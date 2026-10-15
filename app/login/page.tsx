@@ -16,7 +16,12 @@ export default function Login() {
     setErr("");
     const { error } = await createClient().auth.signInWithPassword({ email: email.trim(), password: pw });
     setBusy(false);
-    if (error) return setErr("Correo o contraseña incorrectos.");
+    if (error) {
+      const m = error.message.toLowerCase();
+      if (m.includes("not confirmed")) return setErr("Tu correo aún no está confirmado.");
+      if (m.includes("invalid login")) return setErr("Correo o contraseña incorrectos.");
+      return setErr("No se pudo iniciar sesión: " + error.message);
+    }
     router.replace("/inicio");
     router.refresh();
   }
