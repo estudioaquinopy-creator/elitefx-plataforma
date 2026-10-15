@@ -8,6 +8,8 @@ export type Perfil = {
   rol: "admin" | "alumno";
   plan: "gratis" | "live_trading" | "scanner";
   vence: string | null;
+  telefono: string | null;
+  notif_leidas_at: string | null;
 };
 
 // Devuelve el perfil del usuario con sesión o lo manda al login.

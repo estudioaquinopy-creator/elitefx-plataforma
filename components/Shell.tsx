@@ -2,10 +2,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Cabecera, { type Notif } from "./Cabecera";
 
 type Item = { href: string; label: string; lock: boolean; icon: string };
 
-export default function Shell({ items, nombre, children }: { items: Item[]; nombre: string; children: React.ReactNode }) {
+type Props = { items: Item[]; nombre: string; email: string; iniciales: string; notifs: Notif[]; noLeidas: number; children: React.ReactNode };
+
+export default function Shell({ items, nombre, email, iniciales, notifs, noLeidas, children }: Props) {
   const [open, setOpen] = useState(false);
   const path = usePathname();
   return (
@@ -29,17 +32,7 @@ export default function Shell({ items, nombre, children }: { items: Item[]; nomb
         ))}
       </aside>
       <main className="main">
-        <header className="top">
-          <button className="hbg" aria-label="Abrir menú" onClick={() => setOpen(!open)}>
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <path d="M4 7h16M4 12h16M4 17h16" />
-            </svg>
-          </button>
-          <span className="who">{nombre}</span>
-          <form action="/auth/salir" method="post">
-            <button className="out">Cerrar sesión</button>
-          </form>
-        </header>
+        <Cabecera nombre={nombre} email={email} iniciales={iniciales} notifs={notifs} noLeidas={noLeidas} onMenu={() => setOpen(!open)} />
         {children}
       </main>
     </div>

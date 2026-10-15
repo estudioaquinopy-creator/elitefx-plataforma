@@ -1,5 +1,7 @@
 import Shell from "@/components/Shell";
+import { createClient } from "@/lib/supabase/server";
 import { perfilActual, esMiembro } from "@/lib/sesion";
+import type { Notif } from "@/components/Cabecera";
 
 export const dynamic = "force-dynamic";
 
@@ -18,8 +20,44 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (perfil.rol === "admin") {
     items.push({ href: "/accesos", label: "Accesos", lock: false, icon: "M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" });
   }
+
+  // Notificaciones: avisos de contenido nuevo para todos; vencimientos de membresía solo para el administrador.
+  const supabase = createClient();
+  const { data } = await supabase.from("notificaciones").select("*").order("created_at", { ascending: false }).limit(15);
+  const vistas = perfil.notif_leidas_at ? new Date(perfil.notif_leidas_at).getTime() : 0;
+  const fmt = (d: string) => new Date(d).toLocaleDateString("es-PY");
+  const notifs: Notif[] = ((data ?? []) as { id: string; titulo: string; cuerpo: string; enlace: string | null; created_at: string }[]).map((n) => ({
+    id: n.id,
+    titulo: n.titulo,
+    cuerpo: n.cuerpo,
+    enlace: n.enlace || "/inicio",
+    fecha: fmt(n.created_at),
+    nueva: new Date(n.created_at).getTime() > vistas,
+  }));
+  if (perfil.rol === "admin") {
+    const limite = new Date();
+    limite.setDate(limite.getDate() + 7);
+    const { data: porVencer } = await supabase
+      .from("perfiles").select("id, nombre, email, vence")
+      .not("vence", "is", null).lte("vence", limite.toISOString().slice(0, 10)).order("vence").limit(5);
+    const hoy = new Date().toISOString().slice(0, 10);
+    for (const a of (porVencer ?? []) as { id: string; nombre: string; email: string; vence: string }[]) {
+      notifs.unshift({
+        id: "v-" + a.id,
+        titulo: (a.nombre || a.email) + (a.vence < hoy ? " · membresía vencida" : " · por vencer"),
+        cuerpo: "Vence " + fmt(a.vence),
+        enlace: "/accesos",
+        fecha: "",
+        nueva: true,
+      });
+    }
+  }
+  const noLeidas = notifs.filter((n) => n.nueva).length;
+  const nombre = perfil.nombre || perfil.email;
+  const iniciales = nombre.split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((x) => x[0].toUpperCase()).join("");
+
   return (
-    <Shell items={items} nombre={perfil.nombre || perfil.email}>
+    <Shell items={items} nombre={nombre} email={perfil.email} iniciales={iniciales} notifs={notifs} noLeidas={noLeidas}>
       {children}
     </Shell>
   );
