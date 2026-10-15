@@ -3,7 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-type Item = { href: string; label: string; lock: boolean };
+type Item = { href: string; label: string; lock: boolean; icon: string };
 
 export default function Shell({ items, nombre, children }: { items: Item[]; nombre: string; children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
@@ -20,7 +20,10 @@ export default function Shell({ items, nombre, children }: { items: Item[]; nomb
             onClick={() => setOpen(false)}
             className={path === it.href || path.startsWith(it.href + "/") ? "nav on" : "nav"}
           >
-            {it.label}
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d={it.icon} />
+            </svg>
+            <span className="nl">{it.label}</span>
             {it.lock && <span className="pill">Miembros</span>}
           </Link>
         ))}

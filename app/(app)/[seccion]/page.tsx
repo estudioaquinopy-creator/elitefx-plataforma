@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { perfilActual, esMiembro } from "@/lib/sesion";
 
-const SECCIONES: Record<string, { titulo: string; miembros: boolean }> = {
+const SECCIONES: Record<string, { titulo: string; miembros: boolean; admin?: boolean }> = {
+  accesos: { titulo: "Accesos y membresías", miembros: false, admin: true },
   calendario: { titulo: "Calendario", miembros: true },
   tutoriales: { titulo: "Tutoriales", miembros: true },
   aliados: { titulo: "Aliados", miembros: false },
@@ -13,6 +14,7 @@ export default async function Seccion({ params }: { params: { seccion: string } 
   const s = SECCIONES[params.seccion];
   if (!s) notFound();
   const perfil = await perfilActual();
+  if (s.admin && perfil.rol !== "admin") notFound();
   const bloqueada = s.miembros && !esMiembro(perfil);
   return (
     <>
