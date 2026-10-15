@@ -210,3 +210,64 @@ h1,h2{color:var(--bl)}
 input:focus,textarea:focus,select:focus{outline:2px solid var(--ac);outline-offset:1px}
 .center .card{background:linear-gradient(160deg,#0e1d16,#0a0f0d);border-color:rgba(0,212,122,.3)}
 button.btn:not(.s){background:var(--ac)}
+
+/* ===== Ajuste de paleta v2: menos dorado, más azul, más degradados =====
+   Dorado ≈ 5% (solo llamados a la acción clave, fechas y avisos) · Azul ≈ 20% */
+
+/* Fondo: resplandores verde y azul */
+body{background:
+  radial-gradient(1000px 480px at 90% -10%,rgba(0,212,122,.22),transparent 70%),
+  radial-gradient(800px 460px at -8% 40%,rgba(0,102,255,.16),transparent 70%),
+  radial-gradient(900px 420px at 60% 112%,rgba(0,102,255,.14),transparent 70%),
+  #0a0a0a;background-attachment:fixed}
+
+/* Títulos con degradado blanco → verde menta */
+.main h1{background:linear-gradient(90deg,#ffffff 0%,#d7fff0 45%,#5cf0b0 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* Menú lateral: degradado verde oscuro → negro → azul profundo */
+.side{background:linear-gradient(180deg,#0a2a1c 0%,#0a0f0d 45%,#061436 100%);border-right-color:#14301f}
+.nav.on{background:linear-gradient(90deg,rgba(0,102,255,.35),rgba(0,212,122,.18));color:#fff;box-shadow:inset 3px 0 0 var(--azt)}
+.nav.on svg{color:var(--ac)}
+
+/* Botones con degradado */
+.btn{background:linear-gradient(135deg,#00e68a,#00b86a)}
+.btn.bl{background:linear-gradient(135deg,#1a7bff,#0047c9);color:#fff}
+.btn.sd{background:linear-gradient(135deg,#ffd13d,#e6a800);color:#1a1300}
+.btn.g{background:linear-gradient(135deg,#102a20,#0c1a2e);color:var(--ac);border:1px solid #1d3a30}
+.btn.d{background:#33201a}
+
+/* Tarjetas: degradados que alternan verde oscuro y azul profundo */
+.box{background:linear-gradient(155deg,#0d241a 0%,#0b1511 60%,#0a0d0c 100%)}
+.cols>section.box:nth-child(even),.cols>div>section.box:nth-child(even){background:linear-gradient(155deg,#0a1b3d 0%,#0a1220 60%,#0a0c10 100%);border-color:#14305f}
+.kp .box:nth-child(2n){background:linear-gradient(155deg,#0a1b3d,#0a0f1a)}
+.hero{background:linear-gradient(115deg,#062e1e 0%,#0a2a36 50%,#0a2a6b 100%);border-color:rgba(92,157,255,.4)}
+.th{background:radial-gradient(circle at 30% 30%,#0b4a30,#06204f 70%,#050806);box-shadow:inset 0 0 0 1px rgba(92,157,255,.5)}
+
+/* Dorado fuera de los detalles menores → azul / verde */
+.tag{color:var(--azt)}
+.adm summary{color:var(--azt)}
+.num{background:#0a1f4f;color:var(--azt)}
+.step em{color:var(--azt)}.step.done em{color:var(--ac)}
+.li.on{border-color:var(--azt);background:linear-gradient(90deg,#0a1b3d,#0d1f17)}.li .n{background:#0a1f4f;color:var(--azt)}
+.tab.on{background:linear-gradient(135deg,#0a1b3d,#062e1e);color:#fff;border-color:var(--azt)}
+.cd.on{background:linear-gradient(135deg,#0a1b3d,#062e1e);border-color:var(--azt)}.cd.hoy{box-shadow:inset 0 0 0 1px var(--ac)}
+.dt{border-color:rgba(92,157,255,.4)}
+.pill.c-anuncios{background:#0a1f4f;color:var(--azt)}
+.pill.c-preguntas{background:#0a1f4f;color:var(--azt)}
+.kp .box:nth-child(1){border-left-color:var(--ac)}.kp .box:nth-child(2){border-left-color:var(--az)}.kp .box:nth-child(3){border-left-color:var(--ac)}.kp .box:nth-child(4){border-left-color:var(--azt)}
+.bar i{background:linear-gradient(90deg,var(--ac),#1a7bff)}
+
+/* Portadas por defecto y tarjetas de curso: verde ↔ azul */
+.grid .crs:nth-child(odd){border-top:3px solid var(--ac)}.grid .crs:nth-child(even){border-top:3px solid var(--az)}
+.grid .crs:nth-child(odd) .cov{background:linear-gradient(135deg,#0b4a30 0%,#062e1e 50%,#06204f 100%)}
+.grid .crs:nth-child(even) .cov{background:linear-gradient(135deg,#0a3a9a 0%,#06204f 55%,#062e1e 100%)}
+.cov.big:not([style]){background:linear-gradient(115deg,#0b4a30 0%,#062e1e 35%,#06307a 75%,#0066ff 100%)}
+.crs{background:linear-gradient(180deg,#0e1b16,#0a0d0c)}
+.crs:hover{border-color:var(--azt)}
+
+/* Detalles */
+.av{background:linear-gradient(135deg,#00d47a,#0066ff)}
+.chip{background:linear-gradient(135deg,#0d1f17,#0a1428)}
+.chip.on{background:linear-gradient(135deg,#1a7bff,#0047c9)}
+.center .card{background:linear-gradient(160deg,#0e2a1e 0%,#0a1220 70%,#0a1b3d 100%);border-color:rgba(92,157,255,.35)}
+.slogo{background:linear-gradient(90deg,#fff,#d7fff0);-webkit-background-clip:text;background-clip:text}
