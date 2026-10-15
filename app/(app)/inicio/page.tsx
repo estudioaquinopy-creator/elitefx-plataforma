@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual, permisos, primerNombre, ZONA } from "@/lib/sesion";
+import { youtubeId } from "@/lib/youtube";
 
 export const dynamic = "force-dynamic";
 
 type Curso = { id: string; nombre: string; descripcion: string; grupo: string; orden: number; gratis: boolean };
-type Leccion = { id: string; curso_id: string; orden: number; titulo: string };
+type Leccion = { id: string; curso_id: string; orden: number; titulo: string; youtube_url: string };
 
 export default async function Inicio() {
   const perfil = await perfilActual();
@@ -14,7 +15,7 @@ export default async function Inicio() {
 
   const { data: cs } = await supabase.from("cursos").select("id, nombre, descripcion, grupo, orden, gratis").eq("grupo", "ruta").order("orden");
   const cursos = (cs ?? []) as Curso[];
-  const { data: ls } = await supabase.from("lecciones").select("id, curso_id, orden, titulo").order("orden");
+  const { data: ls } = await supabase.from("lecciones").select("id, curso_id, orden, titulo, youtube_url").order("orden");
   const lecs = (ls ?? []) as Leccion[];
   const { data: pr } = await supabase.from("progreso").select("leccion_id, completada_at").eq("user_id", perfil.id).order("completada_at", { ascending: false });
   const prog = (pr ?? []) as { leccion_id: string; completada_at: string }[];
@@ -33,6 +34,7 @@ export default async function Inicio() {
     }
   }
   const cursoSig = siguiente ? cursos.find((c) => c.id === siguiente!.curso_id) : undefined;
+  const vidSig = siguiente ? youtubeId(siguiente.youtube_url) : null;
   const totalSig = cursoSig ? lecs.filter((l) => l.curso_id === cursoSig.id).length : 0;
   const okSig = cursoSig ? lecs.filter((l) => l.curso_id === cursoSig.id && hechas.has(l.id)).length : 0;
 
@@ -62,7 +64,20 @@ export default async function Inicio() {
       <div className="cols">
         <div>
           <section className="box hero">
-            <div className="th">ELITE&nbsp;<span>FX</span></div>
+            {siguiente && cursoSig && vidSig ? (
+              <Link
+                href={"/cursos/" + cursoSig.id + "?l=" + siguiente.id}
+                className="th thv"
+                aria-label={"Ver " + siguiente.titulo}
+                style={{ backgroundImage: "url(https://img.youtube.com/vi/" + vidSig + "/hqdefault.jpg)" }}
+              >
+                <span className="play">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z" /></svg>
+                </span>
+              </Link>
+            ) : (
+              <div className="th">ELITE&nbsp;<span>FX</span></div>
+            )}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div className="tag" style={{ marginTop: 0 }}>Continúa donde lo dejaste</div>
               {siguiente && cursoSig ? (

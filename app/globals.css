@@ -271,3 +271,9 @@ body{background:
 .chip.on{background:linear-gradient(135deg,#1a7bff,#0047c9)}
 .center .card{background:linear-gradient(160deg,#0e2a1e 0%,#0a1220 70%,#0a1b3d 100%);border-color:rgba(92,157,255,.35)}
 .slogo{background:linear-gradient(90deg,#fff,#d7fff0);-webkit-background-clip:text;background-clip:text}
+
+/* Miniatura del video en "Continúa donde lo dejaste" */
+.th.thv{position:relative;background-size:cover;background-position:center;overflow:hidden;box-shadow:0 0 0 1px rgba(92,157,255,.5),0 8px 24px rgba(0,0,0,.45);text-decoration:none}
+.th.thv::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 40%,rgba(6,20,54,.7))}
+.th .play{position:relative;z-index:1;width:44px;height:44px;border-radius:50%;background:rgba(0,102,255,.9);color:#fff;display:grid;place-items:center;box-shadow:0 4px 16px rgba(0,0,0,.5)}
+.th.thv:hover .play{background:#1a7bff}
