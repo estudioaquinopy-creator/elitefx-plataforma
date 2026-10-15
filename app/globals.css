@@ -64,3 +64,4 @@ code{background:var(--sf2);padding:1px 5px;border-radius:5px}
 .hbg{display:grid}.main{padding:0 14px 28px}.top{margin-bottom:16px}.main h1{font-size:23px}
 .grid{grid-template-columns:1fr 1fr;gap:10px}.box{padding:16px}
 }
+.alerta{background:#33201a;color:var(--co);border-radius:12px;padding:12px 14px;margin:0 0 16px}

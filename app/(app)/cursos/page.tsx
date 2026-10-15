@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 type Curso = { id: string; nombre: string; descripcion: string; grupo: string; orden: number; gratis: boolean; portada_url: string | null };
 
-export default async function Cursos() {
+export default async function Cursos({ searchParams }: { searchParams: { error?: string } }) {
   const perfil = await perfilActual();
   const supabase = createClient();
   const { data: cursosRaw } = await supabase.from("cursos").select("*").order("orden");
@@ -53,14 +53,15 @@ export default async function Cursos() {
     <>
       <h1>Cursos</h1>
       <p className="sub">Todo tu contenido, con progreso por alumno.</p>
+      {searchParams.error && <p className="alerta">{searchParams.error}</p>}
 
       {admin && (
         <details className="box adm">
           <summary>+ Nuevo curso</summary>
-          <form action={crearCurso} className="fm">
+          <form action={crearCurso} className="fm" encType="multipart/form-data">
             <label>Nombre<input name="nombre" required /></label>
             <label>Descripción<input name="descripcion" /></label>
-            <label>Imagen de portada (enlace)<input name="portada_url" placeholder="https://…" /></label>
+            <label>Imagen de portada (archivo)<input type="file" name="portada" accept="image/*" /></label>
             <label>Grupo
               <select name="grupo"><option value="ruta">Ruta de formación</option><option value="extra">Contenido extra</option></select>
             </label>

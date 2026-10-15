@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 type Material = { tipo: string; titulo: string; url: string };
 type Leccion = { id: string; curso_id: string; orden: number; titulo: string; descripcion: string; youtube_url: string; materiales: Material[] };
 
-export default async function CursoPage({ params, searchParams }: { params: { id: string }; searchParams: { l?: string; edit?: string } }) {
+export default async function CursoPage({ params, searchParams }: { params: { id: string }; searchParams: { l?: string; edit?: string; error?: string } }) {
   const perfil = await perfilActual();
   const supabase = createClient();
   const { data: curso } = await supabase.from("cursos").select("*").eq("id", params.id).single();
@@ -42,15 +42,16 @@ export default async function CursoPage({ params, searchParams }: { params: { id
       <div className="cov big" style={curso.portada_url ? { backgroundImage: "url(" + curso.portada_url + ")" } : undefined} />
       <h1>{curso.nombre}</h1>
       <p className="sub">{curso.descripcion}</p>
+      {searchParams.error && <p className="alerta">{searchParams.error}</p>}
 
       {admin && (
         <details className="box adm">
           <summary>Editar curso</summary>
-          <form action={editarCurso} className="fm">
+          <form action={editarCurso} className="fm" encType="multipart/form-data">
             <input type="hidden" name="id" value={curso.id} />
             <label>Nombre<input name="nombre" defaultValue={curso.nombre} required /></label>
             <label>Descripción<input name="descripcion" defaultValue={curso.descripcion} /></label>
-            <label>Imagen de portada (enlace)<input name="portada_url" defaultValue={curso.portada_url ?? ""} /></label>
+            <label>Cambiar imagen de portada (archivo)<input type="file" name="portada" accept="image/*" /></label>
             <label className="ck"><input type="checkbox" name="gratis" defaultChecked={curso.gratis} /> Visible para el plan gratuito</label>
             <button className="btn s">Guardar</button>
           </form>
