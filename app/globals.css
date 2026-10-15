@@ -277,3 +277,44 @@ body{background:
 .th.thv::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 40%,rgba(6,20,54,.7))}
 .th .play{position:relative;z-index:1;width:44px;height:44px;border-radius:50%;background:rgba(0,102,255,.9);color:#fff;display:grid;place-items:center;box-shadow:0 4px 16px rgba(0,0,0,.5)}
 .th.thv:hover .play{background:#1a7bff}
+
+/* ===== Ajuste v3: azul ~5% menos intenso y degradados verde↔azul más suaves =====
+   Se separa el verde del azul con un tono casi negro en el medio, para que no se mezclen. */
+:root{--azt:#6aa5f5}
+body{background:
+  radial-gradient(1000px 480px at 90% -10%,rgba(0,212,122,.20),transparent 70%),
+  radial-gradient(800px 460px at -8% 45%,rgba(0,102,255,.11),transparent 72%),
+  radial-gradient(900px 420px at 60% 112%,rgba(0,102,255,.09),transparent 72%),
+  #0a0a0a;background-attachment:fixed}
+
+.side{background:linear-gradient(180deg,#09281b 0%,#0a100d 38%,#0a0a0b 62%,#071530 100%)}
+.nav.on{background:linear-gradient(90deg,rgba(0,102,255,.27),rgba(10,10,10,0) 85%);box-shadow:inset 3px 0 0 var(--azt)}
+
+.btn.bl{background:linear-gradient(135deg,#1f72e0,#0a3fa8)}
+.chip.on{background:linear-gradient(135deg,#1f72e0,#0a3fa8)}
+.btn.g{background:linear-gradient(135deg,#0f261d,#0b1424);border-color:#1b352c}
+
+.box{background:linear-gradient(155deg,#0d2319 0%,#0b1511 60%,#0a0d0c 100%)}
+.cols>section.box:nth-child(even),.cols>div>section.box:nth-child(even){background:linear-gradient(155deg,#0a1a36 0%,#0a111d 60%,#0a0c0f 100%);border-color:#12294f}
+.kp .box:nth-child(2n){background:linear-gradient(155deg,#0a1a36,#0a0e17)}
+
+.hero{background:linear-gradient(115deg,#062e1e 0%,#0a1410 42%,#0a0e18 62%,#0a2459 100%);border-color:rgba(106,165,245,.32)}
+.th{background:radial-gradient(circle at 30% 30%,#0b4a30,#0a1410 60%,#06183f);box-shadow:inset 0 0 0 1px rgba(106,165,245,.4)}
+.th.thv{box-shadow:0 0 0 1px rgba(106,165,245,.4),0 8px 24px rgba(0,0,0,.45)}
+.th .play{background:rgba(31,114,224,.9)}
+
+.bar i{background:linear-gradient(90deg,var(--ac) 0%,var(--ac) 55%,#2f78d8 100%)}
+.num{background:#09193f}.li .n{background:#09193f}
+.li.on{background:linear-gradient(90deg,#0a1a36,#0a100d)}
+.tab.on,.cd.on{background:linear-gradient(135deg,#0a1a36,#0a1410);border-color:var(--azt)}
+.pill.c-anuncios,.pill.c-preguntas{background:#09193f}
+
+.grid .crs:nth-child(odd) .cov{background:linear-gradient(135deg,#0b4a30 0%,#0a1410 70%,#0a1226 100%)}
+.grid .crs:nth-child(even) .cov{background:linear-gradient(135deg,#0a2f78 0%,#0a1226 60%,#0a1410 100%)}
+.cov.big:not([style]){background:linear-gradient(115deg,#0b4a30 0%,#0a1410 40%,#0a1226 62%,#0a3a94 100%)}
+.crs{background:linear-gradient(180deg,#0e1b16,#0a0d0c)}
+
+.av{background:linear-gradient(135deg,#00d47a 0%,#0a3a5c 60%,#1f5fd0 100%)}
+.chip{background:linear-gradient(135deg,#0d1f17,#0a1120)}
+.center .card{background:linear-gradient(160deg,#0e2a1e 0%,#0a100d 55%,#0a1530 100%);border-color:rgba(106,165,245,.28)}
+.main h1{background:linear-gradient(90deg,#ffffff 0%,#d7fff0 55%,#6af0b2 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
