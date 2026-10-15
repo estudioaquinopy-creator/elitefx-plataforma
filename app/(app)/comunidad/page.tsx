@@ -43,7 +43,7 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
         <section className="box">
           <div className="tag">Modo lectura</div>
           <p className="mu">En el plan gratuito puedes leer la comunidad, pero no publicar. Hazte miembro para participar con Resultados y Preguntas generales.</p>
-          <Link className="btn s" href="/ayuda">Quiero ser miembro</Link>
+          <Link className="btn sd" href="/ayuda">Quiero ser miembro</Link>
         </section>
       )}
 
@@ -58,7 +58,7 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
         {pubs.map((p) => (
           <article key={p.id} className="post">
             <div className="post-h">
-              <span className={p.canal === "anuncios" ? "pill ok" : "pill"}>{CANALES[p.canal]}</span>
+              <span className={"pill c-" + p.canal}>{CANALES[p.canal]}</span>
               <small className="mu">{p.autor} · {new Date(p.created_at).toLocaleDateString("es-PY")}</small>
               {(perm.admin || p.user_id === perfil.id) && (
                 <form action={borrarPublicacion} style={{ marginLeft: "auto" }}>

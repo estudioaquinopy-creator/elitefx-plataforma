@@ -132,3 +132,81 @@ code{background:var(--sf2);padding:1px 5px;border-radius:5px}
 .cvf input[type=file]{width:170px;min-height:0;margin:0;padding:0;border:0;background:none;color:var(--tx);font-size:12px}
 .cvb button{background:rgba(10,10,10,.85);border:1px solid var(--bd);color:var(--tx);border-radius:10px;padding:8px 12px;cursor:pointer;font:600 12px 'Manrope',sans-serif}
 @media(max-width:760px){.hero{flex-direction:column;align-items:flex-start}.th{width:100%}.cd{min-height:50px;padding:4px}.cd .ev{display:none}.cd .dot{display:block;width:6px;height:6px;border-radius:50%;background:var(--ac)}}
+
+/* ================= PALETA OFICIAL ELITE FX =================
+   ~60% verdes y negros · ~15% dorado · ~10% azul · ~5% blanco · resto gris titanio */
+:root{
+  --ac:#00d47a;          /* Verde Elite (primario) */
+  --bg:#0a0a0a;          /* Negro */
+  --vo:#062e1e;          /* Verde oscuro */
+  --go:#ffc107;          /* Dorado (llamados a la acción, valor) */
+  --az:#0066ff;          /* Azul Elite (información) */
+  --azt:#5c9dff;         /* Azul claro, para texto sobre negro */
+  --mu:#8892a0;          /* Gris titanio */
+  --bl:#ffffff;          /* Blanco */
+  --sf:#0f1512;--sf2:#14201a;--bd:#1d2b24;--tx:#e8efea;
+}
+body{background:radial-gradient(900px 420px at 88% -8%,rgba(0,212,122,.20),transparent 70%),radial-gradient(700px 360px at -5% 105%,rgba(0,102,255,.12),transparent 70%),#0a0a0a;background-attachment:fixed}
+h1,h2{color:var(--bl)}
+.slogo,.logo{color:var(--bl)}.slogo span,.logo span{color:var(--ac)}
+
+/* Menú: barra dorada en el ítem activo */
+.nav.on{background:linear-gradient(90deg,rgba(0,212,122,.18),rgba(6,46,30,.9));color:var(--ac);box-shadow:inset 3px 0 0 var(--go)}
+.nav svg{color:var(--mu)}.nav.on svg{color:var(--go)}
+.side{background:linear-gradient(180deg,#0b1410,#0a0a0a)}
+
+/* Botones: verde (principal), dorado (acción clave), azul (ver más) */
+.btn{background:var(--ac);color:#03140d}
+.btn.sd{background:var(--go);color:#1a1300}
+.btn.bl{background:var(--az);color:var(--bl)}
+.btn.g{background:var(--sf2);color:var(--ac);border:1px solid var(--bd)}
+.btn:hover{filter:brightness(1.08)}
+
+/* Etiquetas y textos de apoyo */
+.tag{color:var(--go)}
+.mats a{color:var(--azt)}.adm summary{color:var(--go)}.adm-links a,.lk,.drop-f,.pager a,.calnav a{color:var(--ac)}
+.back{color:var(--azt)}
+.vid{box-shadow:0 0 0 1px var(--bd),0 10px 30px rgba(0,0,0,.45)}
+
+/* Tarjetas con degradado sutil verde oscuro → negro */
+.box{background:linear-gradient(160deg,#0e1d16 0%,#0c1210 55%,#0a0e0c 100%);border-color:#1d2b24}
+.hero{background:linear-gradient(120deg,#062e1e 0%,#0c1c15 55%,#0a0a0a 100%);border-color:rgba(0,212,122,.35)}
+.th{background:radial-gradient(circle at 50% 40%,#0b4a30,#050806);box-shadow:inset 0 0 0 1px rgba(255,193,7,.45)}
+
+/* Portadas de curso: cada tarjeta con un matiz distinto de la paleta */
+.grid .crs:nth-child(3n+1){border-top:3px solid var(--ac)}.grid .crs:nth-child(3n+2){border-top:3px solid var(--go)}.grid .crs:nth-child(3n){border-top:3px solid var(--az)}
+.grid .crs:nth-child(3n+1) .cov{background:linear-gradient(135deg,#0b4a30,#050806)}
+.grid .crs:nth-child(3n+2) .cov{background:linear-gradient(135deg,#4a3a05,#0a0a0a)}
+.grid .crs:nth-child(3n) .cov{background:linear-gradient(135deg,#06307a,#050810)}
+.cov{background-size:cover;background-position:center}
+.cov.big:not([style]){background:linear-gradient(120deg,#0b4a30 0%,#062e1e 45%,#06307a 100%)}
+.bar{background:#1a2620}.bar i{background:linear-gradient(90deg,var(--ac),var(--go))}
+
+/* Indicadores (kp): una franja de color por tarjeta */
+.kp .box{border-left:3px solid var(--ac)}.kp .box:nth-child(2){border-left-color:var(--go)}.kp .box:nth-child(3){border-left-color:var(--az)}.kp .box:nth-child(4){border-left-color:var(--mu)}
+.kp b{color:var(--bl)}.kp b.pos{color:var(--ac)}.kp b.neg{color:var(--co)}
+
+/* Etiquetas de estado y de canal */
+.pill{background:var(--sf2);color:var(--mu)}
+.pill.ok,.pill.st-activo,.pill.c-resultados{background:#062e1e;color:var(--ac)}
+.pill.st-porvencer,.pill.c-anuncios{background:#3a2f06;color:var(--go)}
+.pill.c-preguntas{background:#07204f;color:var(--azt)}
+.pill.st-vencido{background:#33201a;color:var(--co)}
+.pill.st-gratis,.pill.st-sin{background:var(--sf2);color:var(--mu)}
+
+/* Calendario, pasos, chips y notificaciones */
+.dt{background:#0a0a0a;color:var(--go);border:1px solid rgba(255,193,7,.35)}.dt b{color:var(--bl)}
+.cd .ev{color:var(--go)}.cd.on{background:#062e1e;border-color:var(--go)}.cd.hoy{box-shadow:inset 0 0 0 1px var(--azt)}
+.num{background:#062e1e;color:var(--go)}
+.step.done .num{background:var(--ac);color:#03140d}.step.done em{color:var(--ac)}.step em{color:var(--go)}
+.li.on{border-color:var(--go);background:#0d1f17}.li .n{background:#062e1e;color:var(--go)}
+.chip.on{background:var(--az);border-color:var(--az);color:var(--bl)}
+.tab.on{background:#062e1e;color:var(--bl);border-color:var(--go)}
+.bdg{background:var(--go);color:#1a1300}
+.nitem.nueva{border-left:3px solid var(--azt)}
+.av{background:var(--ac);color:#03140d;border:0}
+.okmsg{background:#062e1e;color:var(--ac);border:1px solid rgba(0,212,122,.35)}
+.alerta{border:1px solid rgba(217,150,131,.4)}
+input:focus,textarea:focus,select:focus{outline:2px solid var(--ac);outline-offset:1px}
+.center .card{background:linear-gradient(160deg,#0e1d16,#0a0f0d);border-color:rgba(0,212,122,.3)}
+button.btn:not(.s){background:var(--ac)}

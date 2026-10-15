@@ -119,7 +119,7 @@ export default async function Calendario({ searchParams }: { searchParams: { m?:
               <div key={c.id} className="ses">
                 <div className="dt">{horaPY(c.inicio)}</div>
                 <div style={{ flex: 1 }}><b>{c.titulo}</b></div>
-                {zoom ? <a className="btn s" href={zoom} target="_blank" rel="noopener noreferrer">Unirme por Zoom</a> : <span className="mu">Enlace pendiente</span>}
+                {zoom ? <a className="btn sd" href={zoom} target="_blank" rel="noopener noreferrer">Unirme por Zoom</a> : <span className="mu">Enlace pendiente</span>}
                 {perm.admin && (
                   <form action={eliminarClase}>
                     <input type="hidden" name="id" value={c.id} />

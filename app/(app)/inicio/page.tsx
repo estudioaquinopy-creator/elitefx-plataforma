@@ -70,7 +70,7 @@ export default async function Inicio() {
                   <h2 style={{ margin: "6px 0 4px" }}>{cursoSig.nombre}</h2>
                   <p className="mu" style={{ margin: "0 0 12px" }}>{siguiente.titulo}</p>
                   <div className="bar" style={{ marginBottom: 14 }}><i style={{ width: (totalSig ? Math.round((okSig / totalSig) * 100) : 0) + "%" }} /></div>
-                  <Link className="btn s" href={"/cursos/" + cursoSig.id + "?l=" + siguiente.id}>{okSig ? "Reanudar lección" : "Empezar"}</Link>
+                  <Link className="btn sd" href={"/cursos/" + cursoSig.id + "?l=" + siguiente.id}>{okSig ? "Reanudar lección" : "Empezar"}</Link>
                 </>
               ) : (
                 <>
@@ -108,13 +108,13 @@ export default async function Inicio() {
                   </div>
                 );
               })}
-              <Link className="btn g s" href="/calendario" style={{ marginTop: 10 }}>Ver calendario</Link>
+              <Link className="btn bl s" href="/calendario" style={{ marginTop: 10 }}>Ver calendario</Link>
             </section>
           )}
           <section className="box">
             <div className="hd"><h2>Aliados</h2></div>
             <p className="mu">Abre tu cuenta con un broker aliado para desbloquear el Scanner Elite y las sesiones en vivo.</p>
-            <Link className="btn s" href="/aliados">Ver aliados</Link>
+            <Link className="btn bl s" href="/aliados">Ver aliados</Link>
           </section>
         </div>
       </div>

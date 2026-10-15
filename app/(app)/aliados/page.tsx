@@ -44,12 +44,12 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
           <section className="box">
             <div className="hd"><h2>Broker aliado</h2><span className="pill">Recomendado</span></div>
             <p className="mu">{aj.aliados_broker_desc}</p>
-            {aj.aliados_broker_url ? <a className="btn s" href={aj.aliados_broker_url} target="_blank" rel="noopener noreferrer">Abrir cuenta</a> : <p className="mu">Enlace pendiente.</p>}
+            {aj.aliados_broker_url ? <a className="btn sd" href={aj.aliados_broker_url} target="_blank" rel="noopener noreferrer">Abrir cuenta</a> : <p className="mu">Enlace pendiente.</p>}
           </section>
           <section className="box">
             <div className="hd"><h2>Tarjeta recomendada para usar criptos</h2></div>
             <p className="mu">{aj.aliados_tarjeta_desc}</p>
-            {aj.aliados_tarjeta_url ? <a className="btn s" href={aj.aliados_tarjeta_url} target="_blank" rel="noopener noreferrer">Abrir cuenta</a> : <p className="mu">Enlace pendiente.</p>}
+            {aj.aliados_tarjeta_url ? <a className="btn sd" href={aj.aliados_tarjeta_url} target="_blank" rel="noopener noreferrer">Abrir cuenta</a> : <p className="mu">Enlace pendiente.</p>}
           </section>
           {vid && (
             <section className="box">
