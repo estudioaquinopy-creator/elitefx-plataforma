@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { perfilActual, esMiembro } from "@/lib/sesion";
+import { perfilActual, permisos } from "@/lib/sesion";
 import { crearCurso } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +16,7 @@ export default async function Cursos({ searchParams }: { searchParams: { error?:
   const { data: prog } = await supabase.from("progreso").select("leccion_id").eq("user_id", perfil.id);
   const hechas = new Set((prog ?? []).map((p: { leccion_id: string }) => p.leccion_id));
   const lista = (lecs ?? []) as { id: string; curso_id: string }[];
-  const miembro = esMiembro(perfil);
+  const miembro = (await permisos(perfil)).cursos;
   const admin = perfil.rol === "admin";
 
   function tarjeta(c: Curso) {

@@ -12,6 +12,13 @@ export type Perfil = {
   notif_leidas_at: string | null;
 };
 
+export const ZONA = "America/Asuncion";
+
+// Fecha de hoy en Paraguay, formato AAAA-MM-DD.
+export function hoyPY(): string {
+  return new Date().toLocaleDateString("en-CA", { timeZone: ZONA });
+}
+
 // Devuelve el perfil del usuario con sesión o lo manda al login.
 export async function perfilActual(): Promise<Perfil> {
   const supabase = createClient();
@@ -24,4 +31,51 @@ export async function perfilActual(): Promise<Perfil> {
 
 export function esMiembro(p: Perfil): boolean {
   return p.rol === "admin" || p.plan !== "gratis";
+}
+
+// Primer nombre para saludar; si no hay nombre, la parte del correo antes de la @.
+export function primerNombre(p: Perfil): string {
+  const base = (p.nombre || "").trim() || p.email.split("@")[0].replace(/[._-]+/g, " ");
+  const n = base.split(/\s+/)[0] || "";
+  return n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
+}
+
+export type Permisos = {
+  admin: boolean;
+  miembro: boolean;
+  cursos: boolean;
+  calendario: boolean;
+  tutoriales: boolean;
+  comunidad: boolean; // puede escribir
+};
+
+// Qué puede hacer esta persona: plan + vencimiento + accesos puntuales que concedió el administrador.
+export async function permisos(p: Perfil): Promise<Permisos> {
+  const { data } = await createClient().from("accesos").select("seccion, concedido").eq("user_id", p.id);
+  const ov = new Set(((data ?? []) as { seccion: string; concedido: boolean }[]).filter((a) => a.concedido).map((a) => a.seccion));
+  const admin = p.rol === "admin";
+  const miembro = admin || p.plan !== "gratis";
+  const vigente = !!p.vence && p.vence >= hoyPY();
+  return {
+    admin,
+    miembro,
+    cursos: miembro || ov.has("cursos"),
+    calendario: admin || (p.plan !== "gratis" && vigente) || ov.has("calendario"),
+    tutoriales: miembro || ov.has("tutoriales"),
+    comunidad: miembro || ov.has("comunidad"),
+  };
+}
+
+export type Estado = { clave: "gratis" | "sin" | "activo" | "porvencer" | "vencido"; texto: string };
+
+// Estado de la membresía según la fecha de vencimiento del calendario.
+export function estadoMembresia(p: { plan: string; vence: string | null }): Estado {
+  if (p.plan === "gratis") return { clave: "gratis", texto: "Gratis" };
+  if (!p.vence) return { clave: "sin", texto: "Sin calendario" };
+  const hoy = hoyPY();
+  if (p.vence < hoy) return { clave: "vencido", texto: "Vencido" };
+  const lim = new Date(hoy + "T00:00:00Z");
+  lim.setUTCDate(lim.getUTCDate() + 7);
+  if (p.vence <= lim.toISOString().slice(0, 10)) return { clave: "porvencer", texto: "Por vencer" };
+  return { clave: "activo", texto: "Activo" };
 }

@@ -93,3 +93,42 @@ code{background:var(--sf2);padding:1px 5px;border-radius:5px}
 .okmsg{background:#062e1e;color:var(--ac);border-radius:12px;padding:12px 14px;margin:0 0 16px}
 .top .who,.top .out{display:none}
 @media(max-width:760px){.drop{top:62px}.nd{left:0;right:0;width:auto;max-width:none}.top{gap:8px}}
+
+/* ---------- Secciones: inicio, calendario, tutoriales, comunidad, journal, accesos ---------- */
+.hd{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.hd h2{margin:0}
+.note{color:var(--mu);font-size:13px;margin:12px 0 0}
+.f2{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.acts{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0 14px}
+.kp{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px}
+.kp .box{margin:0;display:flex;flex-direction:column;gap:6px}.kp b{font:700 24px 'Sora',sans-serif}
+.pos{color:var(--ac)}.neg{color:var(--co)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+.chip{padding:8px 14px;border-radius:999px;border:1px solid var(--bd);background:var(--sf);color:var(--mu);text-decoration:none;font-weight:600;font-size:14px}
+.chip.on{background:#062e1e;color:var(--ac);border-color:var(--ac)}
+.hero{display:flex;gap:20px;align-items:center}
+.th{width:150px;aspect-ratio:16/10;border-radius:12px;background:radial-gradient(circle at 50% 40%,#0a3d29,#050806);display:grid;place-items:center;font:700 20px 'Sora',sans-serif;flex:none}.th span{color:var(--ac);font-weight:500}
+.step{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;border:1px solid var(--bd);margin-bottom:8px;text-decoration:none;color:var(--tx)}
+.step:hover{border-color:var(--ac)}.step.lk{opacity:.55}.step em{font-style:normal;font-size:12px;color:var(--mu)}.step.done em{color:var(--ac)}
+.num{width:30px;height:30px;border-radius:50%;background:var(--sf2);color:var(--ac);display:grid;place-items:center;font:600 13px 'Sora',sans-serif;flex:none}
+.ses{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--bd);flex-wrap:wrap}
+.ses:last-child{border-bottom:0}
+.dt{min-width:54px;text-align:center;border-radius:10px;background:var(--sf2);padding:8px;font:600 12px 'Sora',sans-serif;color:var(--ac);display:flex;flex-direction:column}.dt b{font-size:18px;color:var(--tx)}
+.calnav{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;text-transform:capitalize}.calnav a{color:var(--ac);text-decoration:none;font-size:20px;padding:0 10px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.wd{text-align:center;color:var(--mu);font-size:12px;padding:4px 0}
+.cd{position:relative;min-height:64px;border-radius:10px;border:1px solid var(--bd);padding:6px;text-decoration:none;color:var(--tx);font-size:13px;display:flex;flex-direction:column;gap:4px}
+.cd:hover{border-color:var(--ac)}.cd.on{background:#062e1e;border-color:var(--ac)}.cd.hoy{box-shadow:inset 0 0 0 1px var(--ac)}
+.cd .ev{font-size:10px;color:var(--ac)}.cd .dot{display:none}
+.tlink{display:block;text-decoration:none;color:var(--tx)}
+.post{padding:14px 0;border-bottom:1px solid var(--bd)}.post:last-child{border-bottom:0}
+.post-h{display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+.pill.ok{background:#062e1e;color:var(--ac)}
+.pill.st-activo{background:#062e1e;color:var(--ac)}.pill.st-porvencer{background:#3a2f12;color:#ffc107}
+.pill.st-vencido{background:#33201a;color:var(--co)}.pill.st-gratis,.pill.st-sin{background:var(--sf2);color:var(--mu)}
+.pager{display:flex;gap:16px;align-items:center;justify-content:center;margin-top:14px}.pager a{color:var(--ac);text-decoration:none;font-weight:600}
+.cov{position:relative}.covt{position:absolute;left:20px;bottom:16px;font:700 24px 'Sora',sans-serif}
+.cvb{position:absolute;top:10px;right:10px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.cvf{display:flex;gap:6px;align-items:center;background:rgba(10,10,10,.8);border-radius:10px;padding:6px}
+.cvf input[type=file]{width:170px;min-height:0;margin:0;padding:0;border:0;background:none;color:var(--tx);font-size:12px}
+.cvb button{background:rgba(10,10,10,.85);border:1px solid var(--bd);color:var(--tx);border-radius:10px;padding:8px 12px;cursor:pointer;font:600 12px 'Manrope',sans-serif}
+@media(max-width:760px){.hero{flex-direction:column;align-items:flex-start}.th{width:100%}.cd{min-height:50px;padding:4px}.cd .ev{display:none}.cd .dot{display:block;width:6px;height:6px;border-radius:50%;background:var(--ac)}}
