@@ -329,3 +329,7 @@ body{background:
 
 /* Miniatura de la lista de cursos: proporción 16:9 como una portada, escalada al ancho de la tarjeta */
 .grid .crs .cov{height:auto!important;aspect-ratio:16/9;width:100%}
+
+.dias{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.dias label{display:flex;align-items:center;gap:4px;flex-direction:row;font-size:13px}
+.dias input{width:auto}

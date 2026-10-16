@@ -32,3 +32,34 @@ export async function eliminarClase(f: FormData) {
   revalidatePath("/calendario");
   revalidatePath("/inicio");
 }
+
+function leerFijo(f: FormData) {
+  const titulo = String(f.get("titulo") ?? "").trim() || "Trading en vivo";
+  const hora = String(f.get("hora") ?? "");
+  const dias = f.getAll("dias").map(Number).filter((n) => n >= 1 && n <= 7);
+  if (!/^\d{2}:\d{2}/.test(hora)) fallo("/calendario", "Elige la hora.");
+  return { titulo, hora: hora.slice(0, 5), dias, activo: f.get("activo") === "on", zoom_url: String(f.get("zoom_url") ?? "").trim() };
+}
+
+export async function crearFijo(f: FormData) {
+  await soloAdmin();
+  const { error } = await createClient().from("horario_fijo").insert({ ...leerFijo(f), activo: true });
+  if (error) fallo("/calendario", "No se pudo crear: " + error.message);
+  revalidatePath("/calendario"); revalidatePath("/inicio");
+  redirect("/calendario");
+}
+
+export async function guardarFijo(f: FormData) {
+  await soloAdmin();
+  const { error } = await createClient().from("horario_fijo").update(leerFijo(f)).eq("id", String(f.get("id") ?? ""));
+  if (error) fallo("/calendario", "No se pudo guardar: " + error.message);
+  revalidatePath("/calendario"); revalidatePath("/inicio");
+  redirect("/calendario");
+}
+
+export async function eliminarFijo(f: FormData) {
+  await soloAdmin();
+  await createClient().from("horario_fijo").delete().eq("id", String(f.get("id") ?? ""));
+  revalidatePath("/calendario"); revalidatePath("/inicio");
+  redirect("/calendario");
+}

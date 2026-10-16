@@ -4,11 +4,13 @@ import { perfilActual, permisos, hoyPY, ZONA } from "@/lib/sesion";
 import { leerAjustes } from "@/lib/ajustes";
 import Portada from "@/components/Portada";
 import { guardarTextos } from "../ajustes-actions";
-import { crearClase, eliminarClase } from "./actions";
+import { crearClase, eliminarClase, crearFijo, guardarFijo, eliminarFijo } from "./actions";
+import { ocurrencias, type Fijo, type Ocurrencia } from "@/lib/horario";
 
 export const dynamic = "force-dynamic";
 
-type Clase = { id: string; titulo: string; inicio: string; zoom_url: string };
+type Clase = Ocurrencia;
+const DIAS = [["1", "L"], ["2", "M"], ["3", "X"], ["4", "J"], ["5", "V"], ["6", "S"], ["7", "D"]];
 const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 const diaPY = (iso: string) => new Date(iso).toLocaleDateString("en-CA", { timeZone: ZONA });
 const horaPY = (iso: string) => new Date(iso).toLocaleTimeString("es-PY", { timeZone: ZONA, hour: "2-digit", minute: "2-digit", hour12: false });
@@ -40,7 +42,11 @@ export default async function Calendario({ searchParams }: { searchParams: { m?:
   const desde = new Date(Date.UTC(anio, mes - 1, 1, 3, 0, 0)).toISOString();
   const hasta = new Date(Date.UTC(anio, mes, 1, 3, 0, 0)).toISOString();
   const { data } = await createClient().from("clases").select("*").gte("inicio", desde).lt("inicio", hasta).order("inicio");
-  const clases = (data ?? []) as Clase[];
+  const sb = createClient();
+  const { data: fx } = await sb.from("horario_fijo").select("*").order("hora");
+  const fijos = ((fx ?? []) as Fijo[]).map((f) => ({ ...f, hora: String(f.hora) }));
+  const sueltas = ((data ?? []) as Omit<Clase, "fijo">[]).map((c) => ({ ...c, fijo: false }));
+  const clases = [...sueltas, ...ocurrencias(fijos, m + "-01", new Date(Date.UTC(anio, mes, 0)).getUTCDate())].sort((a, b) => a.inicio.localeCompare(b.inicio));
   const porDia = new Map<number, Clase[]>();
   for (const c of clases) {
     const d = Number(diaPY(c.inicio).slice(8, 10));
@@ -58,7 +64,7 @@ export default async function Calendario({ searchParams }: { searchParams: { m?:
   return (
     <>
       <h1>Calendario</h1>
-      <p className="sub">{MESES[mes - 1].charAt(0).toUpperCase() + MESES[mes - 1].slice(1)} {anio} · horario de Paraguay.</p>
+      <p className="sub">{MESES[mes - 1].charAt(0).toUpperCase() + MESES[mes - 1].slice(1)} {anio} · horario de Paraguay · recordatorio 30 minutos antes de cada sesión.</p>
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
       {portada}
 
@@ -74,6 +80,36 @@ export default async function Calendario({ searchParams }: { searchParams: { m?:
               </div>
               <label>Enlace de Zoom de esta clase (si lo dejas vacío usa el general)<input type="url" name="zoom_url" placeholder="https://zoom.us/j/…" /></label>
               <button className="btn s">Crear clase</button>
+            </form>
+          </details>
+          <details className="box adm">
+            <summary>Horario fijo semanal (se repite todas las semanas)</summary>
+            {fijos.map((f) => (
+              <form key={f.id} action={guardarFijo} className="fm" style={{ borderTop: "1px solid var(--bd)", paddingTop: 10 }}>
+                <input type="hidden" name="id" value={f.id} />
+                <div className="f2">
+                  <label>Título<input name="titulo" defaultValue={f.titulo} /></label>
+                  <label>Hora (Paraguay)<input type="time" name="hora" defaultValue={f.hora.slice(0, 5)} required /></label>
+                </div>
+                <div className="dias">
+                  {DIAS.map(([v, l]) => <label key={v}><input type="checkbox" name="dias" value={v} defaultChecked={f.dias.includes(Number(v))} /> {l}</label>)}
+                  <label><input type="checkbox" name="activo" defaultChecked={f.activo} /> Activa</label>
+                </div>
+                <label>Zoom de esta sesión (vacío = general)<input type="url" name="zoom_url" defaultValue={f.zoom_url} /></label>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button className="btn s">Guardar</button>
+                  <button className="btn g s" formAction={eliminarFijo}>Eliminar</button>
+                </div>
+              </form>
+            ))}
+            <form action={crearFijo} className="fm" style={{ borderTop: "1px solid var(--bd)", paddingTop: 10 }}>
+              <b>Nueva sesión fija</b>
+              <div className="f2">
+                <label>Título<input name="titulo" placeholder="Trading en vivo" /></label>
+                <label>Hora (Paraguay)<input type="time" name="hora" required /></label>
+              </div>
+              <div className="dias">{DIAS.map(([v, l]) => <label key={v}><input type="checkbox" name="dias" value={v} /> {l}</label>)}</div>
+              <button className="btn s">Agregar</button>
             </form>
           </details>
           <details className="box adm">
@@ -102,7 +138,7 @@ export default async function Calendario({ searchParams }: { searchParams: { m?:
               ) : (
                 <Link key={i} href={"/calendario?m=" + m + "&d=" + d} className={"cd" + (d === dSel ? " on" : "") + (m + "-" + String(d).padStart(2, "0") === hoy ? " hoy" : "")}>
                   {d}
-                  {porDia.has(d) && <span className="ev">{porDia.get(d)!.length > 1 ? porDia.get(d)!.length + " clases" : horaPY(porDia.get(d)![0].inicio)}</span>}
+                  {porDia.has(d) && <span className="ev">{porDia.get(d)!.length > 1 ? porDia.get(d)!.length + " sesiones" : horaPY(porDia.get(d)![0].inicio)}</span>}
                   {porDia.has(d) && <span className="dot" />}
                 </Link>
               )
@@ -120,7 +156,7 @@ export default async function Calendario({ searchParams }: { searchParams: { m?:
                 <div className="dt">{horaPY(c.inicio)}</div>
                 <div style={{ flex: 1 }}><b>{c.titulo}</b></div>
                 {zoom ? <a className="btn sd" href={zoom} target="_blank" rel="noopener noreferrer">Unirme por Zoom</a> : <span className="mu">Enlace pendiente</span>}
-                {perm.admin && (
+                {perm.admin && !c.fijo && (
                   <form action={eliminarClase}>
                     <input type="hidden" name="id" value={c.id} />
                     <button className="btn g s">Eliminar</button>

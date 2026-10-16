@@ -1,6 +1,7 @@
+import { ocurrencias, type Fijo } from "@/lib/horario";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { perfilActual, permisos, primerNombre, ZONA } from "@/lib/sesion";
+import { perfilActual, permisos, primerNombre, ZONA, hoyPY } from "@/lib/sesion";
 import { youtubeId } from "@/lib/youtube";
 
 export const dynamic = "force-dynamic";
@@ -42,7 +43,11 @@ export default async function Inicio() {
   let sesiones: { id: string; titulo: string; inicio: string }[] = [];
   if (perm.calendario) {
     const { data } = await supabase.from("clases").select("id, titulo, inicio").gte("inicio", new Date().toISOString()).order("inicio").limit(3);
-    sesiones = (data ?? []) as typeof sesiones;
+    const { data: fx } = await supabase.from("horario_fijo").select("*");
+    const fijos = ((fx ?? []) as Fijo[]).map((f) => ({ ...f, hora: String(f.hora) }));
+    const ahora = new Date().toISOString();
+    sesiones = [...((data ?? []) as typeof sesiones), ...ocurrencias(fijos, hoyPY(), 8).filter((o) => o.inicio >= ahora)]
+      .sort((a, b) => a.inicio.localeCompare(b.inicio)).slice(0, 3);
   }
 
   const pasos = cursos.map((c) => {

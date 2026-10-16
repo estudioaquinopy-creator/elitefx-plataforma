@@ -1,6 +1,8 @@
 import Shell from "@/components/Shell";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual, permisos } from "@/lib/sesion";
+import { ocurrencias, type Fijo } from "@/lib/horario";
+import { hoyPY } from "@/lib/sesion";
 import type { Notif } from "@/components/Cabecera";
 
 export const dynamic = "force-dynamic";
@@ -50,6 +52,20 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         fecha: "",
         nueva: true,
       });
+    }
+  }
+  // Recordatorio: 30 minutos antes de cada sesión en vivo (para quien tiene calendario).
+  if (perm.calendario) {
+    const ahora = Date.now();
+    const { data: fx } = await supabase.from("horario_fijo").select("*");
+    const { data: cl } = await supabase.from("clases").select("id, titulo, inicio, zoom_url")
+      .gte("inicio", new Date(ahora).toISOString()).lte("inicio", new Date(ahora + 31 * 60000).toISOString());
+    const fijos = ((fx ?? []) as Fijo[]).map((f) => ({ ...f, hora: String(f.hora) }));
+    const prox = [...ocurrencias(fijos, hoyPY(), 2), ...((cl ?? []) as { id: string; titulo: string; inicio: string }[])]
+      .filter((o) => { const t = new Date(o.inicio).getTime() - ahora; return t >= 0 && t <= 30 * 60000; });
+    for (const o of prox) {
+      const min = Math.max(1, Math.round((new Date(o.inicio).getTime() - ahora) / 60000));
+      notifs.unshift({ id: "r-" + o.id, titulo: "Empieza en " + min + " min", cuerpo: o.titulo, enlace: "/calendario", fecha: "", nueva: true });
     }
   }
   const noLeidas = notifs.filter((n) => n.nueva).length;
