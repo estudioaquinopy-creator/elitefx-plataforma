@@ -447,3 +447,9 @@ input[type=file]::file-selector-button:hover{filter:brightness(1.08)}
 .ig:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(214,41,118,.4)}
 .igi{flex:none;width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.2);display:grid;place-items:center}
 .igt{display:flex;flex-direction:column;line-height:1.2}.igt b{font:700 14px 'Sora',sans-serif;color:#fff}.igt small{margin:0;text-transform:none;letter-spacing:0;font:500 11px 'Manrope',sans-serif;color:rgba(255,255,255,.85)}
+
+/* Botones de Instagram ~30% más pequeños */
+.redes{gap:6px;padding-top:12px}
+.ig{gap:7px;padding:6px 8px;border-radius:10px;box-shadow:0 4px 12px rgba(214,41,118,.25)}
+.igi{width:24px;height:24px;border-radius:7px}.igi svg{width:14px;height:14px}
+.igt b{font-size:10px}.igt small{font-size:9px}
