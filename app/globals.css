@@ -329,13 +329,3 @@ body{background:
 
 /* Miniatura de la lista de cursos: proporción 16:9 como una portada, escalada al ancho de la tarjeta */
 .grid .crs .cov{height:auto!important;aspect-ratio:16/9;width:100%}
-
-/* Reproductor propio: solo play y barra de tiempo */
-.rep{position:relative;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#000;margin-bottom:16px;box-shadow:0 0 0 1px var(--bd),0 10px 30px rgba(0,0,0,.45)}
-.rep-v,.rep-v iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
-.rep-bloq{position:absolute;inset:0 0 44px 0;z-index:2;cursor:pointer}
-.rep-big{position:absolute;z-index:3;left:50%;top:50%;transform:translate(-50%,-60%);width:64px;height:64px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;font-size:24px;cursor:pointer}
-.rep-bar{position:absolute;z-index:4;left:0;right:0;bottom:0;height:44px;display:flex;align-items:center;gap:10px;padding:0 12px;background:linear-gradient(180deg,rgba(0,0,0,.7),#000);color:#fff;font-size:12px}
-.rep-bar button{background:none;border:0;color:#fff;font-size:15px;cursor:pointer;padding:4px 6px}
-.rep-bar input{flex:1;accent-color:var(--ac,#19c37d);cursor:pointer}
-.rep-bar span{min-width:34px;text-align:center}
