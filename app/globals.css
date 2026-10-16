@@ -326,3 +326,6 @@ body{background:
 
 /* Las portadas subidas siempre llenan el recuadro (corrige el recorte en la lista de cursos) */
 .cov,.grid .crs .cov{background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important}
+
+/* Miniatura de la lista de cursos: proporción 16:9 como una portada, escalada al ancho de la tarjeta */
+.grid .crs .cov{height:auto!important;aspect-ratio:16/9;width:100%}
