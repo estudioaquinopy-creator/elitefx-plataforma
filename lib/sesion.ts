@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 
 export type Perfil = {
@@ -10,6 +11,7 @@ export type Perfil = {
   vence: string | null;
   telefono: string | null;
   notif_leidas_at: string | null;
+  vista?: "gratis" | "miembro"; // el administrador está viendo la plataforma como alumno
 };
 
 export const ZONA = "America/Asuncion";
@@ -26,7 +28,14 @@ export async function perfilActual(): Promise<Perfil> {
   if (!user) redirect("/login");
   const { data } = await supabase.from("perfiles").select("*").eq("id", user.id).single();
   if (!data) redirect("/login");
-  return data as Perfil;
+  const real = data as Perfil;
+  // Modo alumno: el administrador ve la plataforma tal como la ve un alumno (miembro o gratis).
+  const vista = cookies().get("ver_como")?.value;
+  if (real.rol === "admin" && (vista === "miembro" || vista === "gratis")) {
+    const lim = new Date(); lim.setDate(lim.getDate() + 30);
+    return { ...real, rol: "alumno", plan: vista === "gratis" ? "gratis" : "live_trading", vence: vista === "gratis" ? null : lim.toISOString().slice(0, 10), vista };
+  }
+  return real;
 }
 
 export function esMiembro(p: Perfil): boolean {

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Tema from "@/components/Tema";
-import { marcarLeidas } from "@/app/(app)/actions";
+import { marcarLeidas, modoAlumno } from "@/app/(app)/actions";
 
 export type Notif = { id: string; titulo: string; cuerpo: string; enlace: string; fecha: string; nueva: boolean };
 
@@ -12,10 +12,12 @@ type Props = {
   iniciales: string;
   notifs: Notif[];
   noLeidas: number;
+  real: boolean;
+  vista: string;
   onMenu: () => void;
 };
 
-export default function Cabecera({ nombre, email, iniciales, notifs, noLeidas, onMenu }: Props) {
+export default function Cabecera({ nombre, email, iniciales, notifs, noLeidas, real, vista, onMenu }: Props) {
   const [abierto, setAbierto] = useState<"" | "n" | "p">("");
   const cerrar = () => setAbierto("");
   return (
@@ -79,6 +81,13 @@ export default function Cabecera({ nombre, email, iniciales, notifs, noLeidas, o
           <Link href="/perfil?t=clave" onClick={cerrar} className="mi">Cambiar contraseña</Link>
           <Link href="/perfil?t=notif" onClick={cerrar} className="mi">Notificaciones</Link>
           <Link href="/ayuda" onClick={cerrar} className="mi">Ayuda y soporte</Link>
+          {real && (
+            <form action={modoAlumno}>
+              {vista !== "miembro" && <button name="como" value="miembro" className="mi">Ver como alumno miembro</button>}
+              {vista !== "gratis" && <button name="como" value="gratis" className="mi">Ver como alumno gratis</button>}
+              {vista && <button name="como" value="" className="mi">Salir del modo alumno</button>}
+            </form>
+          )}
           <form action="/auth/salir" method="post">
             <button className="mi out2">Cerrar sesión</button>
           </form>
