@@ -1,3 +1,4 @@
+import Reproductor from "@/components/Reproductor";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual, permisos } from "@/lib/sesion";
@@ -55,9 +56,7 @@ export default async function Tutoriales({ searchParams }: { searchParams: { c?:
 
       {actual && vid && (
         <section className="box">
-          <div className="vid">
-            <iframe src={"https://www.youtube-nocookie.com/embed/" + vid + "?rel=0&modestbranding=1&autoplay=1"} title={actual.titulo} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen />
-          </div>
+          <Reproductor key={vid} id={vid} titulo={actual.titulo} auto />
           <h2>{actual.titulo}</h2>
           <p className="mu">{actual.categoria}</p>
         </section>

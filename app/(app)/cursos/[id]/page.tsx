@@ -1,3 +1,4 @@
+import Reproductor from "@/components/Reproductor";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -67,14 +68,7 @@ export default async function CursoPage({ params, searchParams }: { params: { id
           {actual ? (
             <>
               {vid ? (
-                <div className="vid">
-                  <iframe
-                    src={"https://www.youtube-nocookie.com/embed/" + vid + "?rel=0&modestbranding=1"}
-                    title={actual.titulo}
-                    allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                </div>
+                <Reproductor key={vid} id={vid} titulo={actual.titulo} />
               ) : (
                 <div className="vid empty">Esta lección aún no tiene video.</div>
               )}
