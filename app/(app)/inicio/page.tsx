@@ -1,3 +1,5 @@
+import EnVivo, { type SesionVivo } from "@/components/EnVivo";
+import { leerAjustes } from "@/lib/ajustes";
 import { ocurrencias, type Fijo } from "@/lib/horario";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -50,6 +52,21 @@ export default async function Inicio() {
       .sort((a, b) => a.inicio.localeCompare(b.inicio)).slice(0, 3);
   }
 
+  // Sesiones cercanas para el aviso "Empieza en…" y el botón de unirse (solo con acceso al calendario).
+  let vivo: SesionVivo[] = [];
+  if (perm.calendario) {
+    const aj = await leerAjustes();
+    const t0 = Date.now() - 90 * 60000, t1 = Date.now() + 3 * 3600000;
+    const { data: cl } = await supabase.from("clases").select("id, titulo, inicio, zoom_url").gte("inicio", new Date(t0).toISOString()).lte("inicio", new Date(t1).toISOString());
+    const { data: fx } = await supabase.from("horario_fijo").select("*");
+    const fijos = ((fx ?? []) as Fijo[]).map((f) => ({ ...f, hora: String(f.hora) }));
+    const hoyIso = hoyPY();
+    const ayer = new Date(new Date(hoyIso + "T12:00:00Z").getTime() - 86400000).toISOString().slice(0, 10);
+    vivo = [...((cl ?? []) as { id: string; titulo: string; inicio: string; zoom_url: string }[]), ...ocurrencias(fijos, ayer, 3)]
+      .filter((o) => { const t = new Date(o.inicio).getTime(); return t >= t0 && t <= t1; })
+      .map((o) => ({ id: o.id, titulo: o.titulo, inicio: o.inicio, zoom: o.zoom_url || aj.zoom_general || "" }));
+  }
+
   const pasos = cursos.map((c) => {
     const total = lecs.filter((l) => l.curso_id === c.id).length;
     const ok = lecs.filter((l) => l.curso_id === c.id && hechas.has(l.id)).length;
@@ -62,6 +79,7 @@ export default async function Inicio() {
     <>
       <h1>Hola, {primerNombre(perfil)}</h1>
       <p className="sub">Este es tu siguiente paso en la academia.</p>
+      {perm.calendario && <EnVivo sesiones={vivo} />}
       {!perfil.nombre && (
         <p className="okmsg">Completa tu nombre en <Link href="/perfil?t=editar" style={{ color: "inherit", fontWeight: 700 }}>Editar perfil</Link> para que aparezca aquí y en la comunidad.</p>
       )}
