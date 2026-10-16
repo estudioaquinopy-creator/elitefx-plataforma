@@ -39,7 +39,6 @@ export default async function CursoPage({ params, searchParams }: { params: { id
   return (
     <>
       <Link href="/cursos" className="back">← Cursos</Link>
-      <div className="cov big" style={curso.portada_url ? { backgroundImage: "url(" + curso.portada_url + ")" } : undefined} />
       <h1>{curso.nombre}</h1>
       <p className="sub">{curso.descripcion}</p>
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
