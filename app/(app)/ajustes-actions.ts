@@ -13,6 +13,7 @@ const CLAVES_PORTADA = ["portada_calendario", "portada_tutoriales"];
 const CLAVES_TEXTO = [
   "aliados_broker_url", "aliados_broker_desc", "aliados_tarjeta_url", "aliados_tarjeta_desc",
   "aliados_video", "aliados_legal", "zoom_general",
+  ...["academia", "personal"].flatMap((g) => ["instagram", "tiktok", "youtube", "facebook", "telegram", "whatsapp"].map((n) => "red_" + g + "_" + n)),
 ];
 
 export async function guardarPortada(f: FormData) {
@@ -35,4 +36,5 @@ export async function guardarTextos(f: FormData) {
   const { error } = await createClient().from("ajustes").upsert(filas);
   if (error) fallo(ruta, "No se pudo guardar: " + error.message);
   revalidatePath(ruta);
+  revalidatePath("/", "layout");
 }

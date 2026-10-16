@@ -4,6 +4,8 @@ import { perfilActual, permisos } from "@/lib/sesion";
 import { modoAlumno } from "./actions";
 import { ocurrencias, type Fijo } from "@/lib/horario";
 import { hoyPY } from "@/lib/sesion";
+import { leerAjustes } from "@/lib/ajustes";
+import { armarRedes } from "@/lib/redes";
 import type { Notif } from "@/components/Cabecera";
 
 export const dynamic = "force-dynamic";
@@ -70,12 +72,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       notifs.unshift({ id: "r-" + o.id, titulo: "Empieza en " + min + " min", cuerpo: o.titulo, enlace: "/calendario", fecha: "", nueva: true });
     }
   }
+  const redes = armarRedes(await leerAjustes());
   const noLeidas = notifs.filter((n) => n.nueva).length;
   const nombre = perfil.nombre || perfil.email;
   const iniciales = nombre.split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((x) => x[0].toUpperCase()).join("");
 
   return (
-    <Shell items={items} nombre={nombre} email={perfil.email} iniciales={iniciales} notifs={notifs} noLeidas={noLeidas} real={perfil.rol === "admin" || !!perfil.vista} vista={perfil.vista ?? ""}>
+    <Shell items={items} nombre={nombre} email={perfil.email} iniciales={iniciales} notifs={notifs} noLeidas={noLeidas} real={perfil.rol === "admin" || !!perfil.vista} vista={perfil.vista ?? ""} redes={redes} editarRedes={perfil.rol === "admin"}>
       {perfil.vista && (
         <form action={modoAlumno} className="vbar">
           <span>Estás viendo la plataforma como <b>alumno {perfil.vista === "gratis" ? "gratis" : "miembro"}</b>. Los cambios de administrador están ocultos.</span>

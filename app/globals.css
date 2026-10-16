@@ -424,3 +424,19 @@ html[data-tema="claro"] .live.pre b{color:#c4262b}
 /* Logo oficial */
 .slogo{padding:6px 10px 20px}.slogo img{display:block;width:100%;max-width:170px;height:auto}
 .logo{text-align:center;margin-bottom:18px}.logo img{display:inline-block;width:100%;max-width:240px;height:auto}
+
+/* Selector de archivos */
+input[type=file]{display:block;width:100%;min-height:0;padding:8px;border:1.5px dashed var(--bd);border-radius:12px;background:var(--sf2);color:var(--mu);font:500 13px 'Manrope',sans-serif;cursor:pointer;transition:border-color .15s}
+input[type=file]:hover{border-color:var(--ac)}
+input[type=file]::file-selector-button{margin-right:12px;padding:9px 16px;border:0;border-radius:10px;background:linear-gradient(135deg,#00e68a,#00b86a);color:#03140d;font:700 13px 'Sora',sans-serif;cursor:pointer}
+input[type=file]::file-selector-button:hover{filter:brightness(1.08)}
+.cvf input[type=file]{border:0;background:none;padding:0;width:170px}
+.cvf input[type=file]::file-selector-button{padding:6px 10px;font-size:12px;margin-right:8px}
+
+/* Redes sociales en el menú */
+.redes{margin-top:auto;padding:16px 8px 4px;border-top:1px solid var(--bd);display:flex;flex-direction:column;gap:10px}
+.redes small{display:block;color:var(--mu);font:600 11px 'Sora',sans-serif;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.rl{display:flex;flex-wrap:wrap;gap:6px}
+.rl a{padding:5px 10px;border-radius:999px;border:1px solid var(--bd);color:var(--tx);text-decoration:none;font-size:12px;font-weight:600;background:var(--sf2)}
+.rl a:hover{border-color:var(--azt);color:var(--azt)}
+.redit{color:var(--azt);font-size:12px;text-decoration:none}
