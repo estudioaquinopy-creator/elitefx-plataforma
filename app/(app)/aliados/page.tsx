@@ -1,63 +1,99 @@
 import { perfilActual } from "@/lib/sesion";
+import { createClient } from "@/lib/supabase/server";
 import { leerAjustes } from "@/lib/ajustes";
 import { youtubeId } from "@/lib/youtube";
 import { guardarTextos } from "../ajustes-actions";
+import { crearAliado, guardarAliado, eliminarAliado } from "./actions";
 
 export const dynamic = "force-dynamic";
+
+type Aliado = { id: string; tipo: string; titulo: string; descripcion: string; url: string; boton: string; tutorial_url: string };
+const TIPOS = ["Broker", "Tarjeta", "Fondeo", "Otro"];
+
+function Campos({ a }: { a?: Aliado }) {
+  return (
+    <>
+      <div className="f2">
+        <label>Tipo
+          <select name="tipo" defaultValue={a?.tipo ?? "Broker"}>
+            {TIPOS.map((t) => <option key={t}>{t}</option>)}
+          </select>
+        </label>
+        <label>Título<input name="titulo" defaultValue={a?.titulo ?? ""} required /></label>
+      </div>
+      <label>Descripción<textarea name="descripcion" rows={3} defaultValue={a?.descripcion ?? ""} /></label>
+      <div className="f2">
+        <label>Enlace de registro<input name="url" type="url" defaultValue={a?.url ?? ""} placeholder="https://…" /></label>
+        <label>Texto del botón<input name="boton" defaultValue={a?.boton ?? "Abrir cuenta"} /></label>
+      </div>
+      <label>Tutorial para crear la cuenta (enlace de YouTube, opcional)<input name="tutorial_url" defaultValue={a?.tutorial_url ?? ""} placeholder="https://youtu.be/…" /></label>
+    </>
+  );
+}
 
 export default async function Aliados({ searchParams }: { searchParams: { error?: string } }) {
   const perfil = await perfilActual();
   const admin = perfil.rol === "admin";
   const aj = await leerAjustes();
-  const vid = youtubeId(aj.aliados_video || "");
-  const campos: [string, string, boolean][] = [
-    ["aliados_broker_url", "Broker aliado · Enlace de registro", false],
-    ["aliados_broker_desc", "Broker aliado · Descripción", true],
-    ["aliados_tarjeta_url", "Tarjeta cripto · Enlace de registro", false],
-    ["aliados_tarjeta_desc", "Tarjeta cripto · Descripción", true],
-    ["aliados_video", "Tutorial de la tarjeta · Enlace de YouTube", false],
-    ["aliados_legal", "Texto legal (divulgación)", true],
-  ];
+  const { data } = await createClient().from("aliados").select("*").order("orden").order("created_at");
+  const aliados = (data ?? []) as Aliado[];
+
   return (
     <>
       <h1>Aliados</h1>
-      <p className="sub">Nuestros aliados para operar y para usar criptomonedas.</p>
+      <p className="sub">Nuestros aliados para operar, fondearte y usar criptomonedas.</p>
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
 
       {admin && (
-        <details className="box adm">
-          <summary>Editar aliados</summary>
-          <form action={guardarTextos} className="fm">
-            <input type="hidden" name="ruta" value="/aliados" />
-            {campos.map(([k, label, largo]) => (
-              <label key={k}>{label}
-                {largo ? <textarea name={k} rows={3} defaultValue={aj[k] ?? ""} /> : <input name={k} defaultValue={aj[k] ?? ""} />}
-              </label>
-            ))}
-            <button className="btn s">Guardar</button>
-          </form>
-        </details>
+        <>
+          <details className="box adm">
+            <summary>+ Agregar aliado</summary>
+            <form action={crearAliado} className="fm"><Campos /><button className="btn s">Agregar aliado</button></form>
+          </details>
+          <details className="box adm">
+            <summary>Texto legal (divulgación)</summary>
+            <form action={guardarTextos} className="fm">
+              <input type="hidden" name="ruta" value="/aliados" />
+              <label>Texto legal<textarea name="aliados_legal" rows={3} defaultValue={aj.aliados_legal ?? ""} /></label>
+              <button className="btn s">Guardar</button>
+            </form>
+          </details>
+        </>
       )}
 
       <div className="cols">
         <div>
-          <section className="box">
-            <div className="hd"><h2>Broker aliado</h2><span className="pill">Recomendado</span></div>
-            <p className="mu">{aj.aliados_broker_desc}</p>
-            {aj.aliados_broker_url ? <a className="btn sd" href={aj.aliados_broker_url} target="_blank" rel="noopener noreferrer">Abrir cuenta</a> : <p className="mu">Enlace pendiente.</p>}
-          </section>
-          <section className="box">
-            <div className="hd"><h2>Tarjeta recomendada para usar criptos</h2></div>
-            <p className="mu">{aj.aliados_tarjeta_desc}</p>
-            {aj.aliados_tarjeta_url ? <a className="btn sd" href={aj.aliados_tarjeta_url} target="_blank" rel="noopener noreferrer">Abrir cuenta</a> : <p className="mu">Enlace pendiente.</p>}
-          </section>
-          {vid && (
-            <section className="box">
-              <div className="tag">Tutorial</div>
-              <h2>Cómo registrarte y tener tu tarjeta virtual para criptomonedas</h2>
-              <div className="vid"><iframe src={"https://www.youtube-nocookie.com/embed/" + vid + "?rel=0"} title="Tutorial de la tarjeta" allowFullScreen /></div>
-            </section>
-          )}
+          {aliados.length === 0 && <section className="box"><p className="mu">Aún no hay aliados cargados.</p></section>}
+          {aliados.map((a) => {
+            const vid = youtubeId(a.tutorial_url);
+            return (
+              <section key={a.id} className="box">
+                <div className="hd"><h2>{a.titulo}</h2><span className="pill">{a.tipo}</span></div>
+                <p className="mu">{a.descripcion}</p>
+                {a.url ? <a className="btn sd" href={a.url} target="_blank" rel="noopener noreferrer">{a.boton || "Abrir cuenta"}</a> : <p className="mu">Enlace pendiente.</p>}
+                {vid && (
+                  <div style={{ marginTop: 16 }}>
+                    <div className="tag">Tutorial</div>
+                    <b>Cómo crear tu cuenta en {a.titulo}</b>
+                    <div className="vid" style={{ marginTop: 10 }}><iframe src={"https://www.youtube-nocookie.com/embed/" + vid + "?rel=0"} title={"Tutorial de " + a.titulo} allowFullScreen /></div>
+                  </div>
+                )}
+                {admin && (
+                  <details className="adm" style={{ marginTop: 12 }}>
+                    <summary>Editar</summary>
+                    <form action={guardarAliado} className="fm">
+                      <input type="hidden" name="id" value={a.id} />
+                      <Campos a={a} />
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button className="btn s">Guardar</button>
+                        <button className="btn g s" formAction={eliminarAliado}>Eliminar</button>
+                      </div>
+                    </form>
+                  </details>
+                )}
+              </section>
+            );
+          })}
           <p className="note">{aj.aliados_legal}</p>
         </div>
         <section className="box">
