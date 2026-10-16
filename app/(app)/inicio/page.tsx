@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 type Curso = { id: string; nombre: string; descripcion: string; grupo: string; orden: number; gratis: boolean };
 type Leccion = { id: string; curso_id: string; orden: number; titulo: string; youtube_url: string };
 
-export default async function Inicio() {
+export default async function Inicio({ searchParams }: { searchParams: { sim?: string } }) {
   const perfil = await perfilActual();
   const perm = await permisos(perfil);
   const supabase = createClient();
@@ -67,6 +67,12 @@ export default async function Inicio() {
       .map((o) => ({ id: o.id, titulo: o.titulo, inicio: o.inicio, zoom: o.zoom_url || aj.zoom_general || "" }));
   }
 
+  // Simulación de prueba (solo administrador / modo alumno): /inicio?sim=25 → una sesión que empieza en 25 minutos.
+  const sim = searchParams.sim !== undefined && searchParams.sim !== "" ? Number(searchParams.sim) : NaN;
+  if (!Number.isNaN(sim) && (perfil.rol === "admin" || perfil.vista)) {
+    vivo = [...vivo, { id: "sim", titulo: "Trading en vivo · SIMULACIÓN de prueba", inicio: new Date(Date.now() + sim * 60000).toISOString(), zoom: "https://zoom.us" }];
+  }
+
   const pasos = cursos.map((c) => {
     const total = lecs.filter((l) => l.curso_id === c.id).length;
     const ok = lecs.filter((l) => l.curso_id === c.id && hechas.has(l.id)).length;
@@ -79,7 +85,7 @@ export default async function Inicio() {
     <>
       <h1>Hola, {primerNombre(perfil)}</h1>
       <p className="sub">Este es tu siguiente paso en la academia.</p>
-      {perm.calendario && <EnVivo sesiones={vivo} />}
+      {(perm.calendario || vivo.length > 0) && <EnVivo sesiones={vivo} />}
       {!perfil.nombre && (
         <p className="okmsg">Completa tu nombre en <Link href="/perfil?t=editar" style={{ color: "inherit", fontWeight: 700 }}>Editar perfil</Link> para que aparezca aquí y en la comunidad.</p>
       )}
