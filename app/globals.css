@@ -420,3 +420,7 @@ html[data-tema="claro"] .live.pre b{color:#c4262b}
 .lkb.on{color:#ff6b8a;border-color:#ff6b8a}
 .resp{display:flex;gap:10px;margin-top:10px;padding:10px;border-radius:12px;background:var(--sf2)}
 .resf{margin-top:10px}.resf .cajat textarea{min-height:60px}
+
+/* Logo oficial */
+.slogo{padding:6px 10px 20px}.slogo img{display:block;width:100%;max-width:170px;height:auto}
+.logo{text-align:center;margin-bottom:18px}.logo img{display:inline-block;width:100%;max-width:240px;height:auto}

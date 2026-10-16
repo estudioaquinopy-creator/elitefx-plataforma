@@ -105,7 +105,7 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
                 </span>
               </Link>
             ) : (
-              <div className="th">ELITE&nbsp;<span>FX</span></div>
+              <div className="th"><img src="/logo-elitefx.png" alt="ELITE FX" style={{ width: "78%", height: "auto" }} /></div>
             )}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div className="tag" style={{ marginTop: 0 }}>Continúa donde lo dejaste</div>

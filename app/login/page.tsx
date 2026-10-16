@@ -31,7 +31,7 @@ export default function Login() {
     <main className="center">
       <div style={{ position: "fixed", top: 16, right: 16 }}><Tema /></div>
       <form className="card" onSubmit={entrar}>
-        <div className="logo">ELITE <span>FX</span></div>
+        <div className="logo"><img src="/logo-elitefx.png" alt="ELITE FX · Trading de Alta Precisión" /></div>
         <h1>Bienvenido de vuelta</h1>
         <p className="sub">Ingresa para continuar con tu formación.</p>
         <label>Correo electrónico

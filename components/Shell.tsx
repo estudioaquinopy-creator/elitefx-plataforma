@@ -15,7 +15,7 @@ export default function Shell({ items, nombre, email, iniciales, notifs, noLeida
     <div className="app">
       {open && <div className="scrim" onClick={() => setOpen(false)} />}
       <aside className={open ? "side open" : "side"}>
-        <div className="slogo">ELITE <span>FX</span></div>
+        <div className="slogo"><img src="/logo-elitefx.png" alt="ELITE FX · Trading de Alta Precisión" /></div>
         {items.map((it) => (
           <Link
             key={it.href}
