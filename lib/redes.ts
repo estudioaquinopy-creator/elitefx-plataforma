@@ -1,6 +1,6 @@
 export const REDES = ["instagram"] as const;
 export const NOMBRES: Record<string, string> = { instagram: "Instagram", tiktok: "TikTok", youtube: "YouTube", facebook: "Facebook", telegram: "Telegram", whatsapp: "WhatsApp" };
-export const GRUPOS: Record<string, string> = { academia: "ELITE FX", personal: "Personal" };
+export const GRUPOS: Record<string, string> = { academia: "ELITE FX", personal: "Marcos Aquino" };
 export type GrupoRedes = { grupo: string; items: { nombre: string; url: string }[] };
 
 // Arma los grupos de redes con los enlaces cargados (los vacíos no se muestran).
