@@ -32,7 +32,7 @@ export default function EnVivo({ sesiones }: { sesiones: SesionVivo[] }) {
   if (proxima) {
     const s = Math.max(0, Math.ceil((proxima.t - ahora) / 1000));
     return (
-      <section className="live" role="status">
+      <section className="live pre" role="status">
         <div><b>Empieza en {dos(Math.floor(s / 60))}:{dos(s % 60)}</b><small>{proxima.titulo}</small></div>
         <span className="mu">Pronto podrás unirte desde aquí</span>
       </section>

@@ -400,3 +400,9 @@ html[data-tema="claro"] .kp b{color:var(--tx)}
 .live.on{border-color:var(--ac);background:linear-gradient(90deg,rgba(0,212,122,.25),rgba(31,114,224,.12))}
 .dotv{display:inline-block;width:9px;height:9px;border-radius:50%;background:#ff4d4d;margin-right:6px;animation:pv 1.2s infinite}
 @keyframes pv{50%{opacity:.25}}
+
+/* Cuenta regresiva en rojo suave */
+.live.pre{border-color:rgba(229,72,77,.6);background:linear-gradient(90deg,rgba(229,72,77,.2),rgba(229,72,77,.06))}
+.live.pre b{color:#ff6b6f}
+html[data-tema="claro"] .live.pre{background:linear-gradient(90deg,rgba(229,72,77,.14),rgba(229,72,77,.04))}
+html[data-tema="claro"] .live.pre b{color:#c4262b}
