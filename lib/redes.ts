@@ -1,4 +1,4 @@
-export const REDES = ["instagram", "tiktok", "youtube", "facebook", "telegram", "whatsapp"] as const;
+export const REDES = ["instagram"] as const;
 export const NOMBRES: Record<string, string> = { instagram: "Instagram", tiktok: "TikTok", youtube: "YouTube", facebook: "Facebook", telegram: "Telegram", whatsapp: "WhatsApp" };
 export const GRUPOS: Record<string, string> = { academia: "ELITE FX", personal: "Personal" };
 export type GrupoRedes = { grupo: string; items: { nombre: string; url: string }[] };
