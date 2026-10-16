@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual, permisos } from "@/lib/sesion";
-import { crearCurso } from "./actions";
+import { cambiarPortadaCurso, crearCurso } from "./actions";
 import { portadaDe } from "@/lib/portadas";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +25,7 @@ export default async function Cursos({ searchParams }: { searchParams: { error?:
     const ok = lista.filter((l) => l.curso_id === c.id && hechas.has(l.id)).length;
     const pct = total ? Math.round((ok / total) * 100) : 0;
     const bloqueado = !(admin || c.gratis || miembro);
-    const img = portadaDe(c.nombre);
+    const img = c.portada_url || portadaDe(c.nombre);
     const estilo = img ? { backgroundImage: "url(" + img + ")" } : undefined;
     const info = (
       <div className="cb">
@@ -53,6 +53,22 @@ export default async function Cursos({ searchParams }: { searchParams: { error?:
       <div key={c.id} className="crs">
         <div className="covw">
           <Link href={"/cursos/" + c.id} className="tlink"><div className="cov" style={estilo} /></Link>
+          {admin && (
+            <div className="cvb cvc">
+              <form action={cambiarPortadaCurso} encType="multipart/form-data" className="cvf">
+                <input type="hidden" name="id" value={c.id} />
+                <input type="file" name="portada" accept="image/*" required />
+                <button>{c.portada_url ? "Cambiar" : "Subir"}</button>
+              </form>
+              {c.portada_url && (
+                <form action={cambiarPortadaCurso}>
+                  <input type="hidden" name="id" value={c.id} />
+                  <input type="hidden" name="quitar" value="1" />
+                  <button>Imagen por defecto</button>
+                </form>
+              )}
+            </div>
+          )}
         </div>
         <Link href={"/cursos/" + c.id} className="tlink">{info}</Link>
       </div>
@@ -71,6 +87,7 @@ export default async function Cursos({ searchParams }: { searchParams: { error?:
           <form action={crearCurso} className="fm" encType="multipart/form-data">
             <label>Nombre<input name="nombre" required /></label>
             <label>Descripción<input name="descripcion" /></label>
+            <label>Imagen de portada (archivo)<input type="file" name="portada" accept="image/*" /></label>
             <label>Grupo
               <select name="grupo"><option value="ruta">Ruta de formación</option><option value="extra">Contenido extra</option></select>
             </label>
