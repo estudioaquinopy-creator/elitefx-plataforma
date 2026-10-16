@@ -21,8 +21,8 @@ create policy "admin gestiona aliados" on public.aliados for all to authenticate
 insert into public.aliados (tipo, titulo, descripcion, url, orden)
 values (
   'Broker', 'Liquid Brokers',
-  'Liquid Brokers es el nombre comercial de Liquid Markets Pty Ltd, un bróker de CFD con sede en Australia. Ofrece más de 300 instrumentos (forex, índices, materias primas, acciones y criptomonedas) y opera con MetaTrader 5 y plataformas propias.',
-  coalesce((select valor from public.ajustes where clave = 'aliados_broker_url'), ''), 1);
+  'Liquid Brokers es el nombre comercial de Liquid Markets Pty Ltd (Australia), también constituida en Santa Lucía. Ofrece más de 300 instrumentos (forex, índices, metales, materias primas y criptomonedas) en MetaTrader 5, Liquid Charts y TH Social, con depósito desde USD 10 en las cuentas ECN y No Commission. Operar con CFD y apalancamiento conlleva riesgo y no es adecuado para todos los inversores.',
+  'https://www.liquidbrokers.com/py', 1);
 
 insert into public.aliados (tipo, titulo, descripcion, url, tutorial_url, orden)
 select 'Tarjeta', 'Tarjeta recomendada para usar criptos',
