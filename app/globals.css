@@ -376,3 +376,15 @@ html[data-tema="claro"] .scrim{background:rgba(20,30,25,.35)}
 html[data-tema="claro"] .vid{box-shadow:0 0 0 1px var(--bd),0 10px 30px rgba(20,40,30,.2)}
 html[data-tema="claro"] input,html[data-tema="claro"] textarea,html[data-tema="claro"] select{background:#fff;color:var(--tx)}
 html[data-tema="claro"] .kp b{color:var(--tx)}
+
+/* Calendario semanal */
+.sem{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px}
+.sdia{border:1px solid var(--bd);border-radius:14px;padding:10px;min-height:180px;display:flex;flex-direction:column;gap:8px;background:var(--sf)}
+.sdia.hoy{border-color:var(--azt);box-shadow:inset 0 0 0 1px var(--azt)}
+.sdh{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--bd);padding-bottom:6px;font-size:12px;color:var(--mu)}
+.sdh b{font:700 18px 'Sora',sans-serif;color:var(--tx)}
+.sv{margin:0;font-size:12px}
+.sc{border:1px solid var(--bd);border-left:3px solid var(--ac);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px;font-size:12px;background:var(--sf2)}
+.sc .sh{font:700 15px 'Sora',sans-serif;color:var(--azt)}
+.sc .btn{min-height:34px;padding:0 10px;font-size:12px}
+@media (max-width:1100px){.sem{grid-template-columns:1fr}.sdia{min-height:0}.sdh{font-size:14px}}

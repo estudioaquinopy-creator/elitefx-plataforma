@@ -15,14 +15,19 @@ const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "
 const diaPY = (iso: string) => new Date(iso).toLocaleDateString("en-CA", { timeZone: ZONA });
 const horaPY = (iso: string) => new Date(iso).toLocaleTimeString("es-PY", { timeZone: ZONA, hour: "2-digit", minute: "2-digit", hour12: false });
 
-export default async function Calendario({ searchParams }: { searchParams: { m?: string; d?: string; error?: string } }) {
+export default async function Calendario({ searchParams }: { searchParams: { s?: string; error?: string } }) {
   const perfil = await perfilActual();
   const perm = await permisos(perfil);
   const aj = await leerAjustes();
   const hoy = hoyPY();
-  const m = /^\d{4}-\d{2}$/.test(searchParams.m ?? "") ? (searchParams.m as string) : hoy.slice(0, 7);
-  const [anio, mes] = m.split("-").map(Number);
-  const dSel = Number(searchParams.d) || (m === hoy.slice(0, 7) ? Number(hoy.slice(8, 10)) : 1);
+  // Semana (lunes a domingo) que contiene la fecha ?s=AAAA-MM-DD (por defecto, hoy).
+  const base = /^\d{4}-\d{2}-\d{2}$/.test(searchParams.s ?? "") ? (searchParams.s as string) : hoy;
+  const [by, bm, bd] = base.split("-").map(Number);
+  const dow = (new Date(Date.UTC(by, bm - 1, bd)).getUTCDay() + 6) % 7;
+  const mas = (n: number) => new Date(Date.UTC(by, bm - 1, bd - dow + n)).toISOString().slice(0, 10);
+  const dias7 = Array.from({ length: 7 }, (_, i) => mas(i));
+  const lunes = dias7[0], domingo = dias7[6];
+  const fmtCorto = (f: string) => Number(f.slice(8, 10)) + " " + MESES[Number(f.slice(5, 7)) - 1].slice(0, 3);
 
   const portada = <Portada url={aj.portada_calendario} clave="portada_calendario" ruta="/calendario" admin={perm.admin} titulo="Calendario" />;
 
@@ -39,32 +44,23 @@ export default async function Calendario({ searchParams }: { searchParams: { m?:
     );
   }
 
-  const desde = new Date(Date.UTC(anio, mes - 1, 1, 3, 0, 0)).toISOString();
-  const hasta = new Date(Date.UTC(anio, mes, 1, 3, 0, 0)).toISOString();
+  const desde = new Date(lunes + "T00:00:00-03:00").toISOString();
+  const hasta = new Date(mas(7) + "T00:00:00-03:00").toISOString();
   const { data } = await createClient().from("clases").select("*").gte("inicio", desde).lt("inicio", hasta).order("inicio");
   const sb = createClient();
   const { data: fx } = await sb.from("horario_fijo").select("*").order("hora");
   const fijos = ((fx ?? []) as Fijo[]).map((f) => ({ ...f, hora: String(f.hora) }));
   const sueltas = ((data ?? []) as Omit<Clase, "fijo">[]).map((c) => ({ ...c, fijo: false }));
-  const clases = [...sueltas, ...ocurrencias(fijos, m + "-01", new Date(Date.UTC(anio, mes, 0)).getUTCDate())].sort((a, b) => a.inicio.localeCompare(b.inicio));
-  const porDia = new Map<number, Clase[]>();
-  for (const c of clases) {
-    const d = Number(diaPY(c.inicio).slice(8, 10));
-    porDia.set(d, [...(porDia.get(d) ?? []), c]);
-  }
-
-  const diasMes = new Date(Date.UTC(anio, mes, 0)).getUTCDate();
-  const offset = (new Date(Date.UTC(anio, mes - 1, 1)).getUTCDay() + 6) % 7; // semana desde lunes
-  const celdas: (number | null)[] = [...Array(offset).fill(null), ...Array.from({ length: diasMes }, (_, i) => i + 1)];
-  const ant = new Date(Date.UTC(anio, mes - 2, 1)).toISOString().slice(0, 7);
-  const sig = new Date(Date.UTC(anio, mes, 1)).toISOString().slice(0, 7);
-  const delDia = porDia.get(dSel) ?? [];
-  const fechaSel = m + "-" + String(dSel).padStart(2, "0");
+  const clases = [...sueltas, ...ocurrencias(fijos, lunes, 7)].sort((a, b) => a.inicio.localeCompare(b.inicio));
+  const porDia = new Map<string, Clase[]>();
+  for (const c of clases) porDia.set(diaPY(c.inicio), [...(porDia.get(diaPY(c.inicio)) ?? []), c]);
+  const NOMBRES = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+  const fechaSel = hoy >= lunes && hoy <= domingo ? hoy : lunes;
 
   return (
     <>
       <h1>Calendario</h1>
-      <p className="sub">{MESES[mes - 1].charAt(0).toUpperCase() + MESES[mes - 1].slice(1)} {anio} · horario de Paraguay · recordatorio 30 minutos antes de cada sesión.</p>
+      <p className="sub">Semana del {fmtCorto(lunes)} al {fmtCorto(domingo)} · horario de Paraguay · recordatorio 30 minutos antes de cada sesión.</p>
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
       {portada}
 
@@ -123,50 +119,41 @@ export default async function Calendario({ searchParams }: { searchParams: { m?:
         </>
       )}
 
-      <div className="cols">
-        <section className="box">
-          <div className="calnav">
-            <Link href={"/calendario?m=" + ant}>←</Link>
-            <b>{MESES[mes - 1]} {anio}</b>
-            <Link href={"/calendario?m=" + sig}>→</Link>
-          </div>
-          <div className="cal">
-            {["L", "M", "X", "J", "V", "S", "D"].map((w) => <div key={w} className="wd">{w}</div>)}
-            {celdas.map((d, i) =>
-              d === null ? (
-                <div key={i} />
-              ) : (
-                <Link key={i} href={"/calendario?m=" + m + "&d=" + d} className={"cd" + (d === dSel ? " on" : "") + (m + "-" + String(d).padStart(2, "0") === hoy ? " hoy" : "")}>
-                  {d}
-                  {porDia.has(d) && <span className="ev">{porDia.get(d)!.length > 1 ? porDia.get(d)!.length + " sesiones" : horaPY(porDia.get(d)![0].inicio)}</span>}
-                  {porDia.has(d) && <span className="dot" />}
-                </Link>
-              )
-            )}
-          </div>
-        </section>
-
-        <section className="box">
-          <h2>{dSel} de {MESES[mes - 1]}</h2>
-          {delDia.length === 0 && <p className="mu">No hay clases este día.</p>}
-          {delDia.map((c) => {
-            const zoom = c.zoom_url || aj.zoom_general;
+      <section className="box">
+        <div className="calnav">
+          <Link href={"/calendario?s=" + mas(-7)} aria-label="Semana anterior">←</Link>
+          <b>{fmtCorto(lunes)} – {fmtCorto(domingo)} {domingo.slice(0, 4)}</b>
+          <Link href={"/calendario?s=" + mas(7)} aria-label="Semana siguiente">→</Link>
+        </div>
+        {!(hoy >= lunes && hoy <= domingo) && <p style={{ textAlign: "center", margin: "0 0 12px" }}><Link href="/calendario" className="lk">Volver a esta semana</Link></p>}
+        <div className="sem">
+          {dias7.map((f, i) => {
+            const lista = porDia.get(f) ?? [];
             return (
-              <div key={c.id} className="ses">
-                <div className="dt">{horaPY(c.inicio)}</div>
-                <div style={{ flex: 1 }}><b>{c.titulo}</b></div>
-                {zoom ? <a className="btn sd" href={zoom} target="_blank" rel="noopener noreferrer">Unirme por Zoom</a> : <span className="mu">Enlace pendiente</span>}
-                {perm.admin && !c.fijo && (
-                  <form action={eliminarClase}>
-                    <input type="hidden" name="id" value={c.id} />
-                    <button className="btn g s">Eliminar</button>
-                  </form>
-                )}
+              <div key={f} className={"sdia" + (f === hoy ? " hoy" : "")}>
+                <div className="sdh"><span>{NOMBRES[i]}</span><b>{Number(f.slice(8, 10))}</b></div>
+                {lista.length === 0 && <p className="mu sv">Sin sesiones</p>}
+                {lista.map((c) => {
+                  const zoom = c.zoom_url || aj.zoom_general;
+                  return (
+                    <div key={c.id} className="sc">
+                      <div className="sh">{horaPY(c.inicio)}</div>
+                      <b>{c.titulo}</b>
+                      {zoom ? <a className="btn sd" href={zoom} target="_blank" rel="noopener noreferrer">Unirme por Zoom</a> : <span className="mu">Enlace pendiente</span>}
+                      {perm.admin && !c.fijo && (
+                        <form action={eliminarClase}>
+                          <input type="hidden" name="id" value={c.id} />
+                          <button className="btn g s">Eliminar</button>
+                        </form>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             );
           })}
-        </section>
-      </div>
+        </div>
+      </section>
     </>
   );
 }

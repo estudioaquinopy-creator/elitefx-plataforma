@@ -23,7 +23,7 @@ export async function crearClase(f: FormData) {
   if (error) fallo("/calendario", "No se pudo crear la clase: " + error.message);
   revalidatePath("/calendario");
   revalidatePath("/inicio");
-  redirect("/calendario?m=" + fecha.slice(0, 7) + "&d=" + Number(fecha.slice(8, 10)));
+  redirect("/calendario?s=" + fecha);
 }
 
 export async function eliminarClase(f: FormData) {
