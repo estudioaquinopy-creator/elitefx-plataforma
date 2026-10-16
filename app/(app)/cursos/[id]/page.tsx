@@ -50,7 +50,6 @@ export default async function CursoPage({ params, searchParams }: { params: { id
             <input type="hidden" name="id" value={curso.id} />
             <label>Nombre<input name="nombre" defaultValue={curso.nombre} required /></label>
             <label>Descripción<input name="descripcion" defaultValue={curso.descripcion} /></label>
-            <label>Cambiar imagen de portada (archivo)<input type="file" name="portada" accept="image/*" /></label>
             <label className="ck"><input type="checkbox" name="gratis" defaultChecked={curso.gratis} /> Visible para el plan gratuito</label>
             <button className="btn s">Guardar</button>
           </form>
