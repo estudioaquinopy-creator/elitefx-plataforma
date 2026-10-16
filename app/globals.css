@@ -333,3 +333,46 @@ body{background:
 .dias{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
 .dias label{display:flex;align-items:center;gap:4px;flex-direction:row;font-size:13px}
 .dias input{width:auto}
+
+/* ================= MODO CLARO ================= */
+html[data-tema="claro"]{color-scheme:light;
+  --bg:#f3f7f5;--sf:#ffffff;--sf2:#eaf1ed;--bd:#d3ded8;--tx:#14201a;--mu:#5a6670;
+  --ac:#00985a;--azt:#0a4fc4;--bl:#0b1812;--go:#a87400;--co:#b4512f}
+html[data-tema="claro"] body{background:
+  radial-gradient(900px 420px at 90% -10%,rgba(0,212,122,.16),transparent 70%),
+  radial-gradient(800px 460px at -8% 45%,rgba(0,102,255,.08),transparent 72%),
+  #f3f7f5;background-attachment:fixed;color:var(--tx)}
+html[data-tema="claro"] .main h1{background:linear-gradient(90deg,#0b2a1d 0%,#0a5a3a 55%,#0a4fc4 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+html[data-tema="claro"] .slogo,html[data-tema="claro"] .logo{background:none;color:#0b1812;-webkit-text-fill-color:#0b1812}
+html[data-tema="claro"] .slogo span,html[data-tema="claro"] .logo span{color:var(--ac);-webkit-text-fill-color:var(--ac)}
+html[data-tema="claro"] .side{background:linear-gradient(180deg,#e6f3ec 0%,#f6f9f7 45%,#e8effb 100%);border-right-color:var(--bd)}
+html[data-tema="claro"] .nav.on{background:linear-gradient(90deg,rgba(10,79,196,.14),rgba(0,0,0,0) 90%);color:#0b1812;box-shadow:inset 3px 0 0 var(--azt)}
+html[data-tema="claro"] .nav.on svg{color:var(--ac)}
+html[data-tema="claro"] .box{background:linear-gradient(155deg,#ffffff 0%,#f4faf7 100%);border-color:var(--bd);box-shadow:0 1px 3px rgba(20,40,30,.06)}
+html[data-tema="claro"] .cols>section.box:nth-child(even),html[data-tema="claro"] .cols>div>section.box:nth-child(even){background:linear-gradient(155deg,#ffffff 0%,#f0f5fd 100%);border-color:#cddaf0}
+html[data-tema="claro"] .kp .box:nth-child(2n){background:linear-gradient(155deg,#ffffff,#f0f5fd)}
+html[data-tema="claro"] .hero{background:linear-gradient(115deg,#e3f5ec 0%,#f4faf7 50%,#e2ecfc 100%);border-color:rgba(10,79,196,.25)}
+html[data-tema="claro"] .th{background:radial-gradient(circle at 30% 30%,#0b4a30,#0a1410 60%,#06183f)}
+html[data-tema="claro"] .crs{background:#fff;border-color:var(--bd);box-shadow:0 1px 3px rgba(20,40,30,.06)}
+html[data-tema="claro"] .center .card{background:linear-gradient(160deg,#ffffff 0%,#eef7f2 60%,#e8effb 100%);border-color:var(--bd)}
+html[data-tema="claro"] .chip{background:#fff;color:var(--tx)}
+html[data-tema="claro"] .chip.on{background:linear-gradient(135deg,#1f72e0,#0a3fa8);color:#fff;border-color:#0a3fa8}
+html[data-tema="claro"] .btn.g{background:#fff;color:var(--ac);border-color:var(--bd)}
+html[data-tema="claro"] .btn.d{background:#f6e3dc;color:#8a3d1f}
+html[data-tema="claro"] .btn.sd{color:#1a1300}
+html[data-tema="claro"] .btn,html[data-tema="claro"] button.btn:not(.s){color:#03140d}
+html[data-tema="claro"] .btn.bl{color:#fff}
+html[data-tema="claro"] .bar{background:#dde7e1}
+html[data-tema="claro"] .dt{background:#fff;color:var(--azt);border-color:#cddaf0}html[data-tema="claro"] .dt b{color:var(--tx)}
+html[data-tema="claro"] .num,html[data-tema="claro"] .li .n{background:#e2ecfc;color:var(--azt)}
+html[data-tema="claro"] .li.on{background:linear-gradient(90deg,#e2ecfc,#f4faf7);border-color:var(--azt)}
+html[data-tema="claro"] .tab.on,html[data-tema="claro"] .cd.on{background:linear-gradient(135deg,#e2ecfc,#e3f5ec);color:var(--tx);border-color:var(--azt)}
+html[data-tema="claro"] .okmsg,html[data-tema="claro"] .pill.ok,html[data-tema="claro"] .pill.st-activo,html[data-tema="claro"] .pill.c-resultados{background:#dff3e8;color:#07703f}
+html[data-tema="claro"] .pill.c-anuncios,html[data-tema="claro"] .pill.c-preguntas{background:#e2ecfc;color:var(--azt)}
+html[data-tema="claro"] .pill.st-porvencer{background:#fbf0d2;color:#7a5600}
+html[data-tema="claro"] .pill.st-vencido{background:#f6e3dc;color:#8a3d1f}
+html[data-tema="claro"] .drop{box-shadow:0 12px 32px rgba(20,40,30,.18)}
+html[data-tema="claro"] .scrim{background:rgba(20,30,25,.35)}
+html[data-tema="claro"] .vid{box-shadow:0 0 0 1px var(--bd),0 10px 30px rgba(20,40,30,.2)}
+html[data-tema="claro"] input,html[data-tema="claro"] textarea,html[data-tema="claro"] select{background:#fff;color:var(--tx)}
+html[data-tema="claro"] .kp b{color:var(--tx)}

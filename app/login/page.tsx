@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Tema from "@/components/Tema";
 import { createClient } from "@/lib/supabase/client";
 
 export default function Login() {
@@ -28,6 +29,7 @@ export default function Login() {
 
   return (
     <main className="center">
+      <div style={{ position: "fixed", top: 16, right: 16 }}><Tema /></div>
       <form className="card" onSubmit={entrar}>
         <div className="logo">ELITE <span>FX</span></div>
         <h1>Bienvenido de vuelta</h1>

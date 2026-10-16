@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import Tema from "@/components/Tema";
 import { marcarLeidas } from "@/app/(app)/actions";
 
 export type Notif = { id: string; titulo: string; cuerpo: string; enlace: string; fecha: string; nueva: boolean };
@@ -31,6 +32,8 @@ export default function Cabecera({ nombre, email, iniciales, notifs, noLeidas, o
         </svg>
         <input type="search" name="q" placeholder="Buscar lecciones, tutoriales, sesiones…" aria-label="Buscar" />
       </form>
+
+      <Tema />
 
       <button className="ico" aria-label="Notificaciones" onClick={() => setAbierto(abierto === "n" ? "" : "n")}>
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
