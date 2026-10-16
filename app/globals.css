@@ -323,3 +323,6 @@ body{background:
 .covw{position:relative}
 .cvb.cvc{top:auto;bottom:8px;left:8px;right:8px;justify-content:flex-start}
 .cvc .cvf{flex:1;min-width:0}.cvc .cvf input[type=file]{flex:1;width:auto;min-width:0}
+
+/* Las portadas subidas siempre llenan el recuadro (corrige el recorte en la lista de cursos) */
+.cov,.grid .crs .cov{background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important}
