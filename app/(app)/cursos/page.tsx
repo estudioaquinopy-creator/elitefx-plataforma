@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual, permisos } from "@/lib/sesion";
-import { crearCurso } from "./actions";
+import { cambiarPortadaCurso, crearCurso } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -25,27 +25,51 @@ export default async function Cursos({ searchParams }: { searchParams: { error?:
     const pct = total ? Math.round((ok / total) * 100) : 0;
     const bloqueado = !(admin || c.gratis || miembro);
     const estilo = c.portada_url ? { backgroundImage: "url(" + c.portada_url + ")" } : undefined;
-    const cuerpo = (
-      <>
-        <div className="cov" style={estilo} />
-        <div className="cb">
-          <b>{c.nombre}</b>
-          <small className="mu">{c.descripcion}</small>
-          {bloqueado ? (
-            <span className="pill">Miembros</span>
-          ) : (
-            <>
-              <div className="bar"><i style={{ width: pct + "%" }} /></div>
-              <small className="mu">{ok}/{total} lecciones</small>
-            </>
+    const info = (
+      <div className="cb">
+        <b>{c.nombre}</b>
+        <small className="mu">{c.descripcion}</small>
+        {bloqueado ? (
+          <span className="pill">Miembros</span>
+        ) : (
+          <>
+            <div className="bar"><i style={{ width: pct + "%" }} /></div>
+            <small className="mu">{ok}/{total} lecciones</small>
+          </>
+        )}
+      </div>
+    );
+    if (bloqueado) {
+      return (
+        <div key={c.id} className="crs lk">
+          <div className="cov" style={estilo} />
+          {info}
+        </div>
+      );
+    }
+    return (
+      <div key={c.id} className="crs">
+        <div className="covw">
+          <Link href={"/cursos/" + c.id} className="tlink"><div className="cov" style={estilo} /></Link>
+          {admin && (
+            <div className="cvb cvc">
+              <form action={cambiarPortadaCurso} encType="multipart/form-data" className="cvf">
+                <input type="hidden" name="id" value={c.id} />
+                <input type="file" name="portada" accept="image/*" required />
+                <button>{c.portada_url ? "Cambiar" : "Subir"}</button>
+              </form>
+              {c.portada_url && (
+                <form action={cambiarPortadaCurso}>
+                  <input type="hidden" name="id" value={c.id} />
+                  <input type="hidden" name="quitar" value="1" />
+                  <button>Quitar</button>
+                </form>
+              )}
+            </div>
           )}
         </div>
-      </>
-    );
-    return bloqueado ? (
-      <div key={c.id} className="crs lk">{cuerpo}</div>
-    ) : (
-      <Link key={c.id} href={"/cursos/" + c.id} className="crs">{cuerpo}</Link>
+        <Link href={"/cursos/" + c.id} className="tlink">{info}</Link>
+      </div>
     );
   }
 

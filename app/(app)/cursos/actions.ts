@@ -134,3 +134,22 @@ export async function alternarCompletada(f: FormData) {
   revalidatePath("/cursos/" + curso_id);
   revalidatePath("/cursos");
 }
+
+// Cambia o quita la portada de un curso directamente desde la lista de cursos.
+export async function cambiarPortadaCurso(f: FormData) {
+  await soloAdmin();
+  const id = txt(f, "id");
+  const ruta = "/cursos";
+  const supabase = createClient();
+  if (f.get("quitar") === "1") {
+    await supabase.from("cursos").update({ portada_url: null }).eq("id", id);
+  } else {
+    const url = await subirPortada(f, ruta);
+    if (!url) fallo(ruta, "Elige una imagen primero.");
+    const { error } = await supabase.from("cursos").update({ portada_url: url }).eq("id", id);
+    if (error) fallo(ruta, "No se pudo guardar la portada: " + error.message);
+  }
+  revalidatePath("/cursos");
+  revalidatePath("/cursos/" + id);
+  redirect("/cursos");
+}

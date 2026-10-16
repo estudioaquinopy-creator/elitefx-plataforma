@@ -318,3 +318,8 @@ body{background:
 .chip{background:linear-gradient(135deg,#0d1f17,#0a1120)}
 .center .card{background:linear-gradient(160deg,#0e2a1e 0%,#0a100d 55%,#0a1530 100%);border-color:rgba(106,165,245,.28)}
 .main h1{background:linear-gradient(90deg,#ffffff 0%,#d7fff0 55%,#6af0b2 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* Portada editable desde la lista de cursos (solo administrador) */
+.covw{position:relative}
+.cvb.cvc{top:auto;bottom:8px;left:8px;right:8px;justify-content:flex-start}
+.cvc .cvf{flex:1;min-width:0}.cvc .cvf input[type=file]{flex:1;width:auto;min-width:0}
