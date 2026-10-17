@@ -23,10 +23,11 @@ export default function Shell({ items, nombre, email, iniciales, notifs, noLeida
             href={it.href}
             onClick={() => setOpen(false)}
             className={path === it.href || path.startsWith(it.href + "/") ? "nav on" : "nav"}
+            data-sec={it.href.slice(1)}
           >
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <span className="ni"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d={it.icon} />
-            </svg>
+            </svg></span>
             <span className="nl">{it.label}</span>
             {it.lock && <span className="pill">Miembros</span>}
           </Link>
@@ -47,7 +48,7 @@ export default function Shell({ items, nombre, email, iniciales, notifs, noLeida
           </div>
         )}
       </aside>
-      <main className="main">
+      <main className="main" data-sec={path.split("/")[1] || ""}>
         <Cabecera nombre={nombre} email={email} iniciales={iniciales} notifs={notifs} noLeidas={noLeidas} real={real} vista={vista} onMenu={() => setOpen(!open)} />
         {children}
       </main>

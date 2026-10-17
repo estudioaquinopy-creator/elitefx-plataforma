@@ -458,3 +458,30 @@ input[type=file]::file-selector-button:hover{filter:brightness(1.08)}
 .slogo img{max-width:102px}
 .slogo{padding-bottom:14px}
 .slogo img{max-width:117px}
+
+/* ===== Iconos con color por sección ===== */
+.nav[data-sec="inicio"]{--c:#00d47a}
+.nav[data-sec="cursos"]{--c:#4d9dff}
+.nav[data-sec="calendario"]{--c:#ffb020}
+.nav[data-sec="tutoriales"]{--c:#ff5d8f}
+.nav[data-sec="aliados"]{--c:#a66bff}
+.nav[data-sec="comunidad"]{--c:#22d3ee}
+.nav[data-sec="journal"]{--c:#a3e635}
+.nav[data-sec="noticias"]{--c:#ff7a45}
+.nav[data-sec="accesos"]{--c:#94a3b8}
+.nav .ni{flex:none;width:32px;height:32px;margin-right:10px;border-radius:10px;display:grid;place-items:center;color:var(--c,var(--mu));background:color-mix(in srgb,var(--c,#888) 16%,transparent);transition:background .15s,transform .15s}
+.nav svg{margin-right:0!important;color:inherit!important}
+.nav:hover .ni{background:color-mix(in srgb,var(--c,#888) 28%,transparent);transform:scale(1.06)}
+.nav.on .ni{background:var(--c);color:#04130c;box-shadow:0 4px 14px color-mix(in srgb,var(--c) 45%,transparent)}
+.nav.on{background:linear-gradient(90deg,color-mix(in srgb,var(--c,#00d47a) 22%,transparent),transparent 85%)!important;box-shadow:inset 3px 0 0 var(--c,var(--azt))!important;color:var(--tx)}
+html[data-tema="claro"] .nav.on .ni{color:#fff}
+.main[data-sec="inicio"] h1::before{--c:#00d47a;background-image:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300d47a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M3 11l9-8 9 8M5 10v10h14V10'/></svg>")}
+.main[data-sec="cursos"] h1::before{--c:#4d9dff;background-image:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234d9dff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 5h7a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H4zM20 5h-3a3 3 0 0 0-3 3'/></svg>")}
+.main[data-sec="calendario"] h1::before{--c:#ffb020;background-image:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffb020' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v13H3zM3 11h18M8 3v4M16 3v4'/></svg>")}
+.main[data-sec="tutoriales"] h1::before{--c:#ff5d8f;background-image:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ff5d8f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M3 6h18v12H3zM10 9.5v5l4.5-2.5z'/></svg>")}
+.main[data-sec="aliados"] h1::before{--c:#a66bff;background-image:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a66bff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M3 12a5 5 0 1 0 10 0a5 5 0 1 0-10 0M11 12a5 5 0 1 0 10 0a5 5 0 1 0-10 0'/></svg>")}
+.main[data-sec="comunidad"] h1::before{--c:#22d3ee;background-image:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2322d3ee' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M21 12a8 8 0 0 1-11.5 7.2L4 20l1-4.6A8 8 0 1 1 21 12z'/></svg>")}
+.main[data-sec="journal"] h1::before{--c:#a3e635;background-image:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a3e635' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M5 4h12a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2zM9 4v16M12 9h4M12 13h4'/></svg>")}
+.main[data-sec="noticias"] h1::before{--c:#ff7a45;background-image:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ff7a45' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2zM18 8h2v10a2 2 0 0 1-2 2M8 8h6M8 12h6M8 16h4'/></svg>")}
+.main[data-sec="accesos"] h1::before{--c:#94a3b8;background-image:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6'/></svg>")}
+.main[data-sec] h1::before{content:"";display:inline-block;width:40px;height:40px;margin-right:12px;vertical-align:-11px;border-radius:12px;background-color:color-mix(in srgb,var(--c,#00d47a) 18%,transparent);background-repeat:no-repeat;background-position:center;background-size:22px;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c,#00d47a) 35%,transparent)}
