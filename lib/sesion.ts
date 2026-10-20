@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
@@ -22,7 +23,7 @@ export function hoyPY(): string {
 }
 
 // Devuelve el perfil del usuario con sesión o lo manda al login.
-export async function perfilActual(): Promise<Perfil> {
+export const perfilActual = cache(async (): Promise<Perfil> => {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
@@ -36,7 +37,7 @@ export async function perfilActual(): Promise<Perfil> {
     return { ...real, rol: "alumno", plan: vista === "gratis" ? "gratis" : "live_trading", vence: vista === "gratis" ? null : lim.toISOString().slice(0, 10), vista };
   }
   return real;
-}
+});
 
 export function esMiembro(p: Perfil): boolean {
   return p.rol === "admin" || p.plan !== "gratis";
@@ -59,7 +60,7 @@ export type Permisos = {
 };
 
 // Qué puede hacer esta persona: plan + vencimiento + accesos puntuales que concedió el administrador.
-export async function permisos(p: Perfil): Promise<Permisos> {
+export const permisos = cache(async (p: Perfil): Promise<Permisos> => {
   const { data } = await createClient().from("accesos").select("seccion, concedido").eq("user_id", p.id);
   const ov = new Set(((data ?? []) as { seccion: string; concedido: boolean }[]).filter((a) => a.concedido).map((a) => a.seccion));
   const admin = p.rol === "admin";
@@ -73,7 +74,7 @@ export async function permisos(p: Perfil): Promise<Permisos> {
     tutoriales: miembro || ov.has("tutoriales"),
     comunidad: miembro || ov.has("comunidad"),
   };
-}
+});
 
 export type Estado = { clave: "gratis" | "sin" | "activo" | "porvencer" | "vencido"; texto: string };
 

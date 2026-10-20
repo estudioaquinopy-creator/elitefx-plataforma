@@ -27,12 +27,24 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     items.push({ href: "/accesos", label: "Accesos", lock: false, icon: "M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" });
   }
 
-  // Notificaciones: avisos de contenido nuevo para todos; vencimientos de membresía solo para el administrador.
+  // Todas las consultas del menú en paralelo (antes iban una detrás de otra).
   const supabase = createClient();
-  const { data } = await supabase.from("notificaciones").select("*").order("created_at", { ascending: false }).limit(15);
+  const ahora = Date.now();
+  const limite = new Date(); limite.setDate(limite.getDate() + 7);
+  const [rNot, rVen, rFx, rCl, aj] = await Promise.all([
+    supabase.from("notificaciones").select("*").order("created_at", { ascending: false }).limit(15),
+    perfil.rol === "admin"
+      ? supabase.from("perfiles").select("id, nombre, email, vence").not("vence", "is", null).lte("vence", limite.toISOString().slice(0, 10)).order("vence").limit(5)
+      : Promise.resolve({ data: null }),
+    perm.calendario ? supabase.from("horario_fijo").select("*") : Promise.resolve({ data: null }),
+    perm.calendario
+      ? supabase.from("clases").select("id, titulo, inicio, zoom_url").gte("inicio", new Date(ahora).toISOString()).lte("inicio", new Date(ahora + 31 * 60000).toISOString())
+      : Promise.resolve({ data: null }),
+    leerAjustes(),
+  ]);
   const vistas = perfil.notif_leidas_at ? new Date(perfil.notif_leidas_at).getTime() : 0;
   const fmt = (d: string) => new Date(d).toLocaleDateString("es-PY");
-  const notifs: Notif[] = ((data ?? []) as { id: string; titulo: string; cuerpo: string; enlace: string | null; created_at: string }[]).map((n) => ({
+  const notifs: Notif[] = ((rNot.data ?? []) as { id: string; titulo: string; cuerpo: string; enlace: string | null; created_at: string }[]).map((n) => ({
     id: n.id,
     titulo: n.titulo,
     cuerpo: n.cuerpo,
@@ -40,39 +52,28 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     fecha: fmt(n.created_at),
     nueva: new Date(n.created_at).getTime() > vistas,
   }));
-  if (perfil.rol === "admin") {
-    const limite = new Date();
-    limite.setDate(limite.getDate() + 7);
-    const { data: porVencer } = await supabase
-      .from("perfiles").select("id, nombre, email, vence")
-      .not("vence", "is", null).lte("vence", limite.toISOString().slice(0, 10)).order("vence").limit(5);
-    const hoy = new Date().toISOString().slice(0, 10);
-    for (const a of (porVencer ?? []) as { id: string; nombre: string; email: string; vence: string }[]) {
-      notifs.unshift({
-        id: "v-" + a.id,
-        titulo: (a.nombre || a.email) + (a.vence < hoy ? " · membresía vencida" : " · por vencer"),
-        cuerpo: "Vence " + fmt(a.vence),
-        enlace: "/accesos",
-        fecha: "",
-        nueva: true,
-      });
-    }
+  const hoyIso = new Date().toISOString().slice(0, 10);
+  for (const a of (rVen.data ?? []) as { id: string; nombre: string; email: string; vence: string }[]) {
+    notifs.unshift({
+      id: "v-" + a.id,
+      titulo: (a.nombre || a.email) + (a.vence < hoyIso ? " · membresía vencida" : " · por vencer"),
+      cuerpo: "Vence " + fmt(a.vence),
+      enlace: "/accesos",
+      fecha: "",
+      nueva: true,
+    });
   }
   // Recordatorio: 30 minutos antes de cada sesión en vivo (para quien tiene calendario).
   if (perm.calendario) {
-    const ahora = Date.now();
-    const { data: fx } = await supabase.from("horario_fijo").select("*");
-    const { data: cl } = await supabase.from("clases").select("id, titulo, inicio, zoom_url")
-      .gte("inicio", new Date(ahora).toISOString()).lte("inicio", new Date(ahora + 31 * 60000).toISOString());
-    const fijos = ((fx ?? []) as Fijo[]).map((f) => ({ ...f, hora: String(f.hora) }));
-    const prox = [...ocurrencias(fijos, hoyPY(), 2), ...((cl ?? []) as { id: string; titulo: string; inicio: string }[])]
+    const fijos = ((rFx.data ?? []) as Fijo[]).map((f) => ({ ...f, hora: String(f.hora) }));
+    const prox = [...ocurrencias(fijos, hoyPY(), 2), ...((rCl.data ?? []) as { id: string; titulo: string; inicio: string }[])]
       .filter((o) => { const t = new Date(o.inicio).getTime() - ahora; return t >= 0 && t <= 30 * 60000; });
     for (const o of prox) {
       const min = Math.max(1, Math.round((new Date(o.inicio).getTime() - ahora) / 60000));
       notifs.unshift({ id: "r-" + o.id, titulo: "Empieza en " + min + " min", cuerpo: o.titulo, enlace: "/calendario", fecha: "", nueva: true });
     }
   }
-  const redes = armarRedes(await leerAjustes());
+  const redes = armarRedes(aj);
   const noLeidas = notifs.filter((n) => n.nueva).length;
   const nombre = perfil.nombre || perfil.email;
   const iniciales = nombre.split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((x) => x[0].toUpperCase()).join("");

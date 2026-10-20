@@ -540,3 +540,9 @@ html[data-tema="claro"] .nav.on .ni{color:var(--tx)!important}
 .pv:hover{border-color:var(--mu)}
 .pv .pvbox{border:0!important;background:none!important;box-shadow:none!important;margin:0}
 .pv-acc{margin:0;padding:0 16px 12px}
+
+/* Carga instantánea (esqueleto) */
+.skel{display:flex;flex-direction:column;gap:14px}
+.sk{border-radius:12px;background:linear-gradient(90deg,var(--sf2),var(--sf),var(--sf2));background-size:200% 100%;animation:sk 1.2s ease-in-out infinite}
+.sk-t{height:38px;width:40%}.sk-s{height:16px;width:60%}.sk-b{height:120px}
+@keyframes sk{0%{background-position:100% 0}100%{background-position:-100% 0}}
