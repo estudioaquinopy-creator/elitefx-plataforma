@@ -549,3 +549,14 @@ html[data-tema="claro"] .nav.on .ni{color:var(--tx)!important}
 
 /* Aviso dentro de la tarjeta "Próximas sesiones" */
 .box .live{margin:0 0 12px;padding:10px 12px}
+
+/* Barra de progreso al navegar + esqueleto con spinner */
+.navbar{position:fixed;top:0;left:0;height:3px;width:0;z-index:9999;background:linear-gradient(90deg,var(--ac,#3b82f6),#93c5fd);box-shadow:0 0 8px var(--ac,#3b82f6);opacity:0;pointer-events:none}
+.navbar.run{opacity:1;width:85%;transition:width 8s cubic-bezier(.1,.7,.2,1)}
+.navbar.end{opacity:0;width:100%;transition:width .2s ease,opacity .3s ease .15s}
+.skel{animation:skin .25s ease both}
+@keyframes skin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.sk-spin{width:26px;height:26px;border-radius:50%;border:3px solid var(--sf2);border-top-color:var(--ac,#3b82f6);animation:giro .8s linear infinite;align-self:center;margin:6px 0}
+@keyframes giro{to{transform:rotate(360deg)}}
+.sk-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.sk-c{height:200px}

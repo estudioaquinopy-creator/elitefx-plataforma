@@ -1,3 +1,4 @@
+import ProgresoNav from "@/components/ProgresoNav";
 import Shell from "@/components/Shell";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual, permisos } from "@/lib/sesion";
@@ -86,6 +87,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <button name="como" value="">Salir del modo alumno</button>
         </form>
       )}
+      <ProgresoNav />
       {children}
     </Shell>
   );
