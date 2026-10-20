@@ -41,36 +41,24 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
   const totalSig = cursoSig ? lecs.filter((l) => l.curso_id === cursoSig.id).length : 0;
   const okSig = cursoSig ? lecs.filter((l) => l.curso_id === cursoSig.id && hechas.has(l.id)).length : 0;
 
-  // Próximas sesiones (solo si tiene acceso al calendario).
-  let sesiones: { id: string; titulo: string; inicio: string }[] = [];
-  if (perm.calendario) {
-    const { data } = await supabase.from("clases").select("id, titulo, inicio").gte("inicio", new Date().toISOString()).order("inicio").limit(3);
-    const { data: fx } = await supabase.from("horario_fijo").select("*");
-    const fijos = ((fx ?? []) as Fijo[]).map((f) => ({ ...f, hora: String(f.hora) }));
-    const ahora = new Date().toISOString();
-    sesiones = [...((data ?? []) as typeof sesiones), ...ocurrencias(fijos, hoyPY(), 8).filter((o) => o.inicio >= ahora)]
-      .sort((a, b) => a.inicio.localeCompare(b.inicio)).slice(0, 3);
-  }
-
-  // Sesiones cercanas para el aviso "Empieza en…" y el botón de unirse (solo con acceso al calendario).
+  // Sesiones para "Próximas sesiones": desde 90 min atrás (para el botón de unirse) hasta 8 días adelante.
   let vivo: SesionVivo[] = [];
   if (perm.calendario) {
     const aj = await leerAjustes();
-    const t0 = Date.now() - 90 * 60000, t1 = Date.now() + 3 * 3600000;
-    const { data: cl } = await supabase.from("clases").select("id, titulo, inicio, zoom_url").gte("inicio", new Date(t0).toISOString()).lte("inicio", new Date(t1).toISOString());
+    const t0 = Date.now() - 90 * 60000, t1 = Date.now() + 8 * 86400000;
+    const { data: cl } = await supabase.from("clases").select("id, titulo, inicio, zoom_url").gte("inicio", new Date(t0).toISOString()).lte("inicio", new Date(t1).toISOString()).order("inicio").limit(30);
     const { data: fx } = await supabase.from("horario_fijo").select("*");
     const fijos = ((fx ?? []) as Fijo[]).map((f) => ({ ...f, hora: String(f.hora) }));
-    const hoyIso = hoyPY();
-    const ayer = new Date(new Date(hoyIso + "T12:00:00Z").getTime() - 86400000).toISOString().slice(0, 10);
-    vivo = [...((cl ?? []) as { id: string; titulo: string; inicio: string; zoom_url: string }[]), ...ocurrencias(fijos, ayer, 3)]
+    const ayer = new Date(new Date(hoyPY() + "T12:00:00Z").getTime() - 86400000).toISOString().slice(0, 10);
+    vivo = [...((cl ?? []) as { id: string; titulo: string; inicio: string; zoom_url: string }[]), ...ocurrencias(fijos, ayer, 10)]
       .filter((o) => { const t = new Date(o.inicio).getTime(); return t >= t0 && t <= t1; })
       .map((o) => ({ id: o.id, titulo: o.titulo, inicio: o.inicio, zoom: o.zoom_url || aj.zoom_general || "" }));
   }
 
   // Simulación de prueba (solo administrador / modo alumno): /inicio?sim=25 → una sesión que empieza en 25 minutos.
-  const sim = searchParams.sim !== undefined && searchParams.sim !== "" ? Number(searchParams.sim) : NaN;
+  const sim = searchParams.sim === undefined ? NaN : searchParams.sim === "" ? 60 : Number(searchParams.sim);
   if (!Number.isNaN(sim) && (perfil.rol === "admin" || perfil.vista)) {
-    vivo = [...vivo, { id: "sim", titulo: "Trading en vivo · SIMULACIÓN de prueba", inicio: new Date(Date.now() + sim * 60000).toISOString(), zoom: "https://zoom.us" }];
+    vivo = [...vivo, { id: "sim", titulo: "Trading en vivo · SIMULACIÓN de prueba", inicio: new Date(Date.now() + sim * 60000 + 1000).toISOString(), zoom: "https://zoom.us" }];
   }
 
   const pasos = cursos.map((c) => {
@@ -141,17 +129,7 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
           {perm.calendario && (
             <section className="box">
               <h2>Próximas sesiones</h2>
-              <EnVivo sesiones={vivo} />
-              {sesiones.length === 0 && <p className="mu">No hay sesiones programadas todavía.</p>}
-              {sesiones.map((s) => {
-                const d = new Date(s.inicio);
-                return (
-                  <div key={s.id} className="ses">
-                    <div className="dt">{d.toLocaleDateString("es-PY", { timeZone: ZONA, month: "short" }).toUpperCase()}<b>{d.toLocaleDateString("es-PY", { timeZone: ZONA, day: "numeric" })}</b></div>
-                    <div style={{ flex: 1 }}><b>{s.titulo}</b><small className="mu" style={{ display: "block" }}>{d.toLocaleTimeString("es-PY", { timeZone: ZONA, hour: "2-digit", minute: "2-digit", hour12: false })} · horario de Paraguay</small></div>
-                  </div>
-                );
-              })}
+              <EnVivo sesiones={vivo} ahoraServidor={Date.now()} />
               <Link className="btn bl s" href="/calendario" style={{ marginTop: 10 }}>Ver calendario</Link>
             </section>
           )}
