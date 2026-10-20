@@ -546,3 +546,6 @@ html[data-tema="claro"] .nav.on .ni{color:var(--tx)!important}
 .sk{border-radius:12px;background:linear-gradient(90deg,var(--sf2),var(--sf),var(--sf2));background-size:200% 100%;animation:sk 1.2s ease-in-out infinite}
 .sk-t{height:38px;width:40%}.sk-s{height:16px;width:60%}.sk-b{height:120px}
 @keyframes sk{0%{background-position:100% 0}100%{background-position:-100% 0}}
+
+/* Aviso dentro de la tarjeta "Próximas sesiones" */
+.box .live{margin:0 0 12px;padding:10px 12px}

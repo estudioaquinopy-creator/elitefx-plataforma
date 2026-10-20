@@ -3,10 +3,11 @@ import { useEffect, useState } from "react";
 
 export type SesionVivo = { id: string; titulo: string; inicio: string; zoom: string };
 
-const VENTANA_AVISO = 30 * 60 * 1000;   // cuenta regresiva desde 30 min antes
+const VENTANA_AVISO = 60 * 60 * 1000;   // cuenta regresiva desde 60 min antes
 const DURACION = 90 * 60 * 1000;        // el botón sigue disponible mientras dura la sesión
 
 const dos = (n: number) => String(n).padStart(2, "0");
+const hms = (s: number) => (s >= 3600 ? Math.floor(s / 3600) + ":" : "") + dos(Math.floor((s % 3600) / 60)) + ":" + dos(s % 60);
 
 export default function EnVivo({ sesiones }: { sesiones: SesionVivo[] }) {
   const [ahora, setAhora] = useState<number | null>(null);
@@ -33,8 +34,8 @@ export default function EnVivo({ sesiones }: { sesiones: SesionVivo[] }) {
     const s = Math.max(0, Math.ceil((proxima.t - ahora) / 1000));
     return (
       <section className="live pre" role="status">
-        <div><b>Empieza en {dos(Math.floor(s / 60))}:{dos(s % 60)}</b><small>{proxima.titulo}</small></div>
-        <span className="mu">Pronto podrás unirte desde aquí</span>
+        <div><b>Empieza en {hms(s)}</b><small>{proxima.titulo}</small></div>
+        <span className="mu">El botón para unirte aparece aquí al llegar a cero</span>
       </section>
     );
   }

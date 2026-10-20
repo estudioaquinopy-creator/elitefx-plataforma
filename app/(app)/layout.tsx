@@ -38,7 +38,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       : Promise.resolve({ data: null }),
     perm.calendario ? supabase.from("horario_fijo").select("*") : Promise.resolve({ data: null }),
     perm.calendario
-      ? supabase.from("clases").select("id, titulo, inicio, zoom_url").gte("inicio", new Date(ahora).toISOString()).lte("inicio", new Date(ahora + 31 * 60000).toISOString())
+      ? supabase.from("clases").select("id, titulo, inicio, zoom_url").gte("inicio", new Date(ahora).toISOString()).lte("inicio", new Date(ahora + 61 * 60000).toISOString())
       : Promise.resolve({ data: null }),
     leerAjustes(),
   ]);
@@ -67,7 +67,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (perm.calendario) {
     const fijos = ((rFx.data ?? []) as Fijo[]).map((f) => ({ ...f, hora: String(f.hora) }));
     const prox = [...ocurrencias(fijos, hoyPY(), 2), ...((rCl.data ?? []) as { id: string; titulo: string; inicio: string }[])]
-      .filter((o) => { const t = new Date(o.inicio).getTime() - ahora; return t >= 0 && t <= 30 * 60000; });
+      .filter((o) => { const t = new Date(o.inicio).getTime() - ahora; return t >= 0 && t <= 60 * 60000; });
     for (const o of prox) {
       const min = Math.max(1, Math.round((new Date(o.inicio).getTime() - ahora) / 60000));
       notifs.unshift({ id: "r-" + o.id, titulo: "Empieza en " + min + " min", cuerpo: o.titulo, enlace: "/calendario", fecha: "", nueva: true });

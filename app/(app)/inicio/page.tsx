@@ -85,7 +85,6 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
     <>
       <h1>Hola, {primerNombre(perfil)}</h1>
       <p className="sub">Este es tu siguiente paso en la academia.</p>
-      {(perm.calendario || vivo.length > 0) && <EnVivo sesiones={vivo} />}
       {!perfil.nombre && (
         <p className="okmsg">Completa tu nombre en <Link href="/perfil?t=editar" style={{ color: "inherit", fontWeight: 700 }}>Editar perfil</Link> para que aparezca aquí y en la comunidad.</p>
       )}
@@ -142,6 +141,7 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
           {perm.calendario && (
             <section className="box">
               <h2>Próximas sesiones</h2>
+              <EnVivo sesiones={vivo} />
               {sesiones.length === 0 && <p className="mu">No hay sesiones programadas todavía.</p>}
               {sesiones.map((s) => {
                 const d = new Date(s.inicio);
