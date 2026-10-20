@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual, permisos } from "@/lib/sesion";
 import CajaTexto from "@/components/CajaTexto";
+import Compositor from "@/components/Compositor";
 import { borrarPublicacion, publicar, darLike, comentar, borrarComentario } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -36,18 +37,7 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
 
       {perm.comunidad ? (
         <section className="box">
-          <form action={publicar} className="fm">
-            <div className="f2">
-              <label>Etiqueta
-                <select name="canal" defaultValue="preguntas">
-                  {opciones.map((c) => <option key={c} value={c}>{CANALES[c]}</option>)}
-                </select>
-              </label>
-              <label>Imagen (opcional, máx. 5 MB)<input type="file" name="imagen" accept="image/*" /></label>
-            </div>
-            <CajaTexto name="cuerpo" rows={3} placeholder="¿Qué quieres compartir? Cuéntanos tu resultado o haz tu pregunta…" />
-            <button className="btn s">Publicar</button>
-          </form>
+          <Compositor action={publicar} iniciales={ini(perfil.nombre || perfil.email)} opciones={opciones.map((c) => ({ value: c, label: CANALES[c] }))} />
         </section>
       ) : (
         <section className="box">
@@ -105,7 +95,7 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
             {perm.comunidad && (
               <form action={comentar} className="fm resf">
                 <input type="hidden" name="id" value={p.id} /><input type="hidden" name="volver" value={volver} />
-                <CajaTexto name="cuerpo" rows={2} placeholder="Escribe una respuesta…" required maxLength={1000} />
+                <CajaTexto name="cuerpo" rows={1} placeholder="Escribe una respuesta…" required maxLength={1000} />
                 <button className="btn g s">Responder</button>
               </form>
             )}
