@@ -4,7 +4,7 @@ import { perfilActual, permisos } from "@/lib/sesion";
 import CajaTexto from "@/components/CajaTexto";
 import Compositor from "@/components/Compositor";
 import PostModal from "@/components/PostModal";
-import { borrarPublicacion, publicar, darLike, comentar, borrarComentario } from "./actions";
+import { borrarPublicacion, publicar, alternarLike, comentar, borrarComentario } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -70,53 +70,49 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
                 {cabecera}
                 {p.titulo && <b className="pv-ti">{p.titulo}</b>}
                 {p.cuerpo && <p className="pv-tx">{p.cuerpo}</p>}
-                <small className="mu">♥ {nl} · 💬 {rs.length}</small>
               </div>
               {p.imagen_url && <img className="pv-img" src={p.imagen_url} alt="" loading="lazy" />}
             </div>
           </section>
         );
         return (
-          <PostModal key={p.id} id={p.id} vista={vista}>
-            <div className="post2">
-              {cabecera}
-              {p.titulo && <h2 style={{ margin: "4px 0 6px" }}>{p.titulo}</h2>}
-              {p.cuerpo && <p style={{ whiteSpace: "pre-wrap", margin: "6px 0 0" }}>{p.cuerpo}</p>}
-              {p.imagen_url && <img className="pimg" src={p.imagen_url} alt="Imagen de la publicación" />}
-
-              <div className="acc">
-                <form action={darLike}>
-                  <input type="hidden" name="id" value={p.id} /><input type="hidden" name="volver" value={volver} />
-                  <button className={"lkb" + (mio ? " on" : "")} aria-pressed={mio}>{mio ? "♥" : "♡"} {nl > 0 ? nl : ""} Me gusta</button>
-                </form>
-                <span className="mu">💬 {rs.length} {rs.length === 1 ? "respuesta" : "respuestas"}</span>
-                {(perm.admin || p.user_id === perfil.id) && (
-                  <form action={borrarPublicacion} style={{ marginLeft: "auto" }}><input type="hidden" name="id" value={p.id} /><button className="lk">Eliminar publicación</button></form>
-                )}
+          <PostModal
+            key={p.id} id={p.id} vista={vista} nl={nl} mio={mio} nc={rs.length} puedeLike={perm.comunidad} alternar={alternarLike}
+            detalle={
+              <div className="post2">
+                {cabecera}
+                {p.titulo && <h2 style={{ margin: "4px 0 6px" }}>{p.titulo}</h2>}
+                {p.cuerpo && <p style={{ whiteSpace: "pre-wrap", margin: "6px 0 0" }}>{p.cuerpo}</p>}
+                {p.imagen_url && <img className="pimg" src={p.imagen_url} alt="Imagen de la publicación" />}
               </div>
-
-              {rs.map((c) => (
-                <div key={c.id} className="resp">
-                  <span className="av2 s">{ini(c.autor)}</span>
-                  <div style={{ flex: 1 }}>
-                    <b>{c.autor}</b> <small className="mu">{cuando(c.created_at)}</small>
-                    <p style={{ whiteSpace: "pre-wrap", margin: "2px 0 0" }}>{c.cuerpo}</p>
+            }
+            extras={(perm.admin || p.user_id === perfil.id) ? (
+              <form action={borrarPublicacion} style={{ marginLeft: "auto" }}><input type="hidden" name="id" value={p.id} /><button className="lk">Eliminar publicación</button></form>
+            ) : null}
+            respuestas={
+              <>
+                {rs.map((c) => (
+                  <div key={c.id} className="resp">
+                    <span className="av2 s">{ini(c.autor)}</span>
+                    <div style={{ flex: 1 }}>
+                      <b>{c.autor}</b> <small className="mu">{cuando(c.created_at)}</small>
+                      <p style={{ whiteSpace: "pre-wrap", margin: "2px 0 0" }}>{c.cuerpo}</p>
+                    </div>
+                    {(perm.admin || c.user_id === perfil.id) && (
+                      <form action={borrarComentario}><input type="hidden" name="id" value={c.id} /><input type="hidden" name="post" value={p.id} /><input type="hidden" name="volver" value={volver} /><button className="lk">Eliminar</button></form>
+                    )}
                   </div>
-                  {(perm.admin || c.user_id === perfil.id) && (
-                    <form action={borrarComentario}><input type="hidden" name="id" value={c.id} /><input type="hidden" name="post" value={p.id} /><input type="hidden" name="volver" value={volver} /><button className="lk">Eliminar</button></form>
-                  )}
-                </div>
-              ))}
-
-              {perm.comunidad && (
-                <form action={comentar} className="fm resf">
-                  <input type="hidden" name="id" value={p.id} /><input type="hidden" name="volver" value={volver} />
-                  <CajaTexto name="cuerpo" rows={1} placeholder="Escribe una respuesta…" required maxLength={1000} />
-                  <button className="btn g s">Responder</button>
-                </form>
-              )}
-            </div>
-          </PostModal>
+                ))}
+                {perm.comunidad && (
+                  <form action={comentar} className="fm resf">
+                    <input type="hidden" name="id" value={p.id} /><input type="hidden" name="volver" value={volver} />
+                    <CajaTexto name="cuerpo" rows={1} placeholder="Escribe una respuesta…" required maxLength={1000} />
+                    <button className="btn g s">Responder</button>
+                  </form>
+                )}
+              </>
+            }
+          />
         );
       })}
     </>

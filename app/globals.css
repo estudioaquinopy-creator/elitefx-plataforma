@@ -533,3 +533,6 @@ html[data-tema="claro"] .nav.on .ni{color:var(--tx)!important}
 .pm::backdrop{background:rgba(0,0,0,.6);backdrop-filter:blur(2px)}
 .pm-x{position:sticky;top:0;float:right;margin:-6px -6px 0 8px;width:34px;height:34px;border-radius:50%;border:1px solid var(--bd);background:var(--sf2);color:var(--tx);cursor:pointer;z-index:2}
 .pm .pimg{max-height:60vh;width:100%;object-fit:contain;background:var(--bg)}
+
+.pv-acc{display:flex;gap:12px;align-items:center;margin:-4px 0 12px;padding:0 4px;flex-wrap:wrap}
+.lkerr{color:var(--co)}

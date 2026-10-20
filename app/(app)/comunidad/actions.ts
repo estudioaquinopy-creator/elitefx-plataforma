@@ -34,18 +34,23 @@ export async function borrarPublicacion(f: FormData) {
   redirect("/comunidad");
 }
 
-export async function darLike(f: FormData) {
+// Me gusta: se llama desde un botón del navegador (sin recargar la página).
+export async function alternarLike(postId: string): Promise<{ ok: boolean; mio: boolean; n: number; error?: string }> {
   const perfil = await perfilActual();
-  const post_id = String(f.get("id") ?? "");
+  const perm = await permisos(perfil);
   const sb = createClient();
-  const { data } = await sb.from("likes").select("post_id").eq("post_id", post_id).eq("user_id", perfil.id).maybeSingle();
-  if (data) await sb.from("likes").delete().eq("post_id", post_id).eq("user_id", perfil.id);
-  else {
-    const { error } = await sb.from("likes").insert({ post_id, user_id: perfil.id });
-    if (error) fallo("/comunidad", "No se pudo dar me gusta (solo miembros).");
+  const cuenta = async () => (await sb.from("likes").select("post_id", { count: "exact", head: true }).eq("post_id", postId)).count ?? 0;
+  if (!perm.comunidad) return { ok: false, mio: false, n: await cuenta(), error: "Solo los miembros pueden dar me gusta." };
+  const { data, error: e1 } = await sb.from("likes").select("post_id").eq("post_id", postId).eq("user_id", perfil.id).maybeSingle();
+  if (e1) return { ok: false, mio: false, n: 0, error: e1.message };
+  if (data) {
+    const { error } = await sb.from("likes").delete().eq("post_id", postId).eq("user_id", perfil.id);
+    if (error) return { ok: false, mio: true, n: await cuenta(), error: error.message };
+    return { ok: true, mio: false, n: await cuenta() };
   }
-  revalidatePath("/comunidad");
-  redirect(String(f.get("volver") || "/comunidad") + "#p" + post_id);
+  const { error } = await sb.from("likes").insert({ post_id: postId, user_id: perfil.id });
+  if (error) return { ok: false, mio: false, n: await cuenta(), error: error.message };
+  return { ok: true, mio: true, n: await cuenta() };
 }
 
 export async function comentar(f: FormData) {
