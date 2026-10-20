@@ -536,3 +536,7 @@ html[data-tema="claro"] .nav.on .ni{color:var(--tx)!important}
 
 .pv-acc{display:flex;gap:12px;align-items:center;margin:-4px 0 12px;padding:0 4px;flex-wrap:wrap}
 .lkerr{color:var(--co)}
+.pv{border:1px solid var(--bd);border-radius:16px;background:var(--sf);margin-bottom:12px;overflow:hidden}
+.pv:hover{border-color:var(--mu)}
+.pv .pvbox{border:0!important;background:none!important;box-shadow:none!important;margin:0}
+.pv-acc{margin:0;padding:0 16px 12px}
