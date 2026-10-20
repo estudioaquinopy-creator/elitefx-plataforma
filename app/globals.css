@@ -485,3 +485,19 @@ html[data-tema="claro"] .nav.on .ni{color:#fff}
 .main[data-sec="noticias"] h1::before{--c:#ff7a45;background-image:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ff7a45' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2zM18 8h2v10a2 2 0 0 1-2 2M8 8h6M8 12h6M8 16h4'/></svg>")}
 .main[data-sec="accesos"] h1::before{--c:#94a3b8;background-image:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6'/></svg>")}
 .main[data-sec] h1::before{content:"";display:inline-block;width:40px;height:40px;margin-right:12px;vertical-align:-11px;border-radius:12px;background-color:color-mix(in srgb,var(--c,#00d47a) 18%,transparent);background-repeat:no-repeat;background-position:center;background-size:22px;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c,#00d47a) 35%,transparent)}
+
+/* ===== Tono neutro: menú, títulos y redes sin colores llamativos ===== */
+.nav[data-sec]{--c:var(--mu)!important}
+.nav .ni{background:transparent!important;color:var(--mu)!important;box-shadow:none!important;transform:none!important}
+.nav:hover .ni{color:var(--tx)!important}
+.nav.on .ni{background:transparent!important;color:var(--tx)!important;box-shadow:none!important}
+.nav.on{background:rgba(255,255,255,.07)!important;box-shadow:inset 3px 0 0 var(--mu)!important;color:var(--tx)!important}
+html[data-tema="claro"] .nav.on{background:rgba(20,40,30,.07)!important}
+html[data-tema="claro"] .nav.on .ni{color:var(--tx)!important}
+.main[data-sec] h1::before{display:none!important}
+
+.ig{background:var(--sf2)!important;border:1px solid var(--bd);color:var(--tx)!important;box-shadow:none!important}
+.ig:hover{transform:none;border-color:var(--mu);box-shadow:none!important}
+.igi{background:transparent!important;border:1px solid var(--bd)}
+.igi svg{stroke:var(--mu)}.igi svg circle[fill]{fill:var(--mu)}
+.igt b{color:var(--tx)!important}.igt small{color:var(--mu)!important}
