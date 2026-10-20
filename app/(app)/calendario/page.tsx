@@ -74,7 +74,7 @@ export default async function Calendario({ searchParams }: { searchParams: { s?:
                 <label>Fecha<input type="date" name="fecha" defaultValue={fechaSel} required /></label>
                 <label>Hora (Paraguay)<input type="time" name="hora" required /></label>
               </div>
-              <label>Enlace de Zoom de esta clase (si lo dejas vacío usa el general)<input type="url" name="zoom_url" placeholder="https://zoom.us/j/…" /></label>
+              <label>Enlace de Google Meet de esta clase (si lo dejas vacío usa el general)<input type="url" name="zoom_url" placeholder="https://meet.google.com/abc-defg-hij" /></label>
               <button className="btn s">Crear clase</button>
             </form>
           </details>
@@ -91,7 +91,7 @@ export default async function Calendario({ searchParams }: { searchParams: { s?:
                   {DIAS.map(([v, l]) => <label key={v}><input type="checkbox" name="dias" value={v} defaultChecked={f.dias.includes(Number(v))} /> {l}</label>)}
                   <label><input type="checkbox" name="activo" defaultChecked={f.activo} /> Activa</label>
                 </div>
-                <label>Zoom de esta sesión (vacío = general)<input type="url" name="zoom_url" defaultValue={f.zoom_url} /></label>
+                <label>Enlace de Meet de esta sesión (vacío = general)<input type="url" name="zoom_url" defaultValue={f.zoom_url} /></label>
                 <div style={{ display: "flex", gap: 8 }}>
                   <button className="btn s">Guardar</button>
                   <button className="btn g s" formAction={eliminarFijo}>Eliminar</button>
@@ -109,10 +109,10 @@ export default async function Calendario({ searchParams }: { searchParams: { s?:
             </form>
           </details>
           <details className="box adm">
-            <summary>Enlace de Zoom general</summary>
+            <summary>Enlace de Google Meet general</summary>
             <form action={guardarTextos} className="fm">
               <input type="hidden" name="ruta" value="/calendario" />
-              <label>Zoom general<input type="url" name="zoom_general" defaultValue={aj.zoom_general} placeholder="https://zoom.us/j/…" /></label>
+              <label>Meet general<input type="url" name="zoom_general" defaultValue={aj.zoom_general} placeholder="https://meet.google.com/abc-defg-hij" /></label>
               <button className="btn s">Guardar</button>
             </form>
           </details>
@@ -139,7 +139,7 @@ export default async function Calendario({ searchParams }: { searchParams: { s?:
                     <div key={c.id} className="sc">
                       <div className="sh">{horaPY(c.inicio)}</div>
                       <b>{c.titulo}</b>
-                      {zoom ? <a className="btn sd" href={zoom} target="_blank" rel="noopener noreferrer">Unirme por Zoom</a> : <span className="mu">Enlace pendiente</span>}
+                      {zoom ? <a className="btn sd" href={zoom} target="_blank" rel="noopener noreferrer">Unirme por Google Meet</a> : <span className="mu">Enlace pendiente</span>}
                       {perm.admin && !c.fijo && (
                         <form action={eliminarClase}>
                           <input type="hidden" name="id" value={c.id} />

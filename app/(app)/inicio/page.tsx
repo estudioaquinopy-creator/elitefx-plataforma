@@ -58,7 +58,7 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
   // Simulación de prueba (solo administrador / modo alumno): /inicio?sim=25 → una sesión que empieza en 25 minutos.
   const sim = searchParams.sim === undefined ? NaN : searchParams.sim === "" ? 60 : Number(searchParams.sim);
   if (!Number.isNaN(sim) && (perfil.rol === "admin" || perfil.vista)) {
-    vivo = [...vivo, { id: "sim", titulo: "Trading en vivo · SIMULACIÓN de prueba", inicio: new Date(Date.now() + sim * 60000 - 1000).toISOString(), zoom: "https://zoom.us" }];
+    vivo = [...vivo, { id: "sim", titulo: "Trading en vivo · SIMULACIÓN de prueba", inicio: new Date(Date.now() + sim * 60000 - 1000).toISOString(), zoom: "https://meet.google.com" }];
   }
 
   const pasos = cursos.map((c) => {
