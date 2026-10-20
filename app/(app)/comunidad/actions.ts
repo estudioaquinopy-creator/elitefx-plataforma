@@ -10,15 +10,16 @@ export async function publicar(f: FormData) {
   const perm = await permisos(perfil);
   const canal = String(f.get("canal") ?? "");
   const cuerpo = String(f.get("cuerpo") ?? "").trim();
+  const titulo = String(f.get("titulo") ?? "").trim().slice(0, 140);
   if (!["anuncios", "preguntas", "resultados"].includes(canal)) fallo("/comunidad", "Elige una etiqueta.");
   if (canal === "anuncios" && !perm.admin) fallo("/comunidad", "Solo el equipo de ELITE FX publica anuncios.");
   if (!perm.comunidad) fallo("/comunidad", "Tu plan solo permite leer la comunidad.");
   const imagen = await subirImagen(f.get("imagen"), "/comunidad", "comunidad");
-  if (!cuerpo && !imagen) fallo("/comunidad", "Escribe un mensaje o sube una imagen.");
+  if (!cuerpo && !imagen && !titulo) fallo("/comunidad", "Escribe un mensaje o sube una imagen.");
   const { error } = await createClient().from("publicaciones").insert({
     user_id: perfil.id,
     autor: perfil.nombre || perfil.email.split("@")[0],
-    canal, titulo: "", cuerpo, imagen_url: imagen,
+    canal, titulo, cuerpo, imagen_url: imagen,
   });
   if (error) fallo("/comunidad", "No se pudo publicar: " + error.message);
   revalidatePath("/comunidad");
@@ -44,7 +45,7 @@ export async function darLike(f: FormData) {
     if (error) fallo("/comunidad", "No se pudo dar me gusta (solo miembros).");
   }
   revalidatePath("/comunidad");
-  redirect(String(f.get("volver") || "/comunidad"));
+  redirect(String(f.get("volver") || "/comunidad") + "#p" + post_id);
 }
 
 export async function comentar(f: FormData) {
@@ -66,5 +67,5 @@ export async function borrarComentario(f: FormData) {
   await perfilActual();
   await createClient().from("comentarios").delete().eq("id", String(f.get("id") ?? ""));
   revalidatePath("/comunidad");
-  redirect(String(f.get("volver") || "/comunidad"));
+  redirect(String(f.get("volver") || "/comunidad") + "#p" + String(f.get("post") ?? ""));
 }
