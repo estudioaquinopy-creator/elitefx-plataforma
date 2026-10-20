@@ -36,9 +36,7 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
 
       {perm.comunidad ? (
-        <section className="box">
-          <Compositor action={publicar} iniciales={ini(perfil.nombre || perfil.email)} opciones={opciones.map((c) => ({ value: c, label: CANALES[c] }))} />
-        </section>
+        <Compositor action={publicar} iniciales={ini(perfil.nombre || perfil.email)} opciones={opciones.map((c) => ({ value: c, label: CANALES[c] }))} />
       ) : (
         <section className="box">
           <div className="tag">Modo lectura</div>
