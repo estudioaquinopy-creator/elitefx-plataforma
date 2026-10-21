@@ -573,6 +573,3 @@ button.cargando{opacity:.75;cursor:wait}
 .fp-av img{width:100%;height:100%;object-fit:cover}
 .fp-b{cursor:pointer;display:inline-block}
 .reg-av{display:flex;align-items:center;gap:14px;margin-bottom:14px}
-
-/* Examen de curso */
-.exam-card{margin-top:16px;padding:14px;border:1px solid var(--bd);border-radius:12px;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
