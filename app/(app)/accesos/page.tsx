@@ -2,18 +2,19 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { estadoMembresia, perfilActual } from "@/lib/sesion";
+import { crearPersona } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-type Fila = { id: string; nombre: string; email: string; plan: string; vence: string | null };
+type Fila = { id: string; nombre: string; email: string; plan: string; vence: string | null; rol: string };
 const POR_PAGINA = 40;
 const PLAN_TXT: Record<string, string> = { gratis: "Gratuito", live_trading: "Live Trading", scanner: "Scanner" };
 const ESTADOS = [["", "Todos"], ["activo", "Activo"], ["porvencer", "Por vencer"], ["vencido", "Vencido"], ["gratis", "Gratis"], ["sin", "Sin calendario"]];
 
-export default async function Accesos({ searchParams }: { searchParams: { q?: string; e?: string; p?: string } }) {
+export default async function Accesos({ searchParams }: { searchParams: { q?: string; e?: string; p?: string; ok?: string; error?: string } }) {
   const perfil = await perfilActual();
   if (perfil.rol !== "admin") notFound();
-  const { data } = await createClient().from("perfiles").select("id, nombre, email, plan, vence").order("nombre");
+  const { data } = await createClient().from("perfiles").select("id, nombre, email, plan, vence, rol").order("nombre");
   const todos = (data ?? []) as Fila[];
   const norm = (s: string) => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
   const q = norm(searchParams.q ?? "");
@@ -23,6 +24,7 @@ export default async function Accesos({ searchParams }: { searchParams: { q?: st
   const pagina = filtrados.slice((pag - 1) * POR_PAGINA, pag * POR_PAGINA);
   const total = Math.ceil(filtrados.length / POR_PAGINA);
   const cuenta = (k: string) => todos.filter((f) => estadoMembresia(f).clave === k).length;
+  const clave = Array.from({ length: 10 }, () => "abcdefghjkmnpqrstuvwxyz23456789"[Math.floor(Math.random() * 31)]).join("");
   const url = (p: number) => "/accesos?q=" + encodeURIComponent(searchParams.q ?? "") + "&e=" + e + "&p=" + p;
 
   return (
@@ -35,6 +37,40 @@ export default async function Accesos({ searchParams }: { searchParams: { q?: st
         <div className="box"><span className="mu">Por vencer (7 días)</span><b>{cuenta("porvencer")}</b></div>
         <div className="box"><span className="mu">Vencidos</span><b>{cuenta("vencido")}</b></div>
       </div>
+
+      {searchParams.ok && <p className="okmsg">{searchParams.ok}</p>}
+      {searchParams.error && <p className="alerta">{searchParams.error}</p>}
+
+      <details className="box adm">
+        <summary>+ Agregar persona</summary>
+        <form action={crearPersona} className="fm">
+          <div className="f2">
+            <label>Nombre<input name="nombre" placeholder="Nombre y apellido" /></label>
+            <label>Correo<input type="email" name="email" required /></label>
+          </div>
+          <div className="f2">
+            <label>Contraseña inicial (cópiala antes de crear)<input name="password" defaultValue={clave} required minLength={8} /></label>
+            <label>Teléfono (opcional, para WhatsApp)<input name="telefono" placeholder="595981123456" /></label>
+          </div>
+          <div className="f2">
+            <label>Tipo de acceso
+              <select name="tipo" defaultValue="gratis">
+                <option value="gratis">Miembro gratuito</option>
+                <option value="miembro">Miembro de pago</option>
+                <option value="admin">Administrador</option>
+              </select>
+            </label>
+            <label>Plan (solo miembros de pago)
+              <select name="plan" defaultValue="live_trading">
+                <option value="live_trading">Live Trading</option>
+                <option value="scanner">Scanner</option>
+              </select>
+            </label>
+          </div>
+          <label>Calendario activo hasta (solo miembros de pago)<input type="date" name="vence" /></label>
+          <button className="btn s">Crear persona</button>
+        </form>
+      </details>
 
       <form method="get" className="box fm" style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, alignItems: "flex-end" }}>
         <label style={{ flex: 1, minWidth: 200 }}>Buscar por nombre o correo<input name="q" defaultValue={searchParams.q ?? ""} /></label>
@@ -52,7 +88,7 @@ export default async function Accesos({ searchParams }: { searchParams: { q?: st
             <div key={f.id} className="ses">
               <div style={{ flex: 1, minWidth: 0 }}>
                 <b>{f.nombre || f.email}</b>
-                <small className="mu" style={{ display: "block", overflowWrap: "anywhere" }}>{f.email} · {PLAN_TXT[f.plan]}{f.vence ? " · vence " + new Date(f.vence + "T00:00:00").toLocaleDateString("es-PY") : ""}</small>
+                <small className="mu" style={{ display: "block", overflowWrap: "anywhere" }}>{f.email} · {f.rol === "admin" ? "Administrador · " : ""}{PLAN_TXT[f.plan]}{f.vence ? " · vence " + new Date(f.vence + "T00:00:00").toLocaleDateString("es-PY") : ""}</small>
               </div>
               <span className={"pill st-" + st.clave}>{st.texto}</span>
               <Link className="btn g s" href={"/accesos/" + f.id}>Gestionar</Link>

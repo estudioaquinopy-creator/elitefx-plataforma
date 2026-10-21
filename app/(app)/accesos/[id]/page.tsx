@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { estadoMembresia, perfilActual } from "@/lib/sesion";
-import { cambiarPlan, fijarFecha, guardarAccesos, quitarCalendario, sumarCalendario } from "../actions";
+import { cambiarPlan, cambiarRol, nuevaClave, fijarFecha, guardarAccesos, quitarCalendario, sumarCalendario } from "../actions";
 
 export const dynamic = "force-dynamic";
 
@@ -76,7 +76,20 @@ export default async function Gestionar({ params, searchParams }: { params: { id
         </section>
 
         <section className="box">
-          <h2>Accesos puntuales</h2>
+          <h2>Rol y contraseña</h2>
+          <p className="mu">{p.rol === "admin" ? "Es administrador: ve y edita todo." : "Es alumno."}</p>
+          <form action={cambiarRol} className="fm">
+            <input type="hidden" name="id" value={p.id} />
+            <input type="hidden" name="rol" value={p.rol === "admin" ? "alumno" : "admin"} />
+            <button className={p.rol === "admin" ? "btn d" : "btn g s"} style={{ marginTop: 0 }}>{p.rol === "admin" ? "Quitar rol de administrador" : "Hacer administrador"}</button>
+          </form>
+          <form action={nuevaClave} className="fm" style={{ flexDirection: "row", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
+            <input type="hidden" name="id" value={p.id} />
+            <label>Nueva contraseña<input name="password" minLength={8} required placeholder="Mínimo 8 caracteres" /></label>
+            <button className="btn g s" style={{ marginBottom: 14 }}>Cambiar contraseña</button>
+          </form>
+
+          <h2 style={{ marginTop: 22 }}>Accesos puntuales</h2>
           <p className="mu">Útil para dar acceso a algo concreto sin cambiar el plan (por ejemplo, a una persona gratuita).</p>
           <form action={guardarAccesos} className="fm">
             <input type="hidden" name="id" value={p.id} />
