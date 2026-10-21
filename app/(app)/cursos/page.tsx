@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { perfilActual, permisos } from "@/lib/sesion";
 import { cambiarPortadaCurso, crearCurso } from "./actions";
 import { portadaDe } from "@/lib/portadas";
+import { bloqueosExamen } from "@/lib/examen";
 
 export const dynamic = "force-dynamic";
 
@@ -19,12 +20,14 @@ export default async function Cursos({ searchParams }: { searchParams: { error?:
   const lista = (lecs ?? []) as { id: string; curso_id: string }[];
   const miembro = (await permisos(perfil)).cursos;
   const admin = perfil.rol === "admin";
+  const bloqueos = admin ? {} : await bloqueosExamen(supabase, perfil.id, cursos);
 
   function tarjeta(c: Curso) {
     const total = lista.filter((l) => l.curso_id === c.id).length;
     const ok = lista.filter((l) => l.curso_id === c.id && hechas.has(l.id)).length;
     const pct = total ? Math.round((ok / total) * 100) : 0;
-    const bloqueado = !(admin || c.gratis || miembro);
+    const faltaExamen = bloqueos[c.id];
+    const bloqueado = !(admin || c.gratis || miembro) || !!faltaExamen;
     const img = c.portada_url || portadaDe(c.nombre);
     const estilo = img ? { backgroundImage: "url(" + img + ")" } : undefined;
     const info = (
@@ -32,7 +35,7 @@ export default async function Cursos({ searchParams }: { searchParams: { error?:
         <b>{c.nombre}</b>
         <small className="mu">{c.descripcion}</small>
         {bloqueado ? (
-          <span className="pill">Miembros</span>
+          <span className="pill">{faltaExamen ? "Aprueba el examen de " + faltaExamen.nombre : "Miembros"}</span>
         ) : (
           <>
             <div className="bar"><i style={{ width: pct + "%" }} /></div>
