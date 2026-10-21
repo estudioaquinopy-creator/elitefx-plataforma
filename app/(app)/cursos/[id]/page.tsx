@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual } from "@/lib/sesion";
-import { youtubeId } from "@/lib/youtube";
+import { embedUrl } from "@/lib/video";
 import { alternarCompletada, editarCurso, eliminarCurso, eliminarLeccion, guardarLeccion } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -31,7 +31,7 @@ export default async function CursoPage({ params, searchParams }: { params: { id
   }
 
   const actual = lecs.find((l) => l.id === searchParams.l) ?? lecs[0];
-  const vid = actual ? youtubeId(actual.youtube_url) : null;
+  const vid = actual ? embedUrl(actual.youtube_url) : null;
   const hecha = actual ? hechas.has(actual.id) : false;
   const editando = admin && searchParams.edit ? lecs.find((l) => l.id === searchParams.edit) : undefined;
   const matTxt = (m: Material[]) => m.map((x) => x.tipo + " | " + x.titulo + " | " + x.url).join("\n");
@@ -68,7 +68,7 @@ export default async function CursoPage({ params, searchParams }: { params: { id
               {vid ? (
                 <div className="vid">
                   <iframe
-                    src={"https://www.youtube-nocookie.com/embed/" + vid + "?rel=0&modestbranding=1"}
+                    src={vid}
                     title={actual.titulo}
                     allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
@@ -124,7 +124,7 @@ export default async function CursoPage({ params, searchParams }: { params: { id
             <input type="hidden" name="id" value={editando ? editando.id : ""} />
             <input type="hidden" name="curso_id" value={curso.id} />
             <label>Título<input name="titulo" defaultValue={editando?.titulo ?? ""} required /></label>
-            <label>Enlace de YouTube<input name="youtube_url" defaultValue={editando?.youtube_url ?? ""} placeholder="https://www.youtube.com/watch?v=…" /></label>
+            <label>Enlace del video (Vimeo o YouTube)<input name="youtube_url" defaultValue={editando?.youtube_url ?? ""} placeholder="https://vimeo.com/123456789/abcdef1234" /></label>
             <label>Descripción<textarea name="descripcion" rows={3} defaultValue={editando?.descripcion ?? ""} /></label>
             <label>Materiales (uno por línea: <code>pdf | Título | enlace</code> o <code>link | Título | enlace</code>)
               <textarea name="materiales" rows={4} defaultValue={editando ? matTxt(editando.materiales) : ""} />

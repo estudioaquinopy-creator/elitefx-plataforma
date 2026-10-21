@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { perfilActual, permisos } from "@/lib/sesion";
 import { leerAjustes } from "@/lib/ajustes";
 import { youtubeId } from "@/lib/youtube";
+import { embedUrl } from "@/lib/video";
 import Portada from "@/components/Portada";
 import { agregarTutorial, eliminarTutorial } from "./actions";
 
@@ -31,7 +32,7 @@ export default async function Tutoriales({ searchParams }: { searchParams: { c?:
   const cats = Array.from(new Set(todos.map((t) => t.categoria)));
   const lista = searchParams.c ? todos.filter((t) => t.categoria === searchParams.c) : todos;
   const actual = todos.find((t) => t.id === searchParams.v);
-  const vid = actual ? youtubeId(actual.youtube_url) : null;
+  const vid = actual ? embedUrl(actual.youtube_url, "&autoplay=1") : null;
 
   return (
     <>
@@ -56,7 +57,7 @@ export default async function Tutoriales({ searchParams }: { searchParams: { c?:
       {actual && vid && (
         <section className="box">
           <div className="vid">
-            <iframe src={"https://www.youtube-nocookie.com/embed/" + vid + "?rel=0&modestbranding=1&autoplay=1"} title={actual.titulo} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen />
+            <iframe src={vid} title={actual.titulo} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen />
           </div>
           <h2>{actual.titulo}</h2>
           <p className="mu">{actual.categoria}</p>

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual } from "@/lib/sesion";
 import { fallo } from "@/lib/subida";
-import { youtubeId } from "@/lib/youtube";
+import { esVideoValido } from "@/lib/video";
 
 async function soloAdmin() {
   const p = await perfilActual();
@@ -17,7 +17,7 @@ export async function agregarTutorial(f: FormData) {
   const categoria = String(f.get("categoria") ?? "").trim() || "General";
   const youtube_url = String(f.get("youtube_url") ?? "").trim();
   if (!titulo) fallo("/tutoriales", "Escribe el título del tutorial.");
-  if (!youtubeId(youtube_url)) fallo("/tutoriales", "El enlace de YouTube no es válido.");
+  if (!esVideoValido(youtube_url)) fallo("/tutoriales", "El enlace del video no es válido (Vimeo o YouTube).");
   const { error } = await createClient().from("tutoriales").insert({ titulo, categoria, youtube_url });
   if (error) fallo("/tutoriales", "No se pudo guardar: " + error.message);
   revalidatePath("/tutoriales");
