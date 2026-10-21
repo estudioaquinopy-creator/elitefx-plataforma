@@ -73,6 +73,7 @@ export default async function Calendario({ searchParams }: { searchParams: { s?:
               <div className="f2">
                 <label>Fecha<input type="date" name="fecha" defaultValue={fechaSel} required /></label>
                 <label>Hora (Paraguay)<input type="time" name="hora" required /></label>
+                <label>Duración (minutos)<input type="number" name="duracion_min" defaultValue={90} min={15} max={720} step={5} required /></label>
               </div>
               <label>Enlace de Google Meet de esta clase (si lo dejas vacío usa el general)<input type="url" name="zoom_url" placeholder="https://meet.google.com/abc-defg-hij" /></label>
               <button className="btn s">Crear clase</button>
@@ -86,6 +87,7 @@ export default async function Calendario({ searchParams }: { searchParams: { s?:
                 <div className="f2">
                   <label>Título<input name="titulo" defaultValue={f.titulo} /></label>
                   <label>Hora (Paraguay)<input type="time" name="hora" defaultValue={f.hora.slice(0, 5)} required /></label>
+                  <label>Duración (min)<input type="number" name="duracion_min" defaultValue={f.duracion_min ?? 90} min={15} max={720} step={5} required /></label>
                 </div>
                 <div className="dias">
                   {DIAS.map(([v, l]) => <label key={v}><input type="checkbox" name="dias" value={v} defaultChecked={f.dias.includes(Number(v))} /> {l}</label>)}
@@ -103,6 +105,7 @@ export default async function Calendario({ searchParams }: { searchParams: { s?:
               <div className="f2">
                 <label>Título<input name="titulo" placeholder="Trading en vivo" /></label>
                 <label>Hora (Paraguay)<input type="time" name="hora" required /></label>
+                <label>Duración (min)<input type="number" name="duracion_min" defaultValue={90} min={15} max={720} step={5} required /></label>
               </div>
               <div className="dias">{DIAS.map(([v, l]) => <label key={v}><input type="checkbox" name="dias" value={v} /> {l}</label>)}</div>
               <button className="btn s">Agregar</button>
@@ -137,7 +140,7 @@ export default async function Calendario({ searchParams }: { searchParams: { s?:
                   const zoom = c.zoom_url || aj.zoom_general;
                   return (
                     <div key={c.id} className="sc">
-                      <div className="sh">{horaPY(c.inicio)}</div>
+                      <div className="sh">{horaPY(c.inicio)} · {c.duracion_min ?? 90} min</div>
                       <b>{c.titulo}</b>
                       {zoom ? <a className="btn sd" href={zoom} target="_blank" rel="noopener noreferrer">Unirme por Google Meet</a> : <span className="mu">Enlace pendiente</span>}
                       {perm.admin && !c.fijo && (

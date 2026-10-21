@@ -45,20 +45,20 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
   let vivo: SesionVivo[] = [];
   if (perm.calendario) {
     const aj = await leerAjustes();
-    const t0 = Date.now() - 90 * 60000, t1 = Date.now() + 8 * 86400000;
-    const { data: cl } = await supabase.from("clases").select("id, titulo, inicio, zoom_url").gte("inicio", new Date(t0).toISOString()).lte("inicio", new Date(t1).toISOString()).order("inicio").limit(30);
+    const t0 = Date.now() - 12 * 3600000, t1 = Date.now() + 8 * 86400000;
+    const { data: cl } = await supabase.from("clases").select("*").gte("inicio", new Date(t0).toISOString()).lte("inicio", new Date(t1).toISOString()).order("inicio").limit(30);
     const { data: fx } = await supabase.from("horario_fijo").select("*");
     const fijos = ((fx ?? []) as Fijo[]).map((f) => ({ ...f, hora: String(f.hora) }));
     const ayer = new Date(new Date(hoyPY() + "T12:00:00Z").getTime() - 86400000).toISOString().slice(0, 10);
-    vivo = [...((cl ?? []) as { id: string; titulo: string; inicio: string; zoom_url: string }[]), ...ocurrencias(fijos, ayer, 10)]
+    vivo = [...((cl ?? []) as { id: string; titulo: string; inicio: string; zoom_url: string; duracion_min?: number }[]), ...ocurrencias(fijos, ayer, 10)]
       .filter((o) => { const t = new Date(o.inicio).getTime(); return t >= t0 && t <= t1; })
-      .map((o) => ({ id: o.id, titulo: o.titulo, inicio: o.inicio, zoom: o.zoom_url || aj.zoom_general || "" }));
+      .map((o) => ({ id: o.id, titulo: o.titulo, inicio: o.inicio, zoom: o.zoom_url || aj.zoom_general || "", duracion: o.duracion_min ?? 90 }));
   }
 
   // Simulación de prueba (solo administrador / modo alumno): /inicio?sim=25 → una sesión que empieza en 25 minutos.
   const sim = searchParams.sim === undefined ? NaN : searchParams.sim === "" ? 60 : Number(searchParams.sim);
   if (!Number.isNaN(sim) && (perfil.rol === "admin" || perfil.vista)) {
-    vivo = [...vivo, { id: "sim", titulo: "Trading en vivo · SIMULACIÓN de prueba", inicio: new Date(Date.now() + sim * 60000 - 1000).toISOString(), zoom: "https://meet.google.com" }];
+    vivo = [...vivo, { id: "sim", titulo: "Trading en vivo · SIMULACIÓN de prueba", inicio: new Date(Date.now() + sim * 60000 - 1000).toISOString(), zoom: "https://meet.google.com", duracion: 90 }];
   }
 
   const pasos = cursos.map((c) => {

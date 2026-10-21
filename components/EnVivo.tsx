@@ -1,10 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
 
-export type SesionVivo = { id: string; titulo: string; inicio: string; zoom: string };
+export type SesionVivo = { id: string; titulo: string; inicio: string; zoom: string; duracion?: number };
 
 const VENTANA_AVISO = 60 * 60 * 1000;   // cuenta regresiva desde 60 min antes
-const DURACION = 90 * 60 * 1000;        // el botón sigue disponible mientras dura la sesión
 const dos = (n: number) => String(n).padStart(2, "0");
 const hms = (s: number) => (s >= 3600 ? Math.floor(s / 3600) + ":" : "") + dos(Math.floor((s % 3600) / 60)) + ":" + dos(s % 60);
 const ZONA = "America/Asuncion";
@@ -20,7 +19,7 @@ export default function EnVivo({ sesiones, ahoraServidor }: { sesiones: SesionVi
   }, []);
 
   const lista = sesiones.map((s) => ({ ...s, t: new Date(s.inicio).getTime() })).sort((a, b) => a.t - b.t);
-  const enCurso = [...lista].reverse().find((s) => s.t <= ahora && ahora < s.t + DURACION);
+  const enCurso = [...lista].reverse().find((s) => s.t <= ahora && ahora < s.t + (s.duracion ?? 90) * 60000);
   const proxima = lista.find((s) => s.t > ahora && s.t - ahora <= VENTANA_AVISO);
   const resto = lista.filter((s) => s.t > ahora && s !== proxima).slice(0, 3);
 
