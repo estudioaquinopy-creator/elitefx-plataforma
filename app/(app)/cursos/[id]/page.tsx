@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual } from "@/lib/sesion";
 import { embedUrl } from "@/lib/video";
+import { bloqueosExamen } from "@/lib/examen";
 import { alternarCompletada, editarCurso, eliminarCurso, eliminarLeccion, guardarLeccion } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +21,23 @@ export default async function CursoPage({ params, searchParams }: { params: { id
   const admin = perfil.rol === "admin";
   const { data: prog } = await supabase.from("progreso").select("leccion_id").eq("user_id", perfil.id);
   const hechas = new Set((prog ?? []).map((p: { leccion_id: string }) => p.leccion_id));
+
+  // Examen: el curso siguiente se desbloquea al aprobar el examen del anterior.
+  const { data: todos } = await supabase.from("cursos").select("id, nombre, grupo, orden");
+  const falta = admin ? undefined : (await bloqueosExamen(supabase, perfil.id, (todos ?? []) as { id: string; nombre: string; grupo: string; orden: number }[]))[params.id];
+  if (falta) {
+    return (
+      <>
+        <Link href="/cursos" className="back">← Cursos</Link>
+        <h1>{curso.nombre}</h1>
+        <section className="box"><div className="tag">Bloqueado</div><p className="mu">Para acceder a este curso primero tienes que aprobar el examen de {falta.nombre}.</p><Link className="btn sd" href={"/cursos/" + falta.id + "/examen"}>Ir al examen de {falta.nombre}</Link></section>
+      </>
+    );
+  }
+  const { data: cfgE } = await supabase.from("examen_config").select("activo, preguntas, minimo").eq("curso_id", params.id).maybeSingle();
+  const { data: apE } = await supabase.from("examen_intentos").select("aciertos, total").eq("user_id", perfil.id).eq("curso_id", params.id).eq("aprobado", true).order("aciertos", { ascending: false }).limit(1);
+  const aprobE = (apE ?? [])[0] as { aciertos: number; total: number } | undefined;
+  const completo = lecs.length > 0 && lecs.every((l) => hechas.has(l.id));
 
   if (!admin && lecs.length === 0 && !curso.gratis && perfil.plan === "gratis") {
     return (
@@ -114,6 +132,21 @@ export default async function CursoPage({ params, searchParams }: { params: { id
               </Link>
             ))}
           </div>
+          {(cfgE?.activo || admin) && (
+            <div className="exam-card">
+              <b>Examen del curso</b>
+              {admin ? (
+                <small className="mu">Administra las preguntas y el mínimo para aprobar.</small>
+              ) : aprobE ? (
+                <small className="pos">✓ Aprobado ({aprobE.aciertos}/{aprobE.total})</small>
+              ) : completo ? (
+                <small className="mu">{cfgE?.preguntas} preguntas · aprueba con {cfgE?.minimo}.</small>
+              ) : (
+                <small className="mu">Completa todas las lecciones para desbloquearlo.</small>
+              )}
+              {(admin || completo || aprobE) && <Link className="btn sd s" href={"/cursos/" + curso.id + "/examen"}>{admin ? "Configurar examen" : aprobE ? "Repetir examen" : "Rendir examen"}</Link>}
+            </div>
+          )}
         </section>
       </div>
 
