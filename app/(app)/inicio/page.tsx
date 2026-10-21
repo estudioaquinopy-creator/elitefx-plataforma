@@ -68,7 +68,7 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
     const faltaEx = bloqExamen[c.id];
     const bloqueado = !(perm.admin || c.gratis || perm.cursos) || !!faltaEx;
     const estado = bloqueado ? "Bloqueado" : total && ok === total ? "Completado" : ok > 0 ? "En curso" : "Pendiente";
-    return { c, estado, ok, total, bloqueado };
+    return { c, estado, ok, total, bloqueado, faltaEx };
   });
 
   return (
@@ -117,7 +117,7 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
           <section className="box">
             <h2>Tu ruta de aprendizaje</h2>
             {pasos.length === 0 && <p className="mu">Todavía no hay cursos.</p>}
-            {pasos.map(({ c, estado, ok, total, bloqueado }, i) => (
+            {pasos.map(({ c, estado, ok, total, bloqueado, faltaEx }, i) => (
               <Link key={c.id} href={bloqueado ? "/cursos" : "/cursos/" + c.id} className={"step" + (estado === "Completado" ? " done" : "") + (bloqueado ? " lk" : "")}>
                 <span className="num">{estado === "Completado" ? "✓" : i + 1}</span>
                 <span style={{ flex: 1 }}><b>{c.nombre}</b><small className="mu" style={{ display: "block" }}>{faltaEx ? "Aprueba el examen de " + faltaEx.nombre : bloqueado ? "Para miembros" : total ? ok + "/" + total + " lecciones" : c.descripcion}</small></span>
