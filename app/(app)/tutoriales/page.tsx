@@ -48,7 +48,7 @@ export default async function Tutoriales({ searchParams }: { searchParams: { c?:
             <label>Título<input name="titulo" required /></label>
             <label>Categoría<input name="categoria" list="cats" placeholder="Plataforma, Análisis, Cripto, Broker…" /></label>
             <datalist id="cats">{cats.map((c) => <option key={c} value={c} />)}</datalist>
-            <label>Enlace del video (Vimeo o YouTube)<input type="url" name="youtube_url" placeholder="https://vimeo.com/123456789/abcdef1234" required /></label>
+            <label>Enlace del video (Vimeo o YouTube)<input type="text" name="youtube_url" placeholder="Pega el código o enlace de Incrustar de Vimeo" required /></label>
             <button className="btn s">Publicar tutorial</button>
           </form>
         </details>

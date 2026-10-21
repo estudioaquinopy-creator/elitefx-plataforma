@@ -5,7 +5,7 @@ export function vimeoInfo(url: string): { id: string; h: string } | null {
   const u = (url || "").trim();
   const m = u.match(/vimeo\.com\/(?:video\/|manage\/videos\/)?(\d+)(?:\/([a-f0-9]+))?/i);
   if (!m) return null;
-  const h = m[2] || (u.match(/[?&]h=([a-f0-9]+)/i)?.[1] ?? "");
+  const h = m[2] || (u.match(/[?&;]h=([a-f0-9]+)/i)?.[1] ?? "");
   return { id: m[1], h };
 }
 

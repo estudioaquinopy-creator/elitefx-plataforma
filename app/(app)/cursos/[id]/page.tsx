@@ -124,7 +124,7 @@ export default async function CursoPage({ params, searchParams }: { params: { id
             <input type="hidden" name="id" value={editando ? editando.id : ""} />
             <input type="hidden" name="curso_id" value={curso.id} />
             <label>Título<input name="titulo" defaultValue={editando?.titulo ?? ""} required /></label>
-            <label>Enlace del video (Vimeo o YouTube)<input name="youtube_url" defaultValue={editando?.youtube_url ?? ""} placeholder="https://vimeo.com/123456789/abcdef1234" /></label>
+            <label>Enlace del video (Vimeo o YouTube)<input name="youtube_url" defaultValue={editando?.youtube_url ?? ""} placeholder="Pega el código o enlace de Incrustar de Vimeo" /></label>
             <label>Descripción<textarea name="descripcion" rows={3} defaultValue={editando?.descripcion ?? ""} /></label>
             <label>Materiales (uno por línea: <code>pdf | Título | enlace</code> o <code>link | Título | enlace</code>)
               <textarea name="materiales" rows={4} defaultValue={editando ? matTxt(editando.materiales) : ""} />
