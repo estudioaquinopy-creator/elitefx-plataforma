@@ -1,5 +1,4 @@
 import EnVivo, { type SesionVivo } from "@/components/EnVivo";
-import { leerAjustes } from "@/lib/ajustes";
 import { ocurrencias, type Fijo } from "@/lib/horario";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -44,7 +43,6 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
   // Sesiones para "Próximas sesiones": desde 90 min atrás (para el botón de unirse) hasta 8 días adelante.
   let vivo: SesionVivo[] = [];
   if (perm.calendario) {
-    const aj = await leerAjustes();
     const t0 = Date.now() - 12 * 3600000, t1 = Date.now() + 8 * 86400000;
     const { data: cl } = await supabase.from("clases").select("*").gte("inicio", new Date(t0).toISOString()).lte("inicio", new Date(t1).toISOString()).order("inicio").limit(30);
     const { data: fx } = await supabase.from("horario_fijo").select("*");
@@ -52,7 +50,7 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
     const ayer = new Date(new Date(hoyPY() + "T12:00:00Z").getTime() - 86400000).toISOString().slice(0, 10);
     vivo = [...((cl ?? []) as { id: string; titulo: string; inicio: string; zoom_url: string; duracion_min?: number }[]), ...ocurrencias(fijos, ayer, 10)]
       .filter((o) => { const t = new Date(o.inicio).getTime(); return t >= t0 && t <= t1; })
-      .map((o) => ({ id: o.id, titulo: o.titulo, inicio: o.inicio, zoom: o.zoom_url || aj.zoom_general || "", duracion: o.duracion_min ?? 90 }));
+      .map((o) => ({ id: o.id, titulo: o.titulo, inicio: o.inicio, zoom: o.zoom_url || "", duracion: o.duracion_min ?? 90 }));
   }
 
   // Simulación de prueba (solo administrador / modo alumno): /inicio?sim=25 → una sesión que empieza en 25 minutos.

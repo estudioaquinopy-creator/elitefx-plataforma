@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { perfilActual, permisos, hoyPY, ZONA } from "@/lib/sesion";
 import { leerAjustes } from "@/lib/ajustes";
 import Portada from "@/components/Portada";
-import { guardarTextos } from "../ajustes-actions";
 import { crearClase, eliminarClase, crearFijo, guardarFijo, eliminarFijo } from "./actions";
 import { ocurrencias, type Fijo, type Ocurrencia } from "@/lib/horario";
 
@@ -75,7 +74,7 @@ export default async function Calendario({ searchParams }: { searchParams: { s?:
                 <label>Hora (Paraguay)<input type="time" name="hora" required /></label>
                 <label>Duración (minutos)<input type="number" name="duracion_min" defaultValue={90} min={15} max={720} step={5} required /></label>
               </div>
-              <label>Enlace de Google Meet de esta clase (si lo dejas vacío usa el general)<input type="url" name="zoom_url" placeholder="https://meet.google.com/abc-defg-hij" /></label>
+              <label>Enlace de Google Meet de esta clase<input type="url" name="zoom_url" placeholder="https://meet.google.com/abc-defg-hij" /></label>
               <button className="btn s">Crear clase</button>
             </form>
           </details>
@@ -93,7 +92,7 @@ export default async function Calendario({ searchParams }: { searchParams: { s?:
                   {DIAS.map(([v, l]) => <label key={v}><input type="checkbox" name="dias" value={v} defaultChecked={f.dias.includes(Number(v))} /> {l}</label>)}
                   <label><input type="checkbox" name="activo" defaultChecked={f.activo} /> Activa</label>
                 </div>
-                <label>Enlace de Meet de esta sesión (vacío = general)<input type="url" name="zoom_url" defaultValue={f.zoom_url} /></label>
+                <label>Enlace de Meet de esta sesión<input type="url" name="zoom_url" defaultValue={f.zoom_url} /></label>
                 <div style={{ display: "flex", gap: 8 }}>
                   <button className="btn s">Guardar</button>
                   <button className="btn g s" formAction={eliminarFijo}>Eliminar</button>
@@ -109,14 +108,6 @@ export default async function Calendario({ searchParams }: { searchParams: { s?:
               </div>
               <div className="dias">{DIAS.map(([v, l]) => <label key={v}><input type="checkbox" name="dias" value={v} /> {l}</label>)}</div>
               <button className="btn s">Agregar</button>
-            </form>
-          </details>
-          <details className="box adm">
-            <summary>Enlace de Google Meet general</summary>
-            <form action={guardarTextos} className="fm">
-              <input type="hidden" name="ruta" value="/calendario" />
-              <label>Meet general<input type="url" name="zoom_general" defaultValue={aj.zoom_general} placeholder="https://meet.google.com/abc-defg-hij" /></label>
-              <button className="btn s">Guardar</button>
             </form>
           </details>
         </>
@@ -137,7 +128,7 @@ export default async function Calendario({ searchParams }: { searchParams: { s?:
                 <div className="sdh"><span>{NOMBRES[i]}</span><b>{Number(f.slice(8, 10))}</b></div>
                 {lista.length === 0 && <p className="mu sv">Sin sesiones</p>}
                 {lista.map((c) => {
-                  const zoom = c.zoom_url || aj.zoom_general;
+                  const zoom = c.zoom_url;
                   return (
                     <div key={c.id} className="sc">
                       <div className="sh">{horaPY(c.inicio)} · {c.duracion_min ?? 90} min</div>
