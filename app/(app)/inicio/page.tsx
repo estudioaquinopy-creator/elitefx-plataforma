@@ -4,6 +4,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual, permisos, primerNombre, ZONA, hoyPY } from "@/lib/sesion";
 import { youtubeId } from "@/lib/youtube";
+import { bloqueosExamen } from "@/lib/examen";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,8 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
   const { data: pr } = await supabase.from("progreso").select("leccion_id, completada_at").eq("user_id", perfil.id).order("completada_at", { ascending: false });
   const prog = (pr ?? []) as { leccion_id: string; completada_at: string }[];
   const hechas = new Set(prog.map((x) => x.leccion_id));
+  let bloqExamen: Record<string, { id: string; nombre: string }> = {};
+  if (!perm.admin) { try { bloqExamen = await bloqueosExamen(supabase, perfil.id, cursos); } catch { bloqExamen = {}; } }
 
   // "Continúa donde lo dejaste": la lección que sigue a la última completada, o la primera disponible.
   let siguiente: Leccion | undefined;
@@ -30,7 +33,7 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
     if (ult) siguiente = lecs.filter((l) => l.curso_id === ult.curso_id && l.orden > ult.orden && !hechas.has(l.id))[0];
   }
   if (!siguiente) {
-    for (const c of cursos) {
+    for (const c of cursos.filter((x) => !bloqExamen[x.id])) {
       siguiente = lecs.filter((l) => l.curso_id === c.id && !hechas.has(l.id))[0];
       if (siguiente) break;
     }
@@ -62,7 +65,8 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
   const pasos = cursos.map((c) => {
     const total = lecs.filter((l) => l.curso_id === c.id).length;
     const ok = lecs.filter((l) => l.curso_id === c.id && hechas.has(l.id)).length;
-    const bloqueado = !(perm.admin || c.gratis || perm.cursos);
+    const faltaEx = bloqExamen[c.id];
+    const bloqueado = !(perm.admin || c.gratis || perm.cursos) || !!faltaEx;
     const estado = bloqueado ? "Bloqueado" : total && ok === total ? "Completado" : ok > 0 ? "En curso" : "Pendiente";
     return { c, estado, ok, total, bloqueado };
   });
@@ -116,7 +120,7 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
             {pasos.map(({ c, estado, ok, total, bloqueado }, i) => (
               <Link key={c.id} href={bloqueado ? "/cursos" : "/cursos/" + c.id} className={"step" + (estado === "Completado" ? " done" : "") + (bloqueado ? " lk" : "")}>
                 <span className="num">{estado === "Completado" ? "✓" : i + 1}</span>
-                <span style={{ flex: 1 }}><b>{c.nombre}</b><small className="mu" style={{ display: "block" }}>{bloqueado ? "Para miembros" : total ? ok + "/" + total + " lecciones" : c.descripcion}</small></span>
+                <span style={{ flex: 1 }}><b>{c.nombre}</b><small className="mu" style={{ display: "block" }}>{faltaEx ? "Aprueba el examen de " + faltaEx.nombre : bloqueado ? "Para miembros" : total ? ok + "/" + total + " lecciones" : c.descripcion}</small></span>
                 <em>{estado}</em>
               </Link>
             ))}
