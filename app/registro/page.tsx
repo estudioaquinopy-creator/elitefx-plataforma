@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Tema from "@/components/Tema";
 import { createClient } from "@/lib/supabase/client";
-import { subirAvatar } from "@/lib/avatar";
 
 export default function Registro() {
   const router = useRouter();
@@ -13,17 +12,9 @@ export default function Registro() {
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [pw2, setPw2] = useState("");
-  const [foto, setFoto] = useState<File | null>(null);
-  const [vista, setVista] = useState("");
   const [err, setErr] = useState("");
   const [listo, setListo] = useState(false);
   const [busy, setBusy] = useState(false);
-
-  function elegirFoto(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0] ?? null;
-    setFoto(f);
-    setVista(f ? URL.createObjectURL(f) : "");
-  }
 
   async function crear(e: React.FormEvent) {
     e.preventDefault();
@@ -44,10 +35,9 @@ export default function Registro() {
       if (m.includes("rate") || m.includes("limit")) return setErr("Demasiados intentos. Espera unos minutos e inténtalo otra vez.");
       return setErr("No se pudo crear la cuenta: " + error.message);
     }
-    // Si el proyecto no pide confirmar el correo, la sesión ya está activa: guardamos teléfono y foto.
+    // Si el proyecto no pide confirmar el correo, la sesión ya está activa: guardamos el teléfono.
     if (data.session && data.user) {
       await sb.from("perfiles").update({ nombre: n, telefono: t }).eq("id", data.user.id);
-      if (foto) { try { await subirAvatar(data.user.id, foto); } catch { /* la foto se puede subir luego desde el perfil */ } }
       router.replace("/inicio"); router.refresh();
       return;
     }
@@ -69,10 +59,6 @@ export default function Registro() {
         ) : (
           <>
             <p className="sub">Accede al Curso básico y a los aliados de ELITE FX.</p>
-            <div className="reg-av">
-              <span className="fp-av">{vista ? <img src={vista} alt="Tu foto" /> : "📷"}</span>
-              <label className="btn g s fp-b">{vista ? "Cambiar foto" : "Agregar foto (opcional)"}<input type="file" accept="image/*" hidden onChange={elegirFoto} /></label>
-            </div>
             <label>Nombre completo<input autoComplete="name" required value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre y apellido" /></label>
             <label>Teléfono / WhatsApp<input type="tel" autoComplete="tel" required value={tel} onChange={(e) => setTel(e.target.value)} placeholder="+595 981 123456" /></label>
             <label>Correo electrónico<input type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></label>
