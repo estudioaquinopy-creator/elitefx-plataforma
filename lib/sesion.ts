@@ -56,7 +56,9 @@ export type Permisos = {
   cursos: boolean;
   calendario: boolean;
   tutoriales: boolean;
-  comunidad: boolean; // puede escribir
+  comunidad: boolean;
+  journal: boolean;
+  noticias: boolean;
 };
 
 // Qué puede hacer esta persona: plan + vencimiento + accesos puntuales que concedió el administrador.
@@ -73,6 +75,8 @@ export const permisos = cache(async (p: Perfil): Promise<Permisos> => {
     calendario: admin || (p.plan !== "gratis" && vigente) || ov.has("calendario"),
     tutoriales: miembro || ov.has("tutoriales"),
     comunidad: miembro || ov.has("comunidad"),
+    journal: miembro || ov.has("journal"),
+    noticias: miembro || ov.has("noticias"),
   };
 });
 

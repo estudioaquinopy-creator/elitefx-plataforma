@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { perfilActual, hoyPY } from "@/lib/sesion";
+import Link from "next/link";
+import { perfilActual, permisos, hoyPY } from "@/lib/sesion";
 import { borrarOperacion, guardarOperacion } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +11,15 @@ const money = (n: number) => (n < 0 ? "-$" : "$") + Math.abs(n).toLocaleString("
 
 export default async function Journal({ searchParams }: { searchParams: { error?: string } }) {
   const perfil = await perfilActual();
+  const perm = await permisos(perfil);
+  if (!perm.journal) {
+    return (
+      <>
+        <h1>Journal</h1>
+        <section className="box"><div className="tag">Solo miembros</div><p className="mu">El journal de trading es para miembros.</p><Link className="btn sd" href="/ayuda">Quiero ser miembro</Link></section>
+      </>
+    );
+  }
   const { data } = await createClient().from("operaciones").select("*").eq("user_id", perfil.id).order("fecha", { ascending: false }).order("created_at", { ascending: false });
   const ops = ((data ?? []) as Op[]).map((o) => ({ ...o, resultado: Number(o.resultado) }));
   const n = ops.length;

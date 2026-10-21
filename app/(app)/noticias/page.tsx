@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { hoyPY, ZONA } from "@/lib/sesion";
+import { hoyPY, ZONA, perfilActual, permisos } from "@/lib/sesion";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +20,15 @@ async function cargar(url: string): Promise<Ev[] | null> {
 }
 
 export default async function Noticias({ searchParams }: { searchParams: { d?: string } }) {
+  const perm = await permisos(await perfilActual());
+  if (!perm.noticias) {
+    return (
+      <>
+        <h1>Noticias</h1>
+        <section className="box"><div className="tag">Solo miembros</div><p className="mu">El calendario de noticias es para miembros.</p><Link className="btn sd" href="/ayuda">Quiero ser miembro</Link></section>
+      </>
+    );
+  }
   const [esta, proxima] = await Promise.all([
     cargar("https://nfs.faireconomy.media/ff_calendar_thisweek.json"),
     cargar("https://nfs.faireconomy.media/ff_calendar_nextweek.json"),

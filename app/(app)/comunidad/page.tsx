@@ -17,6 +17,14 @@ const ini = (n: string) => (n.trim()[0] || "?").toUpperCase();
 export default async function Comunidad({ searchParams }: { searchParams: { canal?: string; error?: string } }) {
   const perfil = await perfilActual();
   const perm = await permisos(perfil);
+  if (!perm.comunidad) {
+    return (
+      <>
+        <h1>Comunidad</h1>
+        <section className="box"><div className="tag">Solo miembros</div><p className="mu">La comunidad es para miembros.</p><Link className="btn sd" href="/ayuda">Quiero ser miembro</Link></section>
+      </>
+    );
+  }
   const filtro = searchParams.canal && CANALES[searchParams.canal] ? searchParams.canal : "";
   const sb = createClient();
   let q = sb.from("publicaciones").select("*").order("created_at", { ascending: false }).limit(60);

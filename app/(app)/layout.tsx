@@ -20,9 +20,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     { href: "/calendario", label: "Calendario", lock: !perm.calendario, icon: "M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v13H3zM3 11h18M8 3v4M16 3v4" },
     { href: "/tutoriales", label: "Tutoriales", lock: !perm.tutoriales, icon: "M3 6h18v12H3zM10 9.5v5l4.5-2.5z" },
     { href: "/aliados", label: "Aliados", lock: false, icon: "M3 12a5 5 0 1 0 10 0a5 5 0 1 0-10 0M11 12a5 5 0 1 0 10 0a5 5 0 1 0-10 0" },
-    { href: "/comunidad", label: "Comunidad", lock: false, icon: "M21 12a8 8 0 0 1-11.5 7.2L4 20l1-4.6A8 8 0 1 1 21 12z" },
-    { href: "/journal", label: "Journal", lock: false, icon: "M5 4h12a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2zM9 4v16M12 9h4M12 13h4" },
-    { href: "/noticias", label: "Noticias", lock: false, icon: "M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2zM18 8h2v10a2 2 0 0 1-2 2M8 8h6M8 12h6M8 16h4" },
+    { href: "/comunidad", label: "Comunidad", lock: !perm.comunidad, icon: "M21 12a8 8 0 0 1-11.5 7.2L4 20l1-4.6A8 8 0 1 1 21 12z" },
+    { href: "/journal", label: "Journal", lock: !perm.journal, icon: "M5 4h12a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2zM9 4v16M12 9h4M12 13h4" },
+    { href: "/noticias", label: "Noticias", lock: !perm.noticias, icon: "M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2zM18 8h2v10a2 2 0 0 1-2 2M8 8h6M8 12h6M8 16h4" },
   ];
   if (perfil.rol === "admin") {
     items.push({ href: "/accesos", label: "Accesos", lock: false, icon: "M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" });

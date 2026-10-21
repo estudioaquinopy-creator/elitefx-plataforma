@@ -81,7 +81,7 @@ export async function fijarFecha(f: FormData) {
   await actualizar(id, act.plan, fecha, ruta, "Vencimiento actualizado.");
 }
 
-const SECCIONES = ["cursos", "calendario", "tutoriales", "comunidad"];
+const SECCIONES = ["cursos", "calendario", "tutoriales", "comunidad", "journal", "noticias"];
 
 export async function guardarAccesos(f: FormData) {
   await soloAdmin();

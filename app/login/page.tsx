@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Tema from "@/components/Tema";
 import { createClient } from "@/lib/supabase/client";
@@ -42,6 +43,7 @@ export default function Login() {
         </label>
         {err && <p className="err">{err}</p>}
         <button className="btn" disabled={busy}>{busy ? "Entrando…" : "Entrar"}</button>
+        <p className="mu" style={{ textAlign: "center", marginTop: 12 }}>¿No tienes cuenta? <Link href="/registro" className="lk">Crea una gratis</Link></p>
       </form>
     </main>
   );

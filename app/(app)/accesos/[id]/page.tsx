@@ -6,7 +6,7 @@ import { cambiarPlan, cambiarRol, nuevaClave, fijarFecha, guardarAccesos, quitar
 
 export const dynamic = "force-dynamic";
 
-const SECCIONES: [string, string][] = [["cursos", "Todos los cursos"], ["calendario", "Calendario (sesiones en vivo)"], ["tutoriales", "Tutoriales"], ["comunidad", "Escribir en la comunidad"]];
+const SECCIONES: [string, string][] = [["cursos", "Todos los cursos"], ["calendario", "Calendario (sesiones en vivo)"], ["tutoriales", "Tutoriales"], ["comunidad", "Comunidad"], ["journal", "Journal"], ["noticias", "Noticias"]];
 
 export default async function Gestionar({ params, searchParams }: { params: { id: string }; searchParams: { ok?: string; error?: string } }) {
   const yo = await perfilActual();
