@@ -16,6 +16,9 @@ export async function publicar(f: FormData) {
   if (!perm.comunidad) fallo("/comunidad", "Tu plan solo permite leer la comunidad.");
   const imagen = await subirImagen(f.get("imagen"), "/comunidad", "comunidad");
   if (!cuerpo && !imagen && !titulo) fallo("/comunidad", "Escribe un mensaje o sube una imagen.");
+  // Evita duplicados: si se envió exactamente lo mismo hace menos de 2 minutos, no se vuelve a crear.
+  const { data: rep } = await createClient().from("publicaciones").select("id").eq("user_id", perfil.id).eq("canal", canal).eq("titulo", titulo).eq("cuerpo", cuerpo).gte("created_at", new Date(Date.now() - 120000).toISOString()).limit(1);
+  if (rep && rep.length) redirect("/comunidad");
   const { error } = await createClient().from("publicaciones").insert({
     user_id: perfil.id,
     autor: perfil.nombre || perfil.email.split("@")[0],
@@ -59,6 +62,8 @@ export async function comentar(f: FormData) {
   if (!perm.comunidad) fallo("/comunidad", "Tu plan solo permite leer la comunidad.");
   const cuerpo = String(f.get("cuerpo") ?? "").trim();
   if (!cuerpo) fallo("/comunidad", "Escribe tu respuesta.");
+  const { data: rep } = await createClient().from("comentarios").select("id").eq("user_id", perfil.id).eq("post_id", String(f.get("id") ?? "")).eq("cuerpo", cuerpo).gte("created_at", new Date(Date.now() - 120000).toISOString()).limit(1);
+  if (rep && rep.length) redirect(String(f.get("volver") || "/comunidad") + "#p" + String(f.get("id") ?? ""));
   const { error } = await createClient().from("comentarios").insert({
     post_id: String(f.get("id") ?? ""), user_id: perfil.id,
     autor: perfil.nombre || perfil.email.split("@")[0], cuerpo,

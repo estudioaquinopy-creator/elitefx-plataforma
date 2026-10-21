@@ -560,3 +560,7 @@ html[data-tema="claro"] .nav.on .ni{color:var(--tx)!important}
 @keyframes giro{to{transform:rotate(360deg)}}
 .sk-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
 .sk-c{height:200px}
+
+/* Botón enviando */
+.btn-spin{display:inline-block;width:14px;height:14px;margin-right:8px;vertical-align:-2px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:giro .7s linear infinite}
+button.cargando{opacity:.75;cursor:wait}

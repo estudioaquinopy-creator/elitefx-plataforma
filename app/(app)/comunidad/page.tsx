@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { perfilActual, permisos } from "@/lib/sesion";
 import CajaTexto from "@/components/CajaTexto";
 import Compositor from "@/components/Compositor";
+import BotonEnvio from "@/components/BotonEnvio";
 import PostModal from "@/components/PostModal";
 import { borrarPublicacion, publicar, alternarLike, comentar, borrarComentario } from "./actions";
 
@@ -115,7 +116,7 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
                   <form action={comentar} className="fm resf">
                     <input type="hidden" name="id" value={p.id} /><input type="hidden" name="volver" value={volver} />
                     <CajaTexto name="cuerpo" rows={1} placeholder="Escribe una respuesta…" required maxLength={1000} />
-                    <button className="btn g s">Responder</button>
+                    <BotonEnvio className="btn g s" enviando="Enviando…">Responder</BotonEnvio>
                   </form>
                 )}
               </>
