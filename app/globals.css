@@ -564,3 +564,12 @@ html[data-tema="claro"] .nav.on .ni{color:var(--tx)!important}
 /* Botón enviando */
 .btn-spin{display:inline-block;width:14px;height:14px;margin-right:8px;vertical-align:-2px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:giro .7s linear infinite}
 button.cargando{opacity:.75;cursor:wait}
+
+/* Foto de perfil */
+.av{overflow:hidden}
+.av img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}
+.fp{display:flex;align-items:center;gap:16px}
+.fp-av{width:72px;height:72px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--sf2);border:1px solid var(--bd);font-weight:700;font-size:24px;flex:none}
+.fp-av img{width:100%;height:100%;object-fit:cover}
+.fp-b{cursor:pointer;display:inline-block}
+.reg-av{display:flex;align-items:center;gap:14px;margin-bottom:14px}

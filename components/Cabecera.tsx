@@ -10,6 +10,7 @@ type Props = {
   nombre: string;
   email: string;
   iniciales: string;
+  avatar?: string;
   notifs: Notif[];
   noLeidas: number;
   real: boolean;
@@ -17,7 +18,7 @@ type Props = {
   onMenu: () => void;
 };
 
-export default function Cabecera({ nombre, email, iniciales, notifs, noLeidas, real, vista, onMenu }: Props) {
+export default function Cabecera({ nombre, email, iniciales, avatar, notifs, noLeidas, real, vista, onMenu }: Props) {
   const [abierto, setAbierto] = useState<"" | "n" | "p">("");
   const cerrar = () => setAbierto("");
   return (
@@ -45,7 +46,7 @@ export default function Cabecera({ nombre, email, iniciales, notifs, noLeidas, r
       </button>
 
       <button className="av" aria-label="Menú de perfil" aria-haspopup="menu" onClick={() => setAbierto(abierto === "p" ? "" : "p")}>
-        {iniciales}
+        {avatar ? <img src={avatar} alt="" /> : iniciales}
       </button>
 
       {abierto && <div className="cierra" onClick={cerrar} />}

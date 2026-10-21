@@ -11,6 +11,7 @@ export type Perfil = {
   plan: "gratis" | "live_trading" | "scanner";
   vence: string | null;
   telefono: string | null;
+  avatar_url?: string | null;
   notif_leidas_at: string | null;
   vista?: "gratis" | "miembro"; // el administrador está viendo la plataforma como alumno
 };

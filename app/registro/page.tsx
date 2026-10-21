@@ -4,31 +4,54 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Tema from "@/components/Tema";
 import { createClient } from "@/lib/supabase/client";
+import { subirAvatar } from "@/lib/avatar";
 
 export default function Registro() {
   const router = useRouter();
   const [nombre, setNombre] = useState("");
+  const [tel, setTel] = useState("");
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
+  const [pw2, setPw2] = useState("");
+  const [foto, setFoto] = useState<File | null>(null);
+  const [vista, setVista] = useState("");
   const [err, setErr] = useState("");
   const [listo, setListo] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  function elegirFoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0] ?? null;
+    setFoto(f);
+    setVista(f ? URL.createObjectURL(f) : "");
+  }
+
   async function crear(e: React.FormEvent) {
     e.preventDefault();
     setErr("");
+    const n = nombre.trim().replace(/\s+/g, " ");
+    const t = tel.replace(/[^\d+]/g, "");
+    if (n.split(" ").length < 2) return setErr("Escribe tu nombre completo (nombre y apellido).");
+    if (t.replace(/\D/g, "").length < 8) return setErr("Escribe un número de teléfono válido, con código de país (ej.: +595981123456).");
     if (pw.length < 8) return setErr("La contraseña debe tener al menos 8 caracteres.");
+    if (pw !== pw2) return setErr("Las contraseñas no coinciden.");
     setBusy(true);
-    const { data, error } = await createClient().auth.signUp({ email: email.trim(), password: pw, options: { data: { nombre: nombre.trim() } } });
-    setBusy(false);
+    const sb = createClient();
+    const { data, error } = await sb.auth.signUp({ email: email.trim(), password: pw, options: { data: { nombre: n, telefono: t } } });
     if (error) {
+      setBusy(false);
       const m = error.message.toLowerCase();
       if (m.includes("already") || m.includes("registered")) return setErr("Ese correo ya tiene una cuenta. Inicia sesión.");
       if (m.includes("rate") || m.includes("limit")) return setErr("Demasiados intentos. Espera unos minutos e inténtalo otra vez.");
       return setErr("No se pudo crear la cuenta: " + error.message);
     }
-    // Si el proyecto no pide confirmar el correo, la sesión ya está activa.
-    if (data.session) { router.replace("/inicio"); router.refresh(); return; }
+    // Si el proyecto no pide confirmar el correo, la sesión ya está activa: guardamos teléfono y foto.
+    if (data.session && data.user) {
+      await sb.from("perfiles").update({ nombre: n, telefono: t }).eq("id", data.user.id);
+      if (foto) { try { await subirAvatar(data.user.id, foto); } catch { /* la foto se puede subir luego desde el perfil */ } }
+      router.replace("/inicio"); router.refresh();
+      return;
+    }
+    setBusy(false);
     setListo(true);
   }
 
@@ -46,11 +69,17 @@ export default function Registro() {
         ) : (
           <>
             <p className="sub">Accede al Curso básico y a los aliados de ELITE FX.</p>
-            <label>Nombre<input autoComplete="name" required value={nombre} onChange={(e) => setNombre(e.target.value)} /></label>
+            <div className="reg-av">
+              <span className="fp-av">{vista ? <img src={vista} alt="Tu foto" /> : "📷"}</span>
+              <label className="btn g s fp-b">{vista ? "Cambiar foto" : "Agregar foto (opcional)"}<input type="file" accept="image/*" hidden onChange={elegirFoto} /></label>
+            </div>
+            <label>Nombre completo<input autoComplete="name" required value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre y apellido" /></label>
+            <label>Teléfono / WhatsApp<input type="tel" autoComplete="tel" required value={tel} onChange={(e) => setTel(e.target.value)} placeholder="+595 981 123456" /></label>
             <label>Correo electrónico<input type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></label>
             <label>Contraseña (mínimo 8 caracteres)<input type="password" autoComplete="new-password" minLength={8} required value={pw} onChange={(e) => setPw(e.target.value)} /></label>
+            <label>Repite la contraseña<input type="password" autoComplete="new-password" minLength={8} required value={pw2} onChange={(e) => setPw2(e.target.value)} /></label>
             {err && <p className="err">{err}</p>}
-            <button className="btn" disabled={busy}>{busy ? "Creando…" : "Crear cuenta"}</button>
+            <button className="btn" disabled={busy}>{busy ? "Creando tu cuenta…" : "Crear cuenta"}</button>
             <p className="mu" style={{ textAlign: "center", marginTop: 12 }}>¿Ya tienes cuenta? <Link href="/login" className="lk">Inicia sesión</Link></p>
           </>
         )}

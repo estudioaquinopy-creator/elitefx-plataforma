@@ -80,7 +80,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const iniciales = nombre.split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((x) => x[0].toUpperCase()).join("");
 
   return (
-    <Shell items={items} nombre={nombre} email={perfil.email} iniciales={iniciales} notifs={notifs} noLeidas={noLeidas} real={perfil.rol === "admin" || !!perfil.vista} vista={perfil.vista ?? ""} redes={redes} editarRedes={perfil.rol === "admin"}>
+    <Shell items={items} nombre={nombre} email={perfil.email} iniciales={iniciales} avatar={perfil.avatar_url ?? ""} notifs={notifs} noLeidas={noLeidas} real={perfil.rol === "admin" || !!perfil.vista} vista={perfil.vista ?? ""} redes={redes} editarRedes={perfil.rol === "admin"}>
       {perfil.vista && (
         <form action={modoAlumno} className="vbar">
           <span>Estás viendo la plataforma como <b>alumno {perfil.vista === "gratis" ? "gratis" : "miembro"}</b>. Los cambios de administrador están ocultos.</span>

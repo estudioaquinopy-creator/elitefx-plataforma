@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual } from "@/lib/sesion";
+import FotoPerfil from "@/components/FotoPerfil";
 import { cambiarClave, guardarPerfil } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -24,8 +25,13 @@ export default async function PerfilPage({ searchParams }: { searchParams: { t?:
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
 
       {t === "editar" && (
+        <section className="box" style={{ maxWidth: 520 }}>
+          <FotoPerfil uid={perfil.id} url={perfil.avatar_url ?? null} iniciales={((perfil.nombre || perfil.email).trim()[0] || "?").toUpperCase()} />
+        </section>
+      )}
+      {t === "editar" && (
         <form action={guardarPerfil} className="box fm" style={{ maxWidth: 520 }}>
-          <label>Nombre<input name="nombre" defaultValue={perfil.nombre} required /></label>
+          <label>Nombre completo<input name="nombre" defaultValue={perfil.nombre} required /></label>
           <label>Teléfono / WhatsApp<input name="telefono" defaultValue={perfil.telefono ?? ""} /></label>
           <label>Correo<input value={perfil.email} disabled readOnly /></label>
           <button className="btn s">Guardar cambios</button>
