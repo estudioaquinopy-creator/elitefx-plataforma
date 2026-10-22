@@ -5,6 +5,8 @@ import { leerAjustes } from "@/lib/ajustes";
 import Portada from "@/components/Portada";
 import { crearClase, eliminarClase, crearFijo, guardarFijo, eliminarFijo } from "./actions";
 import { ocurrencias, type Fijo, type Ocurrencia } from "@/lib/horario";
+import SesionCard from "@/components/SesionCard";
+import { COLORES, tipoSesion } from "@/lib/sesiones";
 
 export const dynamic = "force-dynamic";
 
@@ -120,6 +122,7 @@ export default async function Calendario({ searchParams }: { searchParams: { s?:
           <Link href={"/calendario?s=" + mas(7)} aria-label="Semana siguiente">→</Link>
         </div>
         {!(hoy >= lunes && hoy <= domingo) && <p style={{ textAlign: "center", margin: "0 0 12px" }}><Link href="/calendario" className="lk">Volver a esta semana</Link></p>}
+        <div className="leyenda">{Object.values(COLORES).map((t) => <span key={t.nombre}><i style={{ background: t.color }} />{t.nombre}</span>)}</div>
         <div className="sem">
           {dias7.map((f, i) => {
             const lista = porDia.get(f) ?? [];
@@ -128,19 +131,22 @@ export default async function Calendario({ searchParams }: { searchParams: { s?:
                 <div className="sdh"><span>{NOMBRES[i]}</span><b>{Number(f.slice(8, 10))}</b></div>
                 {lista.length === 0 && <p className="mu sv">Sin sesiones</p>}
                 {lista.map((c) => {
-                  const zoom = c.zoom_url;
+                  const t = COLORES[tipoSesion(c.titulo)];
                   return (
-                    <div key={c.id} className="sc">
-                      <div className="sh">{horaPY(c.inicio)}</div>
-                      <b>{c.titulo}</b>
-                      {zoom && <a className="btn sd" href={zoom} target="_blank" rel="noopener noreferrer">Unirme por Google Meet</a>}
-                      {perm.admin && !c.fijo && (
+                    <SesionCard
+                      key={c.id}
+                      titulo={c.titulo}
+                      inicio={c.inicio}
+                      zoom={c.zoom_url}
+                      color={t.color}
+                      tipo={t.nombre}
+                      extra={perm.admin && !c.fijo ? (
                         <form action={eliminarClase}>
                           <input type="hidden" name="id" value={c.id} />
-                          <button className="btn g s">Eliminar</button>
+                          <button className="btn g s">Eliminar esta sesión</button>
                         </form>
-                      )}
-                    </div>
+                      ) : null}
+                    />
                   );
                 })}
               </div>
