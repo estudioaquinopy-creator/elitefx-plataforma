@@ -153,3 +153,15 @@ export async function cambiarPortadaCurso(f: FormData) {
   revalidatePath("/cursos/" + id);
   redirect("/cursos");
 }
+
+// El administrador reordena las lecciones (arrastrando o con las flechas).
+export async function reordenarLecciones(cursoId: string, ids: string[]): Promise<{ ok: boolean; error?: string }> {
+  await soloAdmin();
+  const supabase = createClient();
+  const resultados = await Promise.all(ids.map((id, i) => supabase.from("lecciones").update({ orden: i + 1 }).eq("id", id).eq("curso_id", cursoId)));
+  const fallo = resultados.find((r) => r.error);
+  if (fallo?.error) return { ok: false, error: fallo.error.message };
+  revalidatePath("/cursos/" + cursoId);
+  revalidatePath("/inicio");
+  return { ok: true };
+}

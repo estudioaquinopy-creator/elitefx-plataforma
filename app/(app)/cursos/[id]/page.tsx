@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { perfilActual } from "@/lib/sesion";
 import { embedUrl } from "@/lib/video";
 import { bloqueosExamen } from "@/lib/examen";
-import { alternarCompletada, editarCurso, eliminarCurso, eliminarLeccion, guardarLeccion } from "../actions";
+import { alternarCompletada, editarCurso, eliminarCurso, eliminarLeccion, guardarLeccion, reordenarLecciones } from "../actions";
+import ListaLeccionesAdmin from "@/components/ListaLeccionesAdmin";
 
 export const dynamic = "force-dynamic";
 
@@ -124,14 +125,18 @@ export default async function CursoPage({ params, searchParams }: { params: { id
 
         <section className="box">
           <h2>Lecciones</h2>
-          <div className="lst">
-            {lecs.map((l, i) => (
-              <Link key={l.id} href={"?l=" + l.id} className={actual && l.id === actual.id ? "li on" : "li"}>
-                <span className="n">{hechas.has(l.id) ? "✓" : i + 1}</span>
-                <span>{l.titulo}</span>
-              </Link>
-            ))}
-          </div>
+          {admin ? (
+            <ListaLeccionesAdmin cursoId={curso.id} lecciones={lecs.map((l) => ({ id: l.id, titulo: l.titulo, hecha: hechas.has(l.id) }))} actualId={actual ? actual.id : null} guardar={reordenarLecciones} />
+          ) : (
+            <div className="lst">
+              {lecs.map((l, i) => (
+                <Link key={l.id} href={"?l=" + l.id} className={actual && l.id === actual.id ? "li on" : "li"}>
+                  <span className="n">{hechas.has(l.id) ? "✓" : i + 1}</span>
+                  <span>{l.titulo}</span>
+                </Link>
+              ))}
+            </div>
+          )}
           {(cfgE?.activo || admin) && (
             <div className="exam-card">
               <b>Examen del curso</b>
