@@ -49,7 +49,7 @@ export default async function Accesos({ searchParams }: { searchParams: { q?: st
             <label>Correo<input type="email" name="email" required /></label>
           </div>
           <div className="f2">
-            <label>Contraseña inicial (cópiala antes de crear)<input name="password" defaultValue={clave} required minLength={8} /></label>
+            <label>Contraseña inicial (cópiala antes de crear)<input name="password" defaultValue={clave} minLength={8} /></label>
             <label>Teléfono (opcional, para WhatsApp)<input name="telefono" placeholder="595981123456" /></label>
           </div>
           <div className="f2">
@@ -68,6 +68,7 @@ export default async function Accesos({ searchParams }: { searchParams: { q?: st
             </label>
           </div>
           <label>Calendario activo hasta (solo miembros de pago)<input type="date" name="vence" /></label>
+          <label className="ck"><input type="checkbox" name="invitar" /> Enviar invitación por correo (la persona elige su propia contraseña; ignora la contraseña de arriba)</label>
           <button className="btn s">Crear persona</button>
         </form>
       </details>

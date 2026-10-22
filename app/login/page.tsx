@@ -41,6 +41,7 @@ export default function Login() {
         <label>Contraseña
           <input type="password" autoComplete="current-password" required value={pw} onChange={(e) => setPw(e.target.value)} />
         </label>
+        <p style={{ textAlign: "right", margin: "-6px 0 12px" }}><Link href="/recuperar" className="lk">¿Olvidaste tu contraseña?</Link></p>
         {err && <p className="err">{err}</p>}
         <button className="btn" disabled={busy}>{busy ? "Entrando…" : "Entrar"}</button>
         <p className="mu" style={{ textAlign: "center", marginTop: 12 }}>¿No tienes cuenta? <Link href="/registro" className="lk">Crea una gratis</Link></p>

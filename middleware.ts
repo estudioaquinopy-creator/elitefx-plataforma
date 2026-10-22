@@ -20,7 +20,7 @@ export async function middleware(request: NextRequest) {
   );
   const { data: { user } } = await supabase.auth.getUser();
   const { pathname } = request.nextUrl;
-  const publica = pathname.startsWith("/login") || pathname.startsWith("/registro") || pathname.startsWith("/auth");
+  const publica = pathname.startsWith("/login") || pathname.startsWith("/registro") || pathname.startsWith("/recuperar") || pathname.startsWith("/nueva-clave") || pathname.startsWith("/auth");
   if (!user && !publica) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";

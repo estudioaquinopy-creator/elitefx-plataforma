@@ -1,6 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { headers } from "next/headers";
 import { clienteAdmin } from "@/lib/supabase/admin";
 import { hoyPY, perfilActual } from "@/lib/sesion";
 import { aviso, fallo } from "@/lib/subida";
@@ -108,15 +109,20 @@ export async function crearPersona(f: FormData) {
   const plan = tipo === "miembro" ? (String(f.get("plan") ?? "") === "scanner" ? "scanner" : "live_trading") : "gratis";
   const vence = String(f.get("vence") ?? "");
   if (!/^\S+@\S+\.\S+$/.test(email)) fallo(ruta, "Escribe un correo válido.");
-  if (password.length < 8) fallo(ruta, "La contraseña debe tener al menos 8 caracteres.");
+  const invitar = f.get("invitar") === "on";
+  if (!invitar && password.length < 8) fallo(ruta, "La contraseña debe tener al menos 8 caracteres (o marca \"Enviar invitación por correo\").");
   if (tipo === "miembro" && !/^\d{4}-\d{2}-\d{2}$/.test(vence)) fallo(ruta, "Elige hasta qué fecha tiene acceso al calendario.");
   const admin = clienteAdmin();
   if (!admin) fallo(ruta, FALTA_CLAVE);
 
-  const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { nombre } });
+  const h = headers();
+  const origen = h.get("origin") || ("https://" + (h.get("x-forwarded-host") || h.get("host")));
+  const { data, error } = invitar
+    ? await admin.auth.admin.inviteUserByEmail(email, { data: { nombre, telefono }, redirectTo: origen + "/nueva-clave" })
+    : await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { nombre } });
   if (error || !data.user) {
     const m = (error?.message ?? "").toLowerCase();
-    fallo(ruta, m.includes("already") || m.includes("registered") ? "Ese correo ya tiene una cuenta. Búscalo en la lista y gestiónalo ahí." : "No se pudo crear la cuenta: " + (error?.message ?? "error desconocido"));
+    fallo(ruta, m.includes("already") || m.includes("registered") ? "Ese correo ya tiene una cuenta. Búscalo en la lista y gestiónalo ahí." : "No se pudo " + (invitar ? "enviar la invitación" : "crear la cuenta") + ": " + (error?.message ?? "error desconocido"));
   }
   const { error: e2 } = await admin.from("perfiles").update({
     nombre, email, telefono: telefono || null,
@@ -126,7 +132,7 @@ export async function crearPersona(f: FormData) {
   }).eq("id", data.user.id);
   if (e2) fallo("/accesos/" + data.user.id, "La cuenta se creó, pero no se pudieron guardar sus datos: " + e2.message);
   revalidatePath("/accesos");
-  aviso("/accesos/" + data.user.id, "Persona creada. Pásale su correo y la contraseña que definiste (no se vuelve a mostrar).");
+  aviso("/accesos/" + data.user.id, invitar ? "Invitación enviada a " + email + ". Al abrir el enlace, elegirá su contraseña." : "Persona creada. Pásale su correo y la contraseña que definiste (no se vuelve a mostrar).");
 }
 
 export async function cambiarRol(f: FormData) {
