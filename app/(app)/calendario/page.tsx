@@ -131,9 +131,9 @@ export default async function Calendario({ searchParams }: { searchParams: { s?:
                   const zoom = c.zoom_url;
                   return (
                     <div key={c.id} className="sc">
-                      <div className="sh">{horaPY(c.inicio)} · {c.duracion_min ?? 90} min</div>
+                      <div className="sh">{horaPY(c.inicio)}</div>
                       <b>{c.titulo}</b>
-                      {zoom ? <a className="btn sd" href={zoom} target="_blank" rel="noopener noreferrer">Unirme por Google Meet</a> : <span className="mu">Enlace pendiente</span>}
+                      {zoom && <a className="btn sd" href={zoom} target="_blank" rel="noopener noreferrer">Unirme por Google Meet</a>}
                       {perm.admin && !c.fijo && (
                         <form action={eliminarClase}>
                           <input type="hidden" name="id" value={c.id} />
