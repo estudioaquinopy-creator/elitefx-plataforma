@@ -1,0 +1,43 @@
+# ELITE FX · Plataforma de estudio
+
+Plataforma propia de la academia ELITE FX (+900 alumnos, migrando desde Skool). Todo el texto de la interfaz, los mensajes y los commits explicativos van **en español**. Dueño: Marcos Aquino.
+
+## Stack y despliegue
+- Next.js 14 (App Router, server components y server actions) + Supabase (Postgres con RLS, Auth, Storage) + Vercel.
+- Cada push a `main` se despliega solo en Vercel. No hay entorno de pruebas: **cuida lo que subes a `main`**.
+- No se puede compilar en el entorno de Claude (npm bloqueado) y `ignoreBuildErrors` está activo: los errores solo se ven en Vercel. Revisa dos veces el código (sobre todo el alcance de variables y los imports).
+- Dominio de producción: `academia.elitefx.com.py` (también existe `elitefx-plataforma.vercel.app`).
+
+## Variables de entorno (en Vercel, nunca en el repositorio ni en el chat)
+- `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` (solo servidor: crear/invitar personas, cambiar roles; ver `lib/supabase/admin.ts`). Nunca con prefijo `NEXT_PUBLIC_`.
+- Cambiar una variable exige un redeploy.
+
+## Base de datos
+- Migraciones en `supabase/migrations/` (0001…0011). **Se ejecutan a mano** en Supabase → SQL Editor, en orden. Si agregas una, créala idempotente (`if not exists`, `drop policy if exists`) y avisa al dueño que la corra antes de usar la función nueva.
+- Seguridad por RLS: helpers `es_admin()`, `es_miembro()`, `tiene_acceso(sec)`. Los alumnos solo pueden editar `nombre`, `telefono`, `avatar_url`, `notif_leidas_at` de su perfil.
+- Examen: las respuestas correctas nunca salen de la base (`examen_preguntas` y `calificar_examen` son funciones `security definer`).
+
+## Reglas de negocio
+- Niveles: admin / gratis / miembro (planes `live_trading`, `scanner`). Los miembros tienen acceso de por vida a los cursos; el calendario solo mientras `vence` esté vigente.
+- Gratis: solo cursos marcados "visible para el plan gratuito" (Curso básico) y Aliados. Calendario, Tutoriales, Comunidad, Journal y Noticias son solo para miembros (el admin puede dar accesos puntuales por persona).
+- Los anuncios los publica solo el admin. El Journal es privado de cada persona.
+- Examen por curso: 10 preguntas al azar del banco, 7 correctas para aprobar; el curso siguiente de la ruta queda bloqueado hasta aprobar. Los admins no tienen bloqueos.
+- Zona horaria: Paraguay (`America/Asuncion`, UTC-3). Las sesiones fijas (Londres 6:00, Nueva York 10:00, Asia 21:00) se calculan en `lib/horario.ts`.
+- Las sesiones en vivo son por Google Meet; cada sesión tiene su propio enlace (no existe enlace general).
+- Videos: Vimeo (privado, restringido a dominios, sin descarga) y YouTube; `lib/video.ts` acepta el enlace o el código de "Incrustar".
+- Modo alumno: el admin ve la plataforma como alumno miembro/gratis (cookie `ver_como`, ver `lib/sesion.ts`).
+- Diseño: tema oscuro verde por defecto (+ modo claro). Mantener el menú lateral en tono neutro. No agregar marcas de agua.
+
+## Estructura
+- `app/(app)/…` secciones con sesión; `app/login`, `registro`, `recuperar`, `nueva-clave` son públicas (ver `middleware.ts`).
+- `components/` componentes de cliente; `lib/` utilidades (`sesion.ts` permisos y perfil, `examen.ts` bloqueos, `supabase/` clientes).
+- Estilos globales en `app/globals.css` (variables CSS; los bloques se agregan al final y sobrescriben a los anteriores).
+
+## Pendientes conocidos
+Importar alumnos desde CSV, recordatorios por correo/WhatsApp, cobros con Pagopar, certificados, foto de perfil en la comunidad, términos y condiciones, igualar la región de Vercel con la de Supabase.
+
+## Al subir cambios
+Mensajes de commit en español, terminados con:
+`Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`
+`Claude-Session: <enlace de la sesión>`
