@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Crea una contraseña nueva</title>
+</head>
+<body style="margin:0;padding:0;background:#0a0a0a;">
+<!-- Plantilla de ELITE FX para Supabase (Reset password). Pegar completa en Authentication > Emails > Templates. -->
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">Recibimos un pedido para cambiar la contraseña de tu cuenta.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0a0a0a;">
+  <tr>
+    <td align="center" style="padding:32px 16px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;">
+        <tr>
+          <td align="center" style="padding:0 0 24px;">
+            <img src="https://academia.elitefx.com.py/logo-elitefx.png" width="200" height="51" alt="ELITE FX" style="display:block;border:0;width:200px;height:auto;">
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#101412;border:1px solid #202a25;border-radius:16px;padding:32px 28px;font-family:Manrope,Arial,Helvetica,sans-serif;color:#e8efea;">
+            <h1 style="margin:0 0 16px;font-family:Sora,Arial,Helvetica,sans-serif;font-size:22px;line-height:1.3;font-weight:700;color:#e8efea;">Crea una contraseña nueva</h1>
+            <p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#e8efea;">{{ if .Data.nombre }}Hola, {{ .Data.nombre }}:{{ else }}Hola:{{ end }}</p>
+            <p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#e8efea;">Recibimos un pedido para cambiar la contraseña de tu cuenta en ELITE FX. Toca el botón para elegir una nueva.</p>
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0;">
+              <tr>
+                <td align="center" bgcolor="#00d47a" style="border-radius:12px;">
+                  <a href="{{ .ConfirmationURL }}" target="_blank" style="display:inline-block;padding:14px 28px;font-family:Sora,Arial,Helvetica,sans-serif;font-size:15px;font-weight:600;color:#04130c;text-decoration:none;border-radius:12px;">Elegir contraseña nueva</a>
+                </td>
+              </tr>
+            </table>
+            <p style="margin:0 0 8px;font-size:13px;line-height:1.6;color:#8892a0;">Si el botón no funciona, copia y pega este enlace en tu navegador:</p>
+            <p style="margin:0 0 20px;font-size:13px;line-height:1.5;word-break:break-all;"><a href="{{ .ConfirmationURL }}" style="color:#00d47a;">{{ .ConfirmationURL }}</a></p>
+            <p style="margin:0;font-size:13px;line-height:1.6;color:#8892a0;">El enlace vence en poco tiempo y solo se puede usar una vez. Si no pediste este cambio, ignora este correo: tu contraseña actual sigue funcionando.</p>
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:20px 8px 0;font-family:Manrope,Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;color:#8892a0;">
+            ELITE FX · Trading de Alta Precisión<br>
+            <a href="https://academia.elitefx.com.py" style="color:#8892a0;">academia.elitefx.com.py</a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>

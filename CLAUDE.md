@@ -18,6 +18,11 @@ Plataforma propia de la academia ELITE FX (+900 alumnos, migrando desde Skool). 
 - Seguridad por RLS: helpers `es_admin()`, `es_miembro()`, `tiene_acceso(sec)`. Los alumnos solo pueden editar `nombre`, `telefono`, `avatar_url`, `notif_leidas_at` de su perfil.
 - Examen: las respuestas correctas nunca salen de la base (`examen_preguntas` y `calificar_examen` son funciones `security definer`).
 
+## Correos
+- Los correos de la cuenta (registro, invitación, recuperar contraseña) los envía Supabase Auth por SMTP de Resend, desde `@elitefx.com.py`. Se configuran en el panel de Supabase, no en el código.
+- Plantillas en español en `supabase/correos/` (se pegan a mano en Authentication → Emails → Templates); guía completa en `supabase/correos/LEEME.md`. Si cambias una plantilla, avisa al dueño que la vuelva a pegar.
+- Plan gratis de Resend: 100 correos por día. Tenerlo en cuenta para invitaciones masivas.
+
 ## Reglas de negocio
 - Niveles: admin / gratis / miembro (planes `live_trading`, `scanner`). Los miembros tienen acceso de por vida a los cursos; el calendario solo mientras `vence` esté vigente.
 - Gratis: solo cursos marcados "visible para el plan gratuito" (Curso básico) y Aliados. Calendario, Tutoriales, Comunidad, Journal y Noticias son solo para miembros (el admin puede dar accesos puntuales por persona).
