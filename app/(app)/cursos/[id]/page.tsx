@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { perfilActual } from "@/lib/sesion";
 import { embedUrl } from "@/lib/video";
 import { bloqueosExamen } from "@/lib/examen";
-import { alternarCompletada, editarCurso, eliminarCurso, eliminarLeccion, guardarLeccion, reordenarLecciones } from "../actions";
+import { alternarCompletada, completarBienvenida, editarCurso, eliminarCurso, eliminarLeccion, guardarLeccion, reordenarLecciones } from "../actions";
 import ListaLeccionesAdmin from "@/components/ListaLeccionesAdmin";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 type Material = { tipo: string; titulo: string; url: string };
 type Leccion = { id: string; curso_id: string; orden: number; titulo: string; descripcion: string; youtube_url: string; materiales: Material[] };
 
-export default async function CursoPage({ params, searchParams }: { params: { id: string }; searchParams: { l?: string; edit?: string; error?: string } }) {
+export default async function CursoPage({ params, searchParams }: { params: { id: string }; searchParams: { l?: string; edit?: string; error?: string; bienvenida?: string } }) {
   const perfil = await perfilActual();
   const supabase = createClient();
   const { data: curso } = await supabase.from("cursos").select("*").eq("id", params.id).single();
@@ -60,6 +60,7 @@ export default async function CursoPage({ params, searchParams }: { params: { id
       <Link href="/cursos" className="back">← Cursos</Link>
       <h1>{curso.nombre}</h1>
       <p className="sub">{curso.descripcion}</p>
+      {searchParams.bienvenida === "1" && <p className="box" style={{ borderColor: "var(--ac)", padding: "12px 14px" }}>👋 Bienvenido a ELITE FX. Mira este video primero: te explica cómo usar la plataforma.</p>}
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
 
       {admin && (
@@ -106,12 +107,19 @@ export default async function CursoPage({ params, searchParams }: { params: { id
                   ))}
                 </div>
               )}
+              {searchParams.bienvenida === "1" && !hecha ? (
+                <form action={completarBienvenida}>
+                  <input type="hidden" name="leccion_id" value={actual.id} />
+                  <button className="btn sd">Ya vi el video, entrar a la plataforma →</button>
+                </form>
+              ) : (
               <form action={alternarCompletada}>
                 <input type="hidden" name="leccion_id" value={actual.id} />
                 <input type="hidden" name="curso_id" value={curso.id} />
                 <input type="hidden" name="hecha" value={hecha ? "1" : "0"} />
                 <button className={hecha ? "btn g" : "btn s"}>{hecha ? "✓ Lección completada (desmarcar)" : "Marcar lección como completada"}</button>
               </form>
+              )}
               {admin && (
                 <p className="adm-links">
                   <Link href={"?l=" + actual.id + "&edit=" + actual.id}>Editar esta lección</Link>

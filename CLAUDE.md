@@ -31,6 +31,7 @@ Plataforma propia de la academia ELITE FX (+900 alumnos, migrando desde Skool). 
 - Zona horaria: Paraguay (`America/Asuncion`, UTC-3). Las sesiones fijas (Londres 6:00, Nueva York 10:00, Asia 21:00) se calculan en `lib/horario.ts`.
 - Las sesiones en vivo son por Google Meet; cada sesión tiene su propio enlace (no existe enlace general).
 - Videos: Vimeo (privado, restringido a dominios, sin descarga) y YouTube; `lib/video.ts` acepta el enlace o el código de "Incrustar".
+- Bienvenida: quien aún no marcó como visto el video "Bienvenido…" de Primeros pasos es llevado a él al entrar a `/inicio` (`lib/bienvenida.ts`); se busca por nombre del curso y título de la lección.
 - Modo alumno: el admin ve la plataforma como alumno miembro/gratis (cookie `ver_como`, ver `lib/sesion.ts`).
 - Diseño: tema oscuro verde por defecto (+ modo claro). Mantener el menú lateral en tono neutro. No agregar marcas de agua.
 

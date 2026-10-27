@@ -1,6 +1,8 @@
 import EnVivo, { type SesionVivo } from "@/components/EnVivo";
 import { ocurrencias, type Fijo } from "@/lib/horario";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { bienvenidaPendiente } from "@/lib/bienvenida";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual, permisos, primerNombre, ZONA, hoyPY } from "@/lib/sesion";
 import { youtubeId } from "@/lib/youtube";
@@ -15,6 +17,10 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
   const perfil = await perfilActual();
   const perm = await permisos(perfil);
   const supabase = createClient();
+
+  // Primer video: quien aún no vio la bienvenida va directo a ella.
+  const bienv = await bienvenidaPendiente(supabase, perfil.id);
+  if (bienv) redirect("/cursos/" + bienv.curso_id + "?l=" + bienv.id + "&bienvenida=1");
 
   const { data: cs } = await supabase.from("cursos").select("id, nombre, descripcion, grupo, orden, gratis").eq("grupo", "ruta").order("orden");
   const cursos = (cs ?? []) as Curso[];

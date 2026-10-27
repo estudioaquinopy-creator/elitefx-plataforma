@@ -135,6 +135,16 @@ export async function alternarCompletada(f: FormData) {
   revalidatePath("/cursos");
 }
 
+// Marca el video de bienvenida como visto y entra a la plataforma.
+export async function completarBienvenida(f: FormData) {
+  const perfil = await perfilActual();
+  const supabase = createClient();
+  const leccion_id = txt(f, "leccion_id");
+  await supabase.from("progreso").upsert({ user_id: perfil.id, leccion_id }, { onConflict: "user_id,leccion_id", ignoreDuplicates: true });
+  revalidatePath("/cursos");
+  redirect("/inicio");
+}
+
 // Cambia o quita la portada de un curso directamente desde la lista de cursos.
 export async function cambiarPortadaCurso(f: FormData) {
   await soloAdmin();
