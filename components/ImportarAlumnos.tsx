@@ -12,6 +12,15 @@ const ALIAS: Record<string, string[]> = {
   plan: ["plan", "membresia", "membresía", "tipo", "nivel"],
   vence: ["vence", "vencimiento", "expira", "expiry", "fecha de vencimiento", "valid until", "hasta", "calendario hasta"],
 };
+// Hoy en Paraguay + n meses (sin desbordar fin de mes), como AAAA-MM-DD.
+function hoyMas(n: number): string {
+  const hoy = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Asuncion" }).format(new Date());
+  const [a, m, d] = hoy.split("-").map(Number);
+  const t = a * 12 + (m - 1) + n;
+  const ya = Math.floor(t / 12), ym = (t % 12) + 1;
+  const ult = new Date(Date.UTC(ya, ym, 0)).getUTCDate();
+  return ya + "-" + String(ym).padStart(2, "0") + "-" + String(Math.min(d, ult)).padStart(2, "0");
+}
 const norm = (s: string) => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 
 function parseCSV(texto: string): string[][] {
@@ -54,8 +63,9 @@ function normFecha(v: string): string {
 export default function ImportarAlumnos({ enviar }: { enviar: (f: FilaImp[], actualizar: boolean, invitar: boolean) => Promise<ResImp[]> }) {
   const [filas, setFilas] = useState<Fila[]>([]);
   const [nombreArchivo, setNombreArchivo] = useState("");
-  const [planDef, setPlanDef] = useState("gratis");
+  const [planDef, setPlanDef] = useState("live_trading");
   const [venceDef, setVenceDef] = useState("");
+  const [mesesDef, setMesesDef] = useState("1");
   const [actualizar, setActualizar] = useState(false);
   const [invitar, setInvitar] = useState(true);
   const [pendientes, setPendientes] = useState<FilaImp[]>([]);
@@ -97,7 +107,7 @@ export default function ImportarAlumnos({ enviar }: { enviar: (f: FilaImp[], act
   const lista: Fila[] = filas.map((f) => {
     if (f.problema) return f;
     const plan = normPlan(f.plan, planDef);
-    const vence = plan === "gratis" ? "" : (normFecha(f.vence) || venceDef);
+    const vence = plan === "gratis" ? "" : (normFecha(f.vence) || venceDef || (mesesDef ? hoyMas(Number(mesesDef)) : ""));
     let problema = "";
     if (plan === "?") problema = "Plan no reconocido: " + f.plan;
     else if (vence === "?") problema = "Fecha no válida: " + f.vence;
@@ -157,7 +167,12 @@ export default function ImportarAlumnos({ enviar }: { enviar: (f: FilaImp[], act
               <option value="gratis">Miembro gratuito</option><option value="live_trading">Live Trading</option><option value="scanner">Scanner</option>
             </select>
           </label>
-          <label>Calendario activo hasta (para las filas de pago sin fecha)<input type="date" value={venceDef} onChange={(e) => setVenceDef(e.target.value)} /></label>
+          <label>Calendario para las filas de pago sin fecha
+            <select value={mesesDef} onChange={(e) => setMesesDef(e.target.value)} disabled={!!venceDef}>
+              <option value="">Sin calendario</option><option value="1">1 mes desde hoy</option><option value="2">2 meses desde hoy</option><option value="3">3 meses desde hoy</option>
+            </select>
+          </label>
+          <label>O una fecha exacta para todas<input type="date" value={venceDef} onChange={(e) => setVenceDef(e.target.value)} /></label>
         </div>
         <label className="ck"><input type="checkbox" checked={invitar} onChange={(e) => setInvitar(e.target.checked)} /> <span><b>Enviar correo de invitación a cada alumno</b> para que cree su contraseña y entre (recomendado)</span></label>
         <label className="ck"><input type="checkbox" checked={actualizar} onChange={(e) => setActualizar(e.target.checked)} /> Si el correo ya tiene cuenta, actualizar su plan, vencimiento, nombre y teléfono</label>
@@ -168,7 +183,7 @@ export default function ImportarAlumnos({ enviar }: { enviar: (f: FilaImp[], act
         <section className="box">
           <h2>3. Revisa y confirma</h2>
           <p><b>{buenas.length}</b> alumnos listos para importar{malas.length > 0 && <> · <span style={{ color: "var(--co)" }}>{malas.length} con problemas (se omiten)</span></>}. De ellos, {pagos} son de pago.</p>
-          {sinFecha > 0 && <p className="alerta">{sinFecha} alumno(s) de pago no tienen fecha de vencimiento: quedarán "Sin calendario" hasta que les pongas una. Puedes elegir una fecha arriba para todos.</p>}
+          {sinFecha > 0 && <p className="alerta">{sinFecha} alumno(s) de pago no tienen fecha de vencimiento: quedarán "Sin calendario" hasta que les pongas una. Puedes elegir arriba los meses o una fecha para todos.</p>}
           <div className="tbl">
             {lista.slice(0, 8).map((f) => (
               <div key={f.linea} className="ses"><div style={{ flex: 1, minWidth: 0 }}><b>{f.nombre || f.email}</b><small className="mu" style={{ display: "block", overflowWrap: "anywhere" }}>{f.email} · {f.plan || planDef}{f.vence ? " · vence " + f.vence : ""}{f.problema ? " · ⚠ " + f.problema : ""}</small></div></div>
