@@ -1,12 +1,12 @@
--- 0012 · Exámenes solo entre cursos de la ruta y cursos libres para el plan gratuito.
+-- 0012 · Exámenes solo entre cursos de la ruta y cursos libres para el plan gratuito (si ya la corriste, puedes volver a correrla).
 -- Idempotente: se puede ejecutar más de una vez.
 
--- 1) Cursos visibles para el plan gratuito: Primeros pasos, Curso básico, Tutoriales y Scanner Elite.
-update public.cursos set gratis = (
-     nombre ilike 'primeros pasos%'
-  or nombre ilike 'curso b%sico%'
-  or nombre ilike 'tutoriales%'
-  or nombre ilike '%scanner%'
+-- 1) Cursos visibles para el plan gratuito: todos, menos Curso intermedio, Curso avanzado y Data de nivel 2.
+--    (Se define por exclusión para no depender de cómo se llamen Scanner/Escáner Élite o Tutoriales.)
+update public.cursos set gratis = not (
+     nombre ilike '%intermedio%'
+  or nombre ilike '%avanzado%'
+  or nombre ilike '%data%nivel%'
 );
 
 -- 2) Primeros pasos no tiene examen.

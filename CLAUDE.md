@@ -25,7 +25,7 @@ Plataforma propia de la academia ELITE FX (+900 alumnos, migrando desde Skool). 
 
 ## Reglas de negocio
 - Niveles: admin / gratis / miembro (planes `live_trading`, `scanner`). Los miembros tienen acceso de por vida a los cursos; el calendario solo mientras `vence` esté vigente.
-- Gratis: solo cursos marcados "visible para el plan gratuito" (Primeros pasos, Curso básico, Tutoriales y Scanner Elite) , Tutoriales (curso y sección) y Aliados. Calendario, Comunidad, Journal y Noticias son solo para miembros (el admin puede dar accesos puntuales por persona).
+- Gratis: solo cursos marcados "visible para el plan gratuito" (todos menos Curso intermedio, Curso avanzado y Data de nivel 2), la sección Tutoriales y Aliados. Calendario, Comunidad, Journal y Noticias son solo para miembros (el admin puede dar accesos puntuales por persona).
 - Los anuncios los publica solo el admin. El Journal es privado de cada persona.
 - Examen: solo entre cursos de la ruta. Primeros pasos NO tiene examen; básico → intermedio, intermedio → avanzado y avanzado → Data de nivel 2 sí (10 preguntas al azar del banco, 7 correctas; el curso siguiente queda bloqueado hasta aprobar). Los admins no tienen bloqueos.
 - Zona horaria: Paraguay (`America/Asuncion`, UTC-3). Las sesiones fijas (Londres 6:00, Nueva York 10:00, Asia 21:00) se calculan en `lib/horario.ts`.
