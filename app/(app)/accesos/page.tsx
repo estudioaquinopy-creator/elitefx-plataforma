@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { estadoMembresia, perfilActual } from "@/lib/sesion";
+import { clienteAdmin } from "@/lib/supabase/admin";
 import { crearPersona } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -9,23 +10,38 @@ export const dynamic = "force-dynamic";
 type Fila = { id: string; nombre: string; email: string; plan: string; vence: string | null; rol: string };
 const POR_PAGINA = 40;
 const PLAN_TXT: Record<string, string> = { gratis: "Gratuito", live_trading: "Live Trading", scanner: "Scanner" };
+const CUENTAS = [["", "Todas"], ["pendiente", "Invitación pendiente"], ["sin", "Sin ingresar"], ["activa", "Activadas"]];
+const CUENTA_TXT: Record<string, string> = { activa: "Activada", pendiente: "Invitación pendiente", sin: "Sin ingresar" };
 const ESTADOS = [["", "Todos"], ["activo", "Activo"], ["porvencer", "Por vencer"], ["vencido", "Vencido"], ["gratis", "Gratis"], ["sin", "Sin calendario"]];
 
-export default async function Accesos({ searchParams }: { searchParams: { q?: string; e?: string; p?: string; ok?: string; error?: string } }) {
+export default async function Accesos({ searchParams }: { searchParams: { q?: string; e?: string; c?: string; p?: string; ok?: string; error?: string } }) {
   const perfil = await perfilActual();
   if (perfil.rol !== "admin") notFound();
   const { data } = await createClient().from("perfiles").select("id, nombre, email, plan, vence, rol").order("nombre");
   const todos = (data ?? []) as Fila[];
+  // Estado de la cuenta (¿activó o solo tiene la invitación?) desde el sistema de acceso.
+  const estadoCuenta: Record<string, string> = {};
+  const adm = clienteAdmin();
+  if (adm) {
+    for (let pg = 1; pg <= 20; pg++) {
+      const { data: lu } = await adm.auth.admin.listUsers({ page: pg, perPage: 1000 });
+      const us = lu?.users ?? [];
+      for (const u of us) estadoCuenta[u.id] = u.last_sign_in_at ? "activa" : u.invited_at ? "pendiente" : "sin";
+      if (us.length < 1000) break;
+    }
+  }
+  const cta = (f: Fila) => estadoCuenta[f.id] ?? "";
   const norm = (s: string) => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
   const q = norm(searchParams.q ?? "");
   const e = searchParams.e ?? "";
-  const filtrados = todos.filter((f) => (!q || norm(f.nombre + " " + f.email).includes(q)) && (!e || estadoMembresia(f).clave === e));
+  const c = searchParams.c ?? "";
+  const filtrados = todos.filter((f) => (!q || norm(f.nombre + " " + f.email).includes(q)) && (!e || estadoMembresia(f).clave === e) && (!c || cta(f) === c));
   const pag = Math.max(1, Number(searchParams.p) || 1);
   const pagina = filtrados.slice((pag - 1) * POR_PAGINA, pag * POR_PAGINA);
   const total = Math.ceil(filtrados.length / POR_PAGINA);
   const cuenta = (k: string) => todos.filter((f) => estadoMembresia(f).clave === k).length;
   const clave = Array.from({ length: 10 }, () => "abcdefghjkmnpqrstuvwxyz23456789"[Math.floor(Math.random() * 31)]).join("");
-  const url = (p: number) => "/accesos?q=" + encodeURIComponent(searchParams.q ?? "") + "&e=" + e + "&p=" + p;
+  const url = (p: number) => "/accesos?q=" + encodeURIComponent(searchParams.q ?? "") + "&e=" + e + "&c=" + c + "&p=" + p;
 
   return (
     <>
@@ -36,6 +52,7 @@ export default async function Accesos({ searchParams }: { searchParams: { q?: st
         <div className="box"><span className="mu">Activos</span><b>{cuenta("activo")}</b></div>
         <div className="box"><span className="mu">Por vencer (7 días)</span><b>{cuenta("porvencer")}</b></div>
         <div className="box"><span className="mu">Vencidos</span><b>{cuenta("vencido")}</b></div>
+        {adm && <div className="box"><span className="mu">Sin activar la cuenta</span><b>{todos.filter((f) => cta(f) === "pendiente" || cta(f) === "sin").length}</b></div>}
       </div>
 
       {searchParams.ok && <p className="okmsg">{searchParams.ok}</p>}
@@ -80,6 +97,11 @@ export default async function Accesos({ searchParams }: { searchParams: { q?: st
         <label>Estado
           <select name="e" defaultValue={e}>{ESTADOS.map(([k, n]) => <option key={k} value={k}>{n}</option>)}</select>
         </label>
+        {adm && (
+          <label>Cuenta
+            <select name="c" defaultValue={c}>{CUENTAS.map(([k, n]) => <option key={k} value={k}>{n}</option>)}</select>
+          </label>
+        )}
         <button className="btn s" style={{ marginBottom: 14 }}>Filtrar</button>
       </form>
 
@@ -93,6 +115,7 @@ export default async function Accesos({ searchParams }: { searchParams: { q?: st
                 <b>{f.nombre || f.email}</b>
                 <small className="mu" style={{ display: "block", overflowWrap: "anywhere" }}>{f.email} · {f.rol === "admin" ? "Administrador · " : ""}{PLAN_TXT[f.plan]}{f.vence ? " · vence " + new Date(f.vence + "T00:00:00").toLocaleDateString("es-PY") : ""}</small>
               </div>
+              {cta(f) && <span className={"pill " + (cta(f) === "activa" ? "st-activo" : "st-porvencer")}>{CUENTA_TXT[cta(f)]}</span>}
               <span className={"pill st-" + st.clave}>{st.texto}</span>
               <Link className="btn g s" href={"/accesos/" + f.id}>Gestionar</Link>
             </div>
