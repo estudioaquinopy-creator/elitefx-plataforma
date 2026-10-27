@@ -23,7 +23,7 @@ const TIPO = ["type", "tipo"];
 const VOL = ["volume", "volumen"];
 const BEN = ["profit", "beneficio", "ganancia", "resultado"];
 const POS = ["position", "posicion", "ticket"];
-const HORA = ["time", "hora", "tiempo", "fecha"];
+const HORA = ["time", "hora", "tiempo", "fecha", "fechahora", "datetime"];
 const PRECIO = ["price", "precio"];
 const COM = ["commission", "comision"];
 const DIR = ["direction", "direccion"];
@@ -152,7 +152,8 @@ function decodificar(buf: ArrayBuffer): string {
 function filasHtml(texto: string): string[][] {
   const doc = new DOMParser().parseFromString(texto, "text/html");
   return Array.from(doc.querySelectorAll("tr")).map((tr) =>
-    Array.from(tr.children).filter((c) => c.tagName === "TD" || c.tagName === "TH").map((c) => (c.textContent || "").replace(/[\s ]+/g, " ").trim())
+    // Se ignoran las celdas ocultas (class="hidden"): MT5 agrega una en cada fila y correría las columnas.
+    Array.from(tr.children).filter((c) => (c.tagName === "TD" || c.tagName === "TH") && !c.classList.contains("hidden") && !/display\s*:\s*none/i.test(c.getAttribute("style") || "")).map((c) => (c.textContent || "").replace(/[\s ]+/g, " ").trim())
   );
 }
 
