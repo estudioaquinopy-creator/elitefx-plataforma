@@ -18,14 +18,20 @@ export async function bloqueosExamen(sb: SupabaseClient, userId: string, cursos:
   const activos = new Set(((cfg ?? []) as { curso_id: string; activo: boolean }[]).filter((c) => c.activo).map((c) => c.curso_id));
   const aprob = new Set(((ints ?? []) as { curso_id: string }[]).map((i) => i.curso_id));
   const out: Record<string, { id: string; nombre: string }> = {};
-  let falta: { id: string; nombre: string } | null = null;
+  // Cada curso bloqueado muestra el examen del curso inmediato anterior (el más cercano con examen activo).
+  // Si ese ya está aprobado pero falta uno anterior, muestra el primero que falta.
+  let primera: { id: string; nombre: string } | null = null; // primer examen sin aprobar
+  let previa: { id: string; nombre: string } | null = null;  // último curso anterior con examen activo
   // La ruta (primeros pasos → básico → intermedio → avanzado) y, al final, "Data de nivel 2": se desbloquea al aprobar el avanzado.
   const norm = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
   const ruta = cursos.filter((x) => x.grupo === "ruta").sort((a, b) => a.orden - b.orden);
   const data = cursos.filter((x) => x.grupo !== "ruta" && /data.*nivel\s*2/.test(norm(x.nombre)));
   for (const c of [...ruta, ...data]) {
-    if (falta) out[c.id] = falta;
-    else if (activos.has(c.id) && !aprob.has(c.id)) falta = { id: c.id, nombre: c.nombre };
+    if (primera) out[c.id] = previa && !aprob.has(previa.id) ? previa : primera;
+    if (activos.has(c.id)) {
+      if (!aprob.has(c.id) && !primera) primera = { id: c.id, nombre: c.nombre };
+      previa = { id: c.id, nombre: c.nombre };
+    }
   }
   return out;
 }
