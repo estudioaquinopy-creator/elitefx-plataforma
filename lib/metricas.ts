@@ -1,5 +1,20 @@
 // Métricas del Journal a partir de las operaciones de una persona.
-export type OpM = { fecha: string; par: string; resultado: number; cierre?: string | null; creado?: string };
+export type OpM = { fecha: string; par: string; resultado: number; cierre?: string | null; creado?: string; direccion?: string; sesion?: string | null; setup?: string | null; emocion?: string | null; plan?: boolean | null };
+
+export type Grupo = { clave: string; n: number; neto: number; tasa: number; prom: number };
+
+// Agrupa operaciones por una clave (dirección, sesión, estrategia…) y calcula su efectividad. Se omiten las que no tienen el dato.
+export function agrupar(ops: OpM[], clave: (o: OpM) => string | null | undefined): Grupo[] {
+  const mapa = new Map<string, { n: number; neto: number; g: number }>();
+  for (const o of ops) {
+    const k = clave(o);
+    if (!k) continue;
+    const v = mapa.get(k) ?? { n: 0, neto: 0, g: 0 };
+    v.n++; v.neto += o.resultado; if (o.resultado > 0) v.g++;
+    mapa.set(k, v);
+  }
+  return Array.from(mapa, ([k, v]) => ({ clave: k, n: v.n, neto: v.neto, tasa: v.g / v.n, prom: v.neto / v.n })).sort((a, b) => b.neto - a.neto);
+}
 
 export type Metricas = {
   n: number; ganadas: number; perdidas: number; tasa: number; neto: number;

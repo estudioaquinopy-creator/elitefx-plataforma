@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual } from "@/lib/sesion";
 import { fallo } from "@/lib/subida";
+import { EMOCIONES, SESIONES } from "@/lib/journal";
 
 export async function guardarOperacion(f: FormData) {
   const perfil = await perfilActual();
@@ -15,10 +16,26 @@ export async function guardarOperacion(f: FormData) {
   if (!["compra", "venta"].includes(direccion)) fallo("/journal", "Elige la dirección.");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) fallo("/journal", "Elige la fecha.");
   if (!Number.isFinite(resultado)) fallo("/journal", "El resultado debe ser un número (negativo si perdiste).");
-  const { error } = await createClient().from("operaciones").insert({
+  const opc = (k: string) => { const t = String(f.get(k) ?? "").trim().replace(",", "."); if (!t) return null; const n = Number(t); return Number.isFinite(n) ? n : null; };
+  const fila: Record<string, unknown> = {
     user_id: perfil.id, fecha, par, direccion, resultado, notas: String(f.get("notas") ?? "").trim(),
-  });
-  if (error) fallo("/journal", "No se pudo guardar: " + error.message);
+  };
+  // Los datos opcionales solo se envían si se completaron.
+  const lotes = opc("volumen"), pa = opc("precio_ap"), pc = opc("precio_ci");
+  if (lotes != null && lotes >= 0) fila.volumen = lotes;
+  if (pa != null) fila.precio_ap = pa;
+  if (pc != null) fila.precio_ci = pc;
+  const sesion = String(f.get("sesion") ?? "");
+  if (SESIONES.includes(sesion)) fila.sesion = sesion;
+  const emocion = String(f.get("emocion") ?? "");
+  if (EMOCIONES.includes(emocion)) fila.emocion = emocion;
+  const setup = String(f.get("setup") ?? "").trim().slice(0, 60);
+  if (setup) fila.setup = setup;
+  const plan = String(f.get("respeto_plan") ?? "");
+  if (plan === "si") fila.respeto_plan = true;
+  if (plan === "no") fila.respeto_plan = false;
+  const { error } = await createClient().from("operaciones").insert(fila);
+  if (error) fallo("/journal", error.message.includes("column") ? "Falta correr la migración 0017 en Supabase para guardar estos datos." : "No se pudo guardar: " + error.message);
   revalidatePath("/journal");
   redirect("/journal");
 }

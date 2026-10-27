@@ -3,16 +3,33 @@ import Link from "next/link";
 import { perfilActual, permisos, hoyPY } from "@/lib/sesion";
 import ImportarMT5 from "@/components/ImportarMT5";
 import ConfirmarEnvio from "@/components/ConfirmarEnvio";
-import { calcular } from "@/lib/metricas";
+import BotonImprimir from "@/components/BotonImprimir";
+import { agrupar, calcular, type Grupo } from "@/lib/metricas";
+import { EMOCIONES, SESIONES } from "@/lib/journal";
 import { borrarImportadas, borrarOperacion, guardarOperacion } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-type Op = { id: string; fecha: string; par: string; direccion: string; resultado: number; notas: string; origen?: string; volumen?: number | null; cierre?: string | null; created_at?: string };
+type Op = { id: string; fecha: string; par: string; direccion: string; resultado: number; notas: string; origen?: string; sesion?: string | null; setup?: string | null; emocion?: string | null; respeto_plan?: boolean | null; volumen?: number | null; cierre?: string | null; created_at?: string };
 const PARES = ["XAUUSD", "EURUSD", "GBPUSD", "USDCAD"];
 const money = (n: number) => (n < 0 ? "-$" : "$") + Math.abs(n).toLocaleString("es-PY", { maximumFractionDigits: 2 });
 
-export default async function Journal({ searchParams }: { searchParams: { error?: string } }) {
+function Tabla({ titulo, g }: { titulo: string; g: Grupo[] }) {
+  if (!g.length) return null;
+  return (
+    <section className="box">
+      <h2>{titulo}</h2>
+      {g.map((x) => (
+        <div key={x.clave} className="ses">
+          <div style={{ flex: 1 }}><b>{x.clave}</b><small className="mu" style={{ display: "block" }}>{x.n} operaciones · {Math.round(x.tasa * 100)}% de aciertos · promedio {money(x.prom)}</small></div>
+          <span className={x.neto < 0 ? "neg" : "pos"}>{money(x.neto)}</span>
+        </div>
+      ))}
+    </section>
+  );
+}
+
+export default async function Journal({ searchParams }: { searchParams: { error?: string; p?: string; d?: string; h?: string } }) {
   const perfil = await perfilActual();
   const perm = await permisos(perfil);
   if (!perm.journal) {
@@ -32,10 +49,35 @@ export default async function Journal({ searchParams }: { searchParams: { error?
     todas.push(...lote);
     if (lote.length < 1000) break;
   }
-  const ops = todas.map((o) => ({ ...o, resultado: Number(o.resultado) }));
+  const hoy = hoyPY();
+  const sumaDias = (f: string, d: number) => { const x = new Date(f + "T00:00:00Z"); x.setUTCDate(x.getUTCDate() + d); return x.toISOString().slice(0, 10); };
+  const per = searchParams.p ?? "todo";
+  let desde = "", hasta = "";
+  if (per === "mes") desde = hoy.slice(0, 8) + "01";
+  else if (per === "30") desde = sumaDias(hoy, -29);
+  else if (per === "90") desde = sumaDias(hoy, -89);
+  else if (per === "anio") desde = hoy.slice(0, 4) + "-01-01";
+  else if (per === "rango") { desde = /^\d{4}-\d{2}-\d{2}$/.test(searchParams.d ?? "") ? searchParams.d! : ""; hasta = /^\d{4}-\d{2}-\d{2}$/.test(searchParams.h ?? "") ? searchParams.h! : ""; }
+  const total = todas.length;
+  const ops = todas.map((o) => ({ ...o, resultado: Number(o.resultado) })).filter((o) => (!desde || o.fecha >= desde) && (!hasta || o.fecha <= hasta));
   const n = ops.length;
-  const m = calcular(ops.map((o) => ({ fecha: o.fecha, par: o.par, resultado: o.resultado, cierre: o.cierre ?? null, creado: o.created_at })));
-  const importadas = ops.filter((o) => o.origen === "mt5").length;
+  const om = ops.map((o) => ({ fecha: o.fecha, par: o.par, resultado: o.resultado, cierre: o.cierre ?? null, creado: o.created_at, direccion: o.direccion, sesion: o.sesion, setup: o.setup, emocion: o.emocion, plan: o.respeto_plan ?? null }));
+  const m = calcular(om);
+  const gDir = agrupar(om, (o) => (o.direccion === "compra" ? "Compras" : o.direccion === "venta" ? "Ventas" : null));
+  const gSes = agrupar(om, (o) => o.sesion);
+  const gSet = agrupar(om, (o) => o.setup);
+  const gEmo = agrupar(om, (o) => o.emocion);
+  const gPlan = agrupar(om, (o) => (o.plan === true ? "Siguió su plan" : o.plan === false ? "No siguió su plan" : null));
+  const pct = (x: number) => Math.round(x * 100) + "%";
+  const comparar = (g: Grupo[], fn: (x: Grupo, y: Grupo) => string) => (g.length >= 2 && g.every((x) => x.n >= 3) ? fn(g[0], g[g.length - 1]) : "");
+  const frases = [
+    comparar([...gDir].sort((a, b) => b.tasa - a.tasa), (x, y) => "Tu efectividad es mayor en " + x.clave.toLowerCase() + ": " + pct(x.tasa) + " de aciertos (" + money(x.neto) + ") frente a " + pct(y.tasa) + " en " + y.clave.toLowerCase() + " (" + money(y.neto) + ")."),
+    comparar(gSes, (x) => "Tu mejor sesión por resultado es " + x.clave + " (" + money(x.neto) + ", " + pct(x.tasa) + " de aciertos)."),
+    comparar(gSet, (x) => "Tu estrategia con mejor resultado es \"" + x.clave + "\" (" + money(x.neto) + ")."),
+    comparar([...gPlan].sort((a, b) => a.clave.localeCompare(b.clave, "es")), () => { const si = gPlan.find((x) => x.clave === "Siguió su plan"), no = gPlan.find((x) => x.clave === "No siguió su plan"); return si && no ? "Cuando sigues tu plan promedias " + money(si.prom) + " por operación; cuando no, " + money(no.prom) + "." : ""; }),
+  ].filter(Boolean);
+  const setupsUsados = Array.from(new Set(todas.map((o) => o.setup).filter(Boolean) as string[]));
+  const importadas = todas.filter((o) => o.origen === "mt5").length;
   const visibles = ops.slice(0, 100);
   const dec = (x: number | null, d = 2) => (x == null ? "—" : x.toLocaleString("es-PY", { maximumFractionDigits: d }));
 
@@ -60,7 +102,7 @@ export default async function Journal({ searchParams }: { searchParams: { error?
         <div className="box"><span className="mu">Mejor / peor</span><b>{n ? money(m.mejor) + " / " + money(m.peor) : "—"}</b></div>
       </div>
 
-      <section className="box">
+      <section className="box no-print">
         <h2>Importar reporte de MetaTrader 5</h2>
         <p className="mu">Sube el reporte de tu historial y se cargan todas tus operaciones y métricas de una vez. Si vuelves a subir el mismo reporte, no se duplican.</p>
         <details>
@@ -78,6 +120,22 @@ export default async function Journal({ searchParams }: { searchParams: { error?
           </form>
         )}
       </section>
+
+      {total > 0 && (
+        <form method="get" className="box fm no-print" style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, alignItems: "flex-end" }}>
+          <label>Período del reporte
+            <select name="p" defaultValue={per}>
+              <option value="todo">Todo el historial</option><option value="mes">Este mes</option><option value="30">Últimos 30 días</option>
+              <option value="90">Últimos 90 días</option><option value="anio">Este año</option><option value="rango">Entre fechas…</option>
+            </select>
+          </label>
+          <label>Desde<input type="date" name="d" defaultValue={searchParams.d ?? ""} /></label>
+          <label>Hasta<input type="date" name="h" defaultValue={searchParams.h ?? ""} /></label>
+          <button className="btn s" style={{ marginBottom: 14 }}>Ver</button>
+          <BotonImprimir />
+        </form>
+      )}
+      {total > 0 && n === 0 && <p className="mu">No hay operaciones en ese período.</p>}
 
       {n > 0 && (
         <>
@@ -113,6 +171,23 @@ export default async function Journal({ searchParams }: { searchParams: { error?
             </section>
           </div>
 
+          {frases.length > 0 && (
+            <section className="box">
+              <h2>Qué dicen tus números</h2>
+              {frases.map((f, i) => <p key={i} style={{ margin: "6px 0" }}>• {f}</p>)}
+            </section>
+          )}
+          <div className="cols">
+            <Tabla titulo="Compras vs ventas" g={gDir} />
+            <Tabla titulo="Por sesión" g={gSes} />
+          </div>
+          <div className="cols">
+            <Tabla titulo="Por estrategia" g={gSet} />
+            <Tabla titulo="Por estado emocional" g={gEmo} />
+          </div>
+          <Tabla titulo="Seguir o no tu plan" g={gPlan} />
+          {gSes.length + gSet.length + gEmo.length + gPlan.length === 0 && <p className="mu no-print">Para ver más comparaciones (por sesión, estrategia, emoción y si seguiste tu plan), completa esos datos al anotar tus operaciones.</p>}
+
           <section className="box">
             <h2>Por par</h2>
             {m.porPar.slice(0, 12).map((x) => (
@@ -125,7 +200,7 @@ export default async function Journal({ searchParams }: { searchParams: { error?
         </>
       )}
 
-      <div className="cols">
+      <div className="cols no-print">
         <section className="box">
           <h2>Nueva operación</h2>
           <form action={guardarOperacion} className="fm">
@@ -140,6 +215,26 @@ export default async function Journal({ searchParams }: { searchParams: { error?
               </label>
             </div>
             <datalist id="pares">{PARES.map((p) => <option key={p} value={p} />)}</datalist>
+            <div className="f2">
+              <label>Lotes (opcional)<input name="volumen" inputMode="decimal" placeholder="Ej.: 0.10" /></label>
+              <label>Sesión (opcional)
+                <select name="sesion" defaultValue=""><option value="">—</option>{SESIONES.map((x) => <option key={x}>{x}</option>)}</select>
+              </label>
+            </div>
+            <div className="f2">
+              <label>Precio de entrada (opcional)<input name="precio_ap" inputMode="decimal" /></label>
+              <label>Precio de salida (opcional)<input name="precio_ci" inputMode="decimal" /></label>
+            </div>
+            <div className="f2">
+              <label>Estrategia / setup (opcional)<input name="setup" list="setups" maxLength={60} placeholder="Ej.: Ruptura, Reversión…" /></label>
+              <label>Estado emocional (opcional)
+                <select name="emocion" defaultValue=""><option value="">—</option>{EMOCIONES.map((x) => <option key={x}>{x}</option>)}</select>
+              </label>
+            </div>
+            <datalist id="setups">{setupsUsados.map((x) => <option key={x} value={x} />)}</datalist>
+            <label>¿Seguiste tu plan? (opcional)
+              <select name="respeto_plan" defaultValue=""><option value="">—</option><option value="si">Sí, seguí mi plan</option><option value="no">No, me salí del plan</option></select>
+            </label>
             <label>Notas<textarea name="notas" rows={3} placeholder="¿Por qué entraste? ¿Qué aprendiste?" /></label>
             <button className="btn s">Guardar operación</button>
           </form>
@@ -153,7 +248,7 @@ export default async function Journal({ searchParams }: { searchParams: { error?
             <div key={o.id} className="ses">
               <div style={{ flex: 1 }}>
                 <b>{o.par} · {o.direccion === "compra" ? "Compra" : "Venta"}</b>
-                <small className="mu" style={{ display: "block" }}>{new Date(o.fecha + "T00:00:00").toLocaleDateString("es-PY")}{o.volumen ? " · " + o.volumen + " lotes" : ""}{o.origen === "mt5" ? " · MT5" : ""}{o.notas ? " · " + o.notas : ""}</small>
+                <small className="mu" style={{ display: "block" }}>{new Date(o.fecha + "T00:00:00").toLocaleDateString("es-PY")}{o.volumen ? " · " + o.volumen + " lotes" : ""}{o.origen === "mt5" ? " · MT5" : ""}{o.sesion ? " · " + o.sesion : ""}{o.setup ? " · " + o.setup : ""}{o.respeto_plan === false ? " · fuera del plan" : ""}{o.notas ? " · " + o.notas : ""}</small>
               </div>
               <span className={o.resultado < 0 ? "neg" : "pos"}>{money(o.resultado)}</span>
               <form action={borrarOperacion}>
