@@ -58,7 +58,7 @@ export default function Registro() {
           </>
         ) : (
           <>
-            <p className="sub">Accede al Curso básico y a los aliados de ELITE FX.</p>
+            <p className="sub">Accede al Curso básico y a nuestro broker recomendado.</p>
             <label>Nombre completo<input autoComplete="name" required value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre y apellido" /></label>
             <label>Teléfono / WhatsApp<input type="tel" autoComplete="tel" required value={tel} onChange={(e) => setTel(e.target.value)} placeholder="+595 981 123456" /></label>
             <label>Correo electrónico<input type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></label>

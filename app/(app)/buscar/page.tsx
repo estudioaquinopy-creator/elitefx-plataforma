@@ -49,7 +49,7 @@ export default async function Buscar({ searchParams }: { searchParams: { q?: str
       const pts = puntuar([[l.titulo, 5], [cn, 2], [l.descripcion, 2], [mats, 2]]);
       if (pts) res.push({ href: "/cursos/" + l.curso_id + "?l=" + l.id, titulo: l.titulo, detalle: cn, tipo: "Lección", puntos: pts });
     }
-    const secciones: [string, string][] = [["Inicio", "/inicio"], ["Cursos", "/cursos"], ["Calendario", "/calendario"], ["Tutoriales", "/tutoriales"], ["Aliados", "/aliados"], ["Comunidad", "/comunidad"], ["Journal", "/journal"]];
+    const secciones: [string, string][] = [["Inicio", "/inicio"], ["Cursos", "/cursos"], ["Calendario", "/calendario"], ["Tutoriales", "/tutoriales"], ["Broker", "/aliados"], ["Comunidad", "/comunidad"], ["Journal", "/journal"]];
     for (const [n, h] of secciones) {
       const pts = puntuar([[n, 3]]);
       if (pts) res.push({ href: h, titulo: n, detalle: "Sección de la plataforma", tipo: "Sección", puntos: pts });

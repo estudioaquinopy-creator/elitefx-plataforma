@@ -40,15 +40,15 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
 
   return (
     <>
-      <h1>Aliados</h1>
-      <p className="sub">Nuestros aliados para operar, fondearte y usar criptomonedas.</p>
+      <h1>Broker recomendado</h1>
+      <p className="sub">Abre tu cuenta con Liquid, nuestro broker recomendado, y empieza a operar con la fórmula.</p>
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
 
       {admin && (
         <>
           <details className="box adm">
-            <summary>+ Agregar aliado</summary>
-            <form action={crearAliado} className="fm"><Campos /><button className="btn s">Agregar aliado</button></form>
+            <summary>+ Agregar broker</summary>
+            <form action={crearAliado} className="fm"><Campos /><button className="btn s">Agregar broker</button></form>
           </details>
           <details className="box adm">
             <summary>Texto legal (divulgación)</summary>
@@ -63,7 +63,7 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
 
       <div className="cols">
         <div>
-          {aliados.length === 0 && <section className="box"><p className="mu">Aún no hay aliados cargados.</p></section>}
+          {aliados.length === 0 && <section className="box"><p className="mu">Aún no hay un broker cargado.</p></section>}
           {aliados.map((a) => {
             const vid = youtubeId(a.tutorial_url);
             return (
