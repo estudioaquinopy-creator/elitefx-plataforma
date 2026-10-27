@@ -241,7 +241,8 @@ export default async function Journal({ searchParams }: { searchParams: { error?
         </section>
 
         <section className="box">
-          <h2>Tus operaciones</h2>
+          <details>
+            <summary style={{ cursor: "pointer", fontSize: 18, fontWeight: 700 }}>Tus operaciones ({n}) — clic para desplegar</summary>
           {n === 0 && <p className="mu">Aún no registraste operaciones.</p>}
           {n > 100 && <p className="mu">Mostrando las últimas 100 de {n}.</p>}
           {visibles.map((o) => (
@@ -257,6 +258,7 @@ export default async function Journal({ searchParams }: { searchParams: { error?
               </form>
             </div>
           ))}
+          </details>
         </section>
       </div>
     </>
