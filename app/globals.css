@@ -598,3 +598,7 @@ button.cargando{opacity:.75;cursor:wait}
 .stipo{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;color:#fff;background:var(--c,var(--ac))}
 .sdet{display:flex;flex-direction:column;gap:2px;margin:0 0 12px}
 .sdet b{font-size:12px;color:var(--mu);text-transform:uppercase;letter-spacing:.04em}
+
+/* Botón de eliminar: rojo con texto blanco en ambos temas */
+.btn.elim,html[data-tema="claro"] .btn.elim{background:#d62828;color:#fff;border:0;width:auto}
+.btn.elim:hover{background:#b91f1f}
