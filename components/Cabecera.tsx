@@ -15,10 +15,11 @@ type Props = {
   noLeidas: number;
   real: boolean;
   vista: string;
+  enLinea?: React.ReactNode;
   onMenu: () => void;
 };
 
-export default function Cabecera({ nombre, email, iniciales, avatar, notifs, noLeidas, real, vista, onMenu }: Props) {
+export default function Cabecera({ nombre, email, iniciales, avatar, notifs, noLeidas, real, vista, enLinea, onMenu }: Props) {
   const [abierto, setAbierto] = useState<"" | "n" | "p">("");
   const cerrar = () => setAbierto("");
   return (
@@ -35,6 +36,8 @@ export default function Cabecera({ nombre, email, iniciales, avatar, notifs, noL
         </svg>
         <input type="search" name="q" placeholder="Buscar lecciones, tutoriales, sesiones…" aria-label="Buscar" />
       </form>
+
+      {enLinea}
 
       <Tema />
 

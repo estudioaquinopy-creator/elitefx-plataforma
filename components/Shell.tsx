@@ -7,9 +7,9 @@ import Cabecera, { type Notif } from "./Cabecera";
 
 type Item = { href: string; label: string; lock: boolean; icon: string };
 
-type Props = { items: Item[]; nombre: string; email: string; iniciales: string; avatar?: string; notifs: Notif[]; noLeidas: number; real: boolean; vista: string; redes: GrupoRedes[]; editarRedes: boolean; children: React.ReactNode };
+type Props = { items: Item[]; nombre: string; email: string; iniciales: string; avatar?: string; notifs: Notif[]; noLeidas: number; real: boolean; vista: string; redes: GrupoRedes[]; editarRedes: boolean; enLinea?: React.ReactNode; children: React.ReactNode };
 
-export default function Shell({ items, nombre, email, iniciales, avatar, notifs, noLeidas, real, vista, redes, editarRedes, children }: Props) {
+export default function Shell({ items, nombre, email, iniciales, avatar, notifs, noLeidas, real, vista, redes, editarRedes, enLinea, children }: Props) {
   const [open, setOpen] = useState(false);
   const path = usePathname();
   return (
@@ -49,7 +49,7 @@ export default function Shell({ items, nombre, email, iniciales, avatar, notifs,
         )}
       </aside>
       <main className="main" data-sec={path.split("/")[1] || ""}>
-        <Cabecera nombre={nombre} email={email} iniciales={iniciales} avatar={avatar} notifs={notifs} noLeidas={noLeidas} real={real} vista={vista} onMenu={() => setOpen(!open)} />
+        <Cabecera nombre={nombre} email={email} iniciales={iniciales} avatar={avatar} notifs={notifs} noLeidas={noLeidas} real={real} vista={vista} enLinea={enLinea} onMenu={() => setOpen(!open)} />
         {children}
       </main>
     </div>
