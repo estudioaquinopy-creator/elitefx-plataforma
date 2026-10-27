@@ -423,7 +423,7 @@ html[data-tema="claro"] .live.pre b{color:#c4262b}
 
 /* Logo oficial */
 .slogo{padding:6px 10px 20px}.slogo img{display:block;width:100%;max-width:170px;height:auto}
-.logo{text-align:center;margin-bottom:18px}.logo img{display:inline-block;width:100%;max-width:240px;height:auto}
+.logo{text-align:center;margin-bottom:18px}.logo img{display:inline-block;width:100%;max-width:168px;height:auto}
 
 /* Selector de archivos */
 input[type=file]{display:block;width:100%;min-height:0;padding:8px;border:1.5px dashed var(--bd);border-radius:12px;background:var(--sf2);color:var(--mu);font:500 13px 'Manrope',sans-serif;cursor:pointer;transition:border-color .15s}
