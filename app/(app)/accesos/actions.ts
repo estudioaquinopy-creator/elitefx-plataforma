@@ -162,3 +162,37 @@ export async function nuevaClave(f: FormData) {
   if (error) fallo(ruta, "No se pudo cambiar la contraseña: " + error.message);
   aviso(ruta, "Contraseña actualizada. Pásasela a la persona.");
 }
+
+// Envía a una persona que ya tiene cuenta el correo para que cree/cambie su contraseña y entre a la plataforma.
+export async function enviarInvitacion(f: FormData) {
+  await soloAdmin();
+  const id = String(f.get("id") ?? "");
+  const ruta = "/accesos/" + id;
+  const { data: act } = await createClient().from("perfiles").select("email, rol").eq("id", id).single();
+  if (!act) fallo(ruta, "No se encontró la persona.");
+  const email = String(act!.email ?? "");
+  if (!email) fallo(ruta, "Esta persona no tiene correo registrado.");
+  const h = headers();
+  const origen = h.get("origin") || ("https://" + (h.get("x-forwarded-host") || h.get("host")));
+  const { error } = await createClient().auth.resetPasswordForEmail(email, { redirectTo: origen + "/nueva-clave" });
+  if (error) fallo(ruta, "No se pudo enviar el correo: " + error.message);
+  aviso(ruta, "Listo: se envió el correo a " + email + " para que cree su contraseña y entre.");
+}
+
+// Elimina la cuenta y todo lo suyo (perfil, avances, publicaciones, journal). No se puede deshacer.
+export async function eliminarPersona(f: FormData) {
+  await soloAdmin();
+  const yo = await perfilActual();
+  const id = String(f.get("id") ?? "");
+  const ruta = "/accesos/" + id;
+  if (id === yo.id) fallo(ruta, "No puedes eliminar tu propia cuenta.");
+  const { data: act } = await createClient().from("perfiles").select("email, rol").eq("id", id).single();
+  if (!act) fallo(ruta, "No se encontró la persona.");
+  if (act!.rol === "admin") fallo(ruta, "Primero quítale el rol de administrador y luego elimínala.");
+  const admin = clienteAdmin();
+  if (!admin) fallo(ruta, "Falta configurar SUPABASE_SERVICE_ROLE_KEY en Vercel.");
+  const { error } = await admin!.auth.admin.deleteUser(id);
+  if (error) fallo(ruta, "No se pudo eliminar: " + error.message);
+  revalidatePath("/accesos");
+  aviso("/accesos", "Cuenta eliminada.");
+}

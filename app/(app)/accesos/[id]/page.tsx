@@ -1,8 +1,9 @@
 import Link from "next/link";
+import ConfirmarEnvio from "@/components/ConfirmarEnvio";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { estadoMembresia, perfilActual } from "@/lib/sesion";
-import { cambiarPlan, cambiarRol, nuevaClave, fijarFecha, guardarAccesos, quitarCalendario, sumarCalendario } from "../actions";
+import { cambiarPlan, cambiarRol, eliminarPersona, enviarInvitacion, nuevaClave, fijarFecha, guardarAccesos, quitarCalendario, sumarCalendario } from "../actions";
 
 export const dynamic = "force-dynamic";
 
@@ -89,6 +90,13 @@ export default async function Gestionar({ params, searchParams }: { params: { id
             <button className="btn g s" style={{ marginBottom: 14 }}>Cambiar contraseña</button>
           </form>
 
+          <h2 style={{ marginTop: 22 }}>Invitación</h2>
+          <p className="mu">Envía a {p.email} un correo para que cree su contraseña y entre a la plataforma.</p>
+          <form action={enviarInvitacion} className="fm">
+            <input type="hidden" name="id" value={p.id} />
+            <button className="btn g s">Enviar invitación por correo</button>
+          </form>
+
           <h2 style={{ marginTop: 22 }}>Accesos puntuales</h2>
           <p className="mu">Útil para dar acceso a algo concreto sin cambiar el plan (por ejemplo, a una persona gratuita).</p>
           <form action={guardarAccesos} className="fm">
@@ -100,6 +108,17 @@ export default async function Gestionar({ params, searchParams }: { params: { id
           </form>
         </section>
       </div>
+
+      {p.id !== yo.id && (
+        <section className="box" style={{ marginTop: 18 }}>
+          <h2>Eliminar cuenta</h2>
+          <p className="mu">Borra a {nombre} de la plataforma junto con su progreso, publicaciones y journal. No se puede deshacer.{p.rol === "admin" ? " Para eliminar a un administrador, primero quítale el rol." : ""}</p>
+          <form action={eliminarPersona} className="fm">
+            <input type="hidden" name="id" value={p.id} />
+            <ConfirmarEnvio mensaje={"¿Eliminar definitivamente a " + nombre + "? No se puede deshacer."} className="btn d">Eliminar cuenta</ConfirmarEnvio>
+          </form>
+        </section>
+      )}
     </>
   );
 }
