@@ -14,7 +14,7 @@ Plataforma propia de la academia ELITE FX (+900 alumnos, migrando desde Skool). 
 - Cambiar una variable exige un redeploy.
 
 ## Base de datos
-- Migraciones en `supabase/migrations/` (0001…0013). **Se ejecutan a mano** en Supabase → SQL Editor, en orden. Si agregas una, créala idempotente (`if not exists`, `drop policy if exists`) y avisa al dueño que la corra antes de usar la función nueva.
+- Migraciones en `supabase/migrations/` (0001…0014). **Se ejecutan a mano** en Supabase → SQL Editor, en orden. Si agregas una, créala idempotente (`if not exists`, `drop policy if exists`) y avisa al dueño que la corra antes de usar la función nueva.
 - Seguridad por RLS: helpers `es_admin()`, `es_miembro()`, `tiene_acceso(sec)`. Los alumnos solo pueden editar `nombre`, `telefono`, `avatar_url`, `notif_leidas_at` de su perfil.
 - Examen: las respuestas correctas nunca salen de la base (`examen_preguntas` y `calificar_examen` son funciones `security definer`).
 
