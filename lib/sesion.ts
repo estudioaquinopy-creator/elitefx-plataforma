@@ -74,7 +74,7 @@ export const permisos = cache(async (p: Perfil): Promise<Permisos> => {
     miembro,
     cursos: miembro || ov.has("cursos"),
     calendario: admin || (p.plan !== "gratis" && vigente) || ov.has("calendario"),
-    tutoriales: miembro || ov.has("tutoriales"),
+    tutoriales: true, // libre también para el plan gratuito
     comunidad: miembro || ov.has("comunidad"),
     journal: miembro || ov.has("journal"),
     noticias: miembro || ov.has("noticias"),
