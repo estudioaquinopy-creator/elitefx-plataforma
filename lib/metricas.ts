@@ -22,6 +22,8 @@ export type Metricas = {
   promGanada: number; promPerdida: number; payoff: number | null; esperanza: number;
   mejor: number; peor: number; ddMax: number; rachaG: number; rachaP: number;
   curva: number[];
+  curvaFechas: string[]; // fecha (AAAA-MM-DD) de cada punto de la curva; el primero es la fecha de la primera operación
+  ddPico: number;       // resultado acumulado en el pico previo al drawdown máximo
   porPar: { par: string; n: number; neto: number; tasa: number }[];
   porDia: { dia: string; n: number; neto: number }[];
 };
@@ -32,17 +34,20 @@ export function calcular(ops: OpM[]): Metricas {
   const orden = [...ops].sort((a, b) => ((a.cierre || a.fecha) + (a.creado || "")).localeCompare((b.cierre || b.fecha) + (b.creado || "")));
   let neto = 0, gt = 0, pt = 0, g = 0, p = 0, pico = 0, dd = 0, rg = 0, rp = 0, mg = 0, mp = 0;
   const curva: number[] = [0];
+  const curvaFechas: string[] = orden.length ? [(orden[0].cierre || orden[0].fecha).slice(0, 10)] : [];
+  let ddPico = 0;
   const pares = new Map<string, { n: number; neto: number; g: number }>();
   const dias = DIAS.map((d) => ({ dia: d, n: 0, neto: 0 }));
   for (const o of orden) {
     const r = o.resultado;
     neto += r;
     curva.push(Math.round(neto * 100) / 100);
+    curvaFechas.push((o.cierre || o.fecha).slice(0, 10));
     if (r > 0) { g++; gt += r; rg++; rp = 0; mg = Math.max(mg, rg); }
     else if (r < 0) { p++; pt += r; rp++; rg = 0; mp = Math.max(mp, rp); }
     else { rg = 0; rp = 0; }
     pico = Math.max(pico, neto);
-    dd = Math.max(dd, pico - neto);
+    if (pico - neto > dd) { dd = pico - neto; ddPico = pico; }
     const pr = pares.get(o.par) ?? { n: 0, neto: 0, g: 0 };
     pr.n++; pr.neto += r; if (r > 0) pr.g++;
     pares.set(o.par, pr);
@@ -58,7 +63,7 @@ export function calcular(ops: OpM[]): Metricas {
     esperanza: n ? neto / n : 0,
     mejor: n ? Math.max(...orden.map((o) => o.resultado)) : 0,
     peor: n ? Math.min(...orden.map((o) => o.resultado)) : 0,
-    ddMax: dd, rachaG: mg, rachaP: mp, curva,
+    ddMax: dd, rachaG: mg, rachaP: mp, curva, curvaFechas, ddPico,
     porPar: Array.from(pares, ([par, v]) => ({ par, n: v.n, neto: v.neto, tasa: v.g / v.n })).sort((a, b) => b.neto - a.neto),
     porDia: dias,
   };

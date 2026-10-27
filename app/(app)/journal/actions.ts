@@ -92,3 +92,14 @@ export async function borrarImportadas() {
   revalidatePath("/journal");
   redirect("/journal");
 }
+
+// Capital inicial de la cuenta: es la base de todos los porcentajes del Journal.
+export async function guardarCapital(f: FormData) {
+  const perfil = await perfilActual();
+  const capital = Number(String(f.get("capital") ?? "").replace(/\s/g, "").replace(",", "."));
+  if (!Number.isFinite(capital) || capital < 0) fallo("/journal", "El capital inicial debe ser un número positivo.");
+  const { error } = await createClient().from("journal_config").upsert({ user_id: perfil.id, capital_inicial: capital });
+  if (error) fallo("/journal", error.message.includes("journal_config") ? "Falta correr la migración 0018 en Supabase." : "No se pudo guardar: " + error.message);
+  revalidatePath("/journal");
+  redirect("/journal");
+}
