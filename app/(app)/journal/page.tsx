@@ -110,7 +110,7 @@ export default async function Journal({ searchParams }: { searchParams: { error?
           <ol className="mu">
             <li>En MetaTrader 5 abre la pestaña <b>Historial</b> (abajo, en la caja de herramientas) y elige el período que quieres (por ejemplo, "Todo el historial").</li>
             <li>Haz clic derecho sobre la tabla → <b>Reporte</b> → <b>HTML</b> o <b>Excel (XLSX)</b>.</li>
-            <li>Guarda el archivo y súbelo aquí. En el celular, MT5 también permite compartir el reporte desde Historial.</li>
+            <li>Guarda el archivo y súbelo aquí (puedes subirlo desde el celular si el archivo está guardado en él). El reporte que genera la app de MT5 en el celular sale en PDF, y por ahora no se puede importar: para HTML o Excel usa MT5 en una computadora.</li>
           </ol>
         </details>
         <ImportarMT5 />
