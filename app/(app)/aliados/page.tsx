@@ -54,7 +54,7 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
             <summary>Texto legal (divulgación)</summary>
             <form action={guardarTextos} className="fm">
               <input type="hidden" name="ruta" value="/aliados" />
-              <label>Texto legal<textarea name="aliados_legal" rows={3} defaultValue={aj.aliados_legal ?? ""} /></label>
+              <label>Texto legal<textarea name="aliados_legal" rows={8} defaultValue={aj.aliados_legal ?? ""} /></label>
               <button className="btn s">Guardar</button>
             </form>
           </details>
@@ -94,7 +94,7 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
               </section>
             );
           })}
-          <p className="note">{aj.aliados_legal}</p>
+          {aj.aliados_legal && <p className="note" style={{ lineHeight: 1.55 }}>{aj.aliados_legal}</p>}
         </div>
         <section className="box">
           <div className="hd"><h2>Tus primeros pasos</h2></div>
