@@ -63,10 +63,9 @@ export default async function Gestionar({ params, searchParams }: { params: { id
           <form action={cambiarPlan} className="fm">
             <input type="hidden" name="id" value={p.id} />
             <label>Plan
-              <select name="plan" defaultValue={p.plan}>
+              <select name="plan" defaultValue={p.plan === "gratis" ? "gratis" : "live_trading"}>
                 <option value="gratis">Gratuito</option>
-                <option value="live_trading">Live Trading</option>
-                <option value="scanner">Scanner</option>
+                <option value="live_trading">VIP</option>
               </select>
             </label>
             <button className="btn g s">Guardar plan</button>

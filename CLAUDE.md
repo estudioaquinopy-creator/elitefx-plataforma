@@ -14,7 +14,7 @@ Plataforma propia de la academia ELITE FX (+900 alumnos, migrando desde Skool). 
 - Cambiar una variable exige un redeploy.
 
 ## Base de datos
-- Migraciones en `supabase/migrations/` (0001…0019). **Se ejecutan a mano** en Supabase → SQL Editor, en orden. Si agregas una, créala idempotente (`if not exists`, `drop policy if exists`) y avisa al dueño que la corra antes de usar la función nueva.
+- Migraciones en `supabase/migrations/` (0001…0020). **Se ejecutan a mano** en Supabase → SQL Editor, en orden. Si agregas una, créala idempotente (`if not exists`, `drop policy if exists`) y avisa al dueño que la corra antes de usar la función nueva.
 - Seguridad por RLS: helpers `es_admin()`, `es_miembro()`, `tiene_acceso(sec)`. Los alumnos solo pueden editar `nombre`, `telefono`, `avatar_url`, `notif_leidas_at` de su perfil.
 - Examen: las respuestas correctas nunca salen de la base (`examen_preguntas` y `calificar_examen` son funciones `security definer`).
 
@@ -24,7 +24,7 @@ Plataforma propia de la academia ELITE FX (+900 alumnos, migrando desde Skool). 
 - Plan gratis de Resend: 100 correos por día. Tenerlo en cuenta para invitaciones masivas.
 
 ## Reglas de negocio
-- Niveles: admin / gratis / miembro (planes `live_trading`, `scanner`). Los miembros tienen acceso de por vida a los cursos; el calendario solo mientras `vence` esté vigente.
+- Niveles: admin / miembro gratuito / miembro VIP. Solo hay dos planes: `gratis` y VIP (guardado como `live_trading`; `scanner` es un valor antiguo y se trata igual que VIP; la migración 0020 lo unifica). El admin elige 1, 2 o 3 meses de calendario VIP. Los miembros tienen acceso de por vida a los cursos; el calendario solo mientras `vence` esté vigente.
 - Gratis: solo cursos marcados "visible para el plan gratuito" (todos menos Curso intermedio, Curso avanzado y Data de nivel 2), la sección Tutoriales y el Broker recomendado (ruta `/aliados`). Calendario, Comunidad, Journal y Noticias son solo para miembros (el admin puede dar accesos puntuales por persona).
 - Los anuncios los publica solo el admin. El Journal es privado de cada persona;  El capital inicial de cada persona (tabla `journal_config`, migración 0018) es la base de todos los porcentajes del Journal; se puede importar el reporte de MetaTrader 5 (HTML/XLSX/CSV) en `components/ImportarMT5.tsx` con el lector `lib/mt5.ts` (se lee en el navegador; usa `fflate` para XLSX) y las métricas están en `lib/metricas.ts` y las recomendaciones personalizadas (reglas fijas por horario, par, día, riesgo, disciplina) en `lib/consejos.ts`. Las operaciones importadas llevan `origen = 'mt5'` y `ticket` único por persona.
 - Examen: solo entre cursos de la ruta. Primeros pasos NO tiene examen; básico → intermedio, intermedio → avanzado y avanzado → Data de nivel 2 sí (10 preguntas al azar del banco, 7 correctas; el curso siguiente queda bloqueado hasta aprobar). Los admins no tienen bloqueos.

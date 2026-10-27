@@ -11,7 +11,8 @@ async function soloAdmin() {
   if (p.rol !== "admin") throw new Error("Solo el administrador puede hacer esto.");
 }
 
-const PLANES = ["gratis", "live_trading", "scanner"];
+// Solo hay dos niveles: gratuito y VIP (se guarda como "live_trading").
+const PLANES = ["gratis", "live_trading"];
 
 // Suma meses sin desbordar (31 de enero + 1 mes = 28/29 de febrero).
 function sumarMeses(base: string, n: number): string {
@@ -56,7 +57,7 @@ export async function sumarCalendario(f: FormData) {
   if (![1, 2, 3].includes(n)) fallo(ruta, "Elige 1, 2 o 3 meses.");
   const act = await cargar(id);
   if (!act) fallo(ruta, "No se encontró la persona.");
-  if (act.plan === "gratis") fallo(ruta, "Primero cambia el plan a Live Trading o Scanner.");
+  if (act.plan === "gratis") fallo(ruta, "Primero cambia el plan a VIP.");
   const hoy = hoyPY();
   const base = act.vence && act.vence > hoy ? act.vence : hoy;
   await actualizar(id, act.plan, sumarMeses(base, n), ruta, "Calendario extendido " + n + (n === 1 ? " mes." : " meses."));
@@ -106,12 +107,14 @@ export async function crearPersona(f: FormData) {
   const password = String(f.get("password") ?? "");
   const telefono = String(f.get("telefono") ?? "").trim();
   const tipo = String(f.get("tipo") ?? "gratis"); // admin | gratis | miembro
-  const plan = tipo === "miembro" ? (String(f.get("plan") ?? "") === "scanner" ? "scanner" : "live_trading") : "gratis";
-  const vence = String(f.get("vence") ?? "");
+  const plan = tipo === "miembro" ? "live_trading" : "gratis";
+  const meses = Number(f.get("meses"));
+  let vence = String(f.get("vence") ?? "");
+  if (!vence && [1, 2, 3].includes(meses)) vence = sumarMeses(hoyPY(), meses);
   if (!/^\S+@\S+\.\S+$/.test(email)) fallo(ruta, "Escribe un correo válido.");
   const invitar = f.get("invitar") === "on";
   if (!invitar && password.length < 8) fallo(ruta, "La contraseña debe tener al menos 8 caracteres (o marca \"Enviar invitación por correo\").");
-  if (tipo === "miembro" && !/^\d{4}-\d{2}-\d{2}$/.test(vence)) fallo(ruta, "Elige hasta qué fecha tiene acceso al calendario.");
+  if (tipo === "miembro" && !/^\d{4}-\d{2}-\d{2}$/.test(vence)) fallo(ruta, "Elige cuántos meses de acceso VIP tendrá (1, 2 o 3).");
   const admin = clienteAdmin();
   if (!admin) fallo(ruta, FALTA_CLAVE);
 

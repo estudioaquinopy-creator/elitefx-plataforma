@@ -6,7 +6,7 @@ import { perfilActual } from "@/lib/sesion";
 export type FilaImp = { nombre: string; email: string; telefono: string; plan: string; vence: string };
 export type ResImp = { email: string; estado: "creado" | "invitado" | "reenviado" | "actualizado" | "existe" | "error" | "limite"; detalle?: string };
 
-const PLANES = ["gratis", "live_trading", "scanner"];
+const PLANES = ["gratis", "live_trading"]; // gratuito o VIP
 
 // Procesa un lote (hasta 50 filas). Con invitar=true cada persona recibe el correo de invitación para crear su contraseña;
 // si no, la cuenta se crea con una contraseña aleatoria y la persona entra con "Olvidé mi contraseña". Si se alcanza el

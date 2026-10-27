@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 type Fila = { id: string; nombre: string; email: string; plan: string; vence: string | null; rol: string };
 const POR_PAGINA = 40;
-const PLAN_TXT: Record<string, string> = { gratis: "Gratuito", live_trading: "Live Trading", scanner: "Scanner" };
+const PLAN_TXT: Record<string, string> = { gratis: "Gratuito", live_trading: "VIP", scanner: "VIP" };
 const CUENTAS = [["", "Todas"], ["pendiente", "Invitación pendiente"], ["sin", "Sin ingresar"], ["activa", "Activadas"]];
 const CUENTA_TXT: Record<string, string> = { activa: "Activada", pendiente: "Invitación pendiente", sin: "Sin ingresar" };
 const ESTADOS = [["", "Todos"], ["activo", "Activo"], ["porvencer", "Por vencer"], ["vencido", "Vencido"], ["gratis", "Gratis"], ["sin", "Sin calendario"]];
@@ -75,18 +75,17 @@ export default async function Accesos({ searchParams }: { searchParams: { q?: st
             <label>Tipo de acceso
               <select name="tipo" defaultValue="gratis">
                 <option value="gratis">Miembro gratuito</option>
-                <option value="miembro">Miembro de pago</option>
+                <option value="miembro">Miembro VIP</option>
                 <option value="admin">Administrador</option>
               </select>
             </label>
-            <label>Plan (solo miembros de pago)
-              <select name="plan" defaultValue="live_trading">
-                <option value="live_trading">Live Trading</option>
-                <option value="scanner">Scanner</option>
+            <label>Meses de acceso VIP (solo miembros VIP)
+              <select name="meses" defaultValue="1">
+                <option value="1">1 mes</option><option value="2">2 meses</option><option value="3">3 meses</option>
               </select>
             </label>
           </div>
-          <label>Calendario activo hasta (solo miembros de pago)<input type="date" name="vence" /></label>
+          <label>O elige una fecha de vencimiento (opcional; reemplaza a los meses)<input type="date" name="vence" /></label>
           <label className="ck"><input type="checkbox" name="invitar" defaultChecked /> <span><b>Enviar invitación por correo</b> (recomendado): la persona recibe un mail y elige su propia contraseña. Desmárcalo para crearla con la contraseña inicial de arriba.</span></label>
           <button className="btn s">Crear persona</button>
         </form>

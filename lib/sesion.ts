@@ -8,7 +8,7 @@ export type Perfil = {
   nombre: string;
   email: string;
   rol: "admin" | "alumno";
-  plan: "gratis" | "live_trading" | "scanner";
+  plan: "gratis" | "live_trading" | "scanner"; // en la práctica: gratuito o VIP (live_trading); "scanner" es un valor antiguo que se trata como VIP
   vence: string | null;
   telefono: string | null;
   avatar_url?: string | null;

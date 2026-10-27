@@ -45,9 +45,8 @@ function parseCSV(texto: string): string[][] {
 function normPlan(v: string, def: string): string {
   const x = norm(v);
   if (!x) return def;
-  if (/scanner/.test(x)) return "scanner";
   if (/^(gratis|free|gratuito|0)$/.test(x)) return "gratis";
-  if (/live|miembro|member|pago|premium|vip|paid|activo/.test(x)) return "live_trading";
+  if (/live|scanner|miembro|member|pago|premium|vip|paid|activo/.test(x)) return "live_trading";
   return "?";
 }
 function normFecha(v: string): string {
@@ -154,7 +153,7 @@ export default function ImportarAlumnos({ enviar }: { enviar: (f: FilaImp[], act
     <>
       <section className="box">
         <h2>1. Prepara tu archivo</h2>
-        <p className="mu">Un CSV con una fila por alumno. Solo el <b>correo</b> es obligatorio. Columnas que reconozco: <b>nombre</b>, <b>email</b>, <b>telefono</b>, <b>plan</b> (gratis, live_trading o scanner) y <b>vence</b> (fecha hasta la que tiene calendario, como 2026-12-31 o 31/12/2026).</p>
+        <p className="mu">Un CSV con una fila por alumno. Solo el <b>correo</b> es obligatorio. Columnas que reconozco: <b>nombre</b>, <b>email</b>, <b>telefono</b>, <b>plan</b> (gratis o vip) y <b>vence</b> (fecha hasta la que tiene calendario, como 2026-12-31 o 31/12/2026).</p>
         <button type="button" className="btn g s" onClick={() => descargar("plantilla-alumnos.csv", "nombre,email,telefono,plan,vence\nMaría Pérez,maria@ejemplo.com,595981123456,live_trading,2026-12-31\nJuan Gómez,juan@ejemplo.com,595982654321,gratis,\n")}>Descargar plantilla</button>
       </section>
 
@@ -164,7 +163,7 @@ export default function ImportarAlumnos({ enviar }: { enviar: (f: FilaImp[], act
         <div className="f2">
           <label>Plan para las filas sin plan
             <select value={planDef} onChange={(e) => setPlanDef(e.target.value)}>
-              <option value="gratis">Miembro gratuito</option><option value="live_trading">Live Trading</option><option value="scanner">Scanner</option>
+              <option value="gratis">Miembro gratuito</option><option value="live_trading">Miembro VIP</option>
             </select>
           </label>
           <label>Calendario para las filas de pago sin fecha
