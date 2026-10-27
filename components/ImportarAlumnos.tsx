@@ -51,12 +51,14 @@ function normFecha(v: string): string {
   return "?";
 }
 
-export default function ImportarAlumnos({ enviar }: { enviar: (f: FilaImp[], actualizar: boolean) => Promise<ResImp[]> }) {
+export default function ImportarAlumnos({ enviar }: { enviar: (f: FilaImp[], actualizar: boolean, invitar: boolean) => Promise<ResImp[]> }) {
   const [filas, setFilas] = useState<Fila[]>([]);
   const [nombreArchivo, setNombreArchivo] = useState("");
   const [planDef, setPlanDef] = useState("gratis");
   const [venceDef, setVenceDef] = useState("");
   const [actualizar, setActualizar] = useState(false);
+  const [invitar, setInvitar] = useState(true);
+  const [pendientes, setPendientes] = useState<FilaImp[]>([]);
   const [aviso, setAviso] = useState("");
   const [corriendo, setCorriendo] = useState(false);
   const [hechos, setHechos] = useState(0);
@@ -107,15 +109,29 @@ export default function ImportarAlumnos({ enviar }: { enviar: (f: FilaImp[], act
   const sinFecha = buenas.filter((f) => f.plan !== "gratis" && !f.vence).length;
 
   async function importar() {
-    setCorriendo(true); setRes(null); setHechos(0);
+    setCorriendo(true); setRes(null); setHechos(0); setPendientes([]);
     const acumulado: ResImp[] = [];
-    for (let i = 0; i < buenas.length; i += 25) {
-      const lote = buenas.slice(i, i + 25).map(({ nombre, email, telefono, plan, vence }) => ({ nombre, email, telefono, plan, vence }));
-      try { acumulado.push(...(await enviar(lote, actualizar))); }
-      catch (e) { acumulado.push(...lote.map((l) => ({ email: l.email, estado: "error" as const, detalle: (e as Error).message }))); }
-      setHechos(Math.min(i + 25, buenas.length));
+    const tam = invitar ? 10 : 25;
+    let pend: FilaImp[] = [];
+    for (let i = 0; i < buenas.length; i += tam) {
+      const lote = buenas.slice(i, i + tam).map(({ nombre, email, telefono, plan, vence }) => ({ nombre, email, telefono, plan, vence }));
+      let r: ResImp[];
+      try { r = await enviar(lote, actualizar, invitar); }
+      catch (e) { r = lote.map((l) => ({ email: l.email, estado: "error" as const, detalle: (e as Error).message })); }
+      acumulado.push(...r);
+      setHechos(Math.min(i + tam, buenas.length));
+      const hechosEmails = new Set(r.map((x) => x.email));
+      const limite = r.some((x) => x.estado === "limite");
+      const sinProcesar = lote.filter((l) => !hechosEmails.has(l.email));
+      const conLimite = lote.filter((l) => r.some((x) => x.email === l.email && x.estado === "limite"));
+      if (limite) {
+        pend = [...conLimite, ...sinProcesar, ...buenas.slice(i + tam).map(({ nombre, email, telefono, plan, vence }) => ({ nombre, email, telefono, plan, vence }))];
+        break;
+      }
+      if (invitar) await new Promise((ok) => setTimeout(ok, 800));
     }
-    setRes(acumulado); setCorriendo(false);
+    setPendientes(pend);
+    setRes(acumulado.filter((x) => x.estado !== "limite")); setCorriendo(false);
   }
 
   function descargar(nombre: string, contenido: string) {
@@ -143,6 +159,7 @@ export default function ImportarAlumnos({ enviar }: { enviar: (f: FilaImp[], act
           </label>
           <label>Calendario activo hasta (para las filas de pago sin fecha)<input type="date" value={venceDef} onChange={(e) => setVenceDef(e.target.value)} /></label>
         </div>
+        <label className="ck"><input type="checkbox" checked={invitar} onChange={(e) => setInvitar(e.target.checked)} /> <span><b>Enviar correo de invitación a cada alumno</b> para que cree su contraseña y entre (recomendado)</span></label>
         <label className="ck"><input type="checkbox" checked={actualizar} onChange={(e) => setActualizar(e.target.checked)} /> Si el correo ya tiene cuenta, actualizar su plan, vencimiento, nombre y teléfono</label>
         {aviso && <p className="alerta">{aviso}</p>}
       </section>
@@ -159,8 +176,10 @@ export default function ImportarAlumnos({ enviar }: { enviar: (f: FilaImp[], act
             {lista.length > 8 && <p className="mu">… y {lista.length - 8} más.</p>}
           </div>
           {malas.length > 0 && <details><summary>Ver filas con problemas ({malas.length})</summary>{malas.slice(0, 50).map((f) => <p key={f.linea} className="mu" style={{ margin: "4px 0" }}>Fila {f.linea}: {f.email || "(sin correo)"} — {f.problema}</p>)}</details>}
-          <p className="mu">No se envía ningún correo. Las cuentas se crean listas y cada alumno entra con <b>"¿Olvidaste tu contraseña?"</b> en el login.</p>
-          <button type="button" className="btn sd" disabled={corriendo || buenas.length === 0} onClick={importar}>{corriendo ? "Importando… " + hechos + " de " + buenas.length : "Importar " + buenas.length + " alumnos"}</button>
+          {invitar
+            ? <p className="mu">Se enviará un correo de invitación a cada uno ({buenas.length} correos). Si alguien ya tiene cuenta pero nunca entró, se le reenvía. Tu servicio de correo tiene un límite de envíos por hora y por día: si se alcanza, la importación se detiene y te dejo descargar las filas que faltan para continuar después.</p>
+            : <p className="mu">No se enviará ningún correo. Las cuentas se crean listas y cada alumno entra con <b>"¿Olvidaste tu contraseña?"</b> en el login.</p>}
+          <button type="button" className="btn sd" disabled={corriendo || buenas.length === 0} onClick={importar}>{corriendo ? "Importando… " + hechos + " de " + buenas.length : (invitar ? "Importar y enviar " : "Importar ") + buenas.length + " alumnos"}</button>
           {corriendo && <div className="bar" style={{ marginTop: 12 }}><i style={{ width: Math.round((hechos / Math.max(1, buenas.length)) * 100) + "%" }} /></div>}
         </section>
       )}
@@ -168,7 +187,13 @@ export default function ImportarAlumnos({ enviar }: { enviar: (f: FilaImp[], act
       {res && (
         <section className="box">
           <h2>Resultado</h2>
-          <p className="okmsg">{cuenta("creado")} cuentas creadas · {cuenta("actualizado")} actualizadas · {cuenta("existe")} ya existían · {cuenta("error")} con error.</p>
+          <p className="okmsg">{cuenta("invitado") + cuenta("creado")} cuentas creadas{invitar ? " con invitación enviada" : ""} · {cuenta("reenviado")} invitaciones reenviadas · {cuenta("actualizado")} actualizadas · {cuenta("existe")} ya existían · {cuenta("error")} con error.</p>
+          {pendientes.length > 0 && (
+            <>
+              <p className="alerta">Se alcanzó el límite de envío de correos. Faltan {pendientes.length} alumnos. Espera un rato (o al día siguiente) y sube de nuevo este archivo con solo las filas pendientes.</p>
+              <button type="button" className="btn sd" onClick={() => descargar("alumnos-pendientes.csv", "nombre,email,telefono,plan,vence\n" + pendientes.map((f) => [f.nombre, f.email, f.telefono, f.plan, f.vence].map((x) => '"' + String(x ?? "").replace(/"/g, '""') + '"').join(",")).join("\n"))}>Descargar las {pendientes.length} filas pendientes</button>
+            </>
+          )}
           {res.some((r) => r.estado === "error" || r.estado === "existe") && (
             <button type="button" className="btn g s" onClick={() => descargar("informe-importacion.csv", "email,estado,detalle\n" + res.filter((r) => r.estado === "error" || r.estado === "existe").map((r) => [r.email, r.estado, '"' + (r.detalle ?? "").replace(/"/g, '""') + '"'].join(",")).join("\n"))}>Descargar informe de problemas</button>
           )}
