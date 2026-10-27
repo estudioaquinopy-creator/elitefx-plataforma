@@ -1,5 +1,5 @@
 // Métricas del Journal a partir de las operaciones de una persona.
-export type OpM = { fecha: string; par: string; resultado: number; cierre?: string | null; creado?: string; direccion?: string; sesion?: string | null; setup?: string | null; emocion?: string | null; plan?: boolean | null };
+export type OpM = { fecha: string; par: string; resultado: number; apertura?: string | null; cierre?: string | null; creado?: string; direccion?: string; sesion?: string | null; setup?: string | null; emocion?: string | null; plan?: boolean | null };
 
 export type Grupo = { clave: string; n: number; neto: number; tasa: number; prom: number };
 

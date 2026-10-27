@@ -6,6 +6,7 @@ import ConfirmarEnvio from "@/components/ConfirmarEnvio";
 import BotonImprimir from "@/components/BotonImprimir";
 import { agrupar, calcular, type Grupo } from "@/lib/metricas";
 import { EMOCIONES, SESIONES } from "@/lib/journal";
+import { generarConsejos } from "@/lib/consejos";
 import { borrarImportadas, borrarOperacion, guardarCapital, guardarOperacion } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -67,7 +68,7 @@ export default async function Journal({ searchParams }: { searchParams: { error?
   const total = todas.length;
   const ops = todas.map((o) => ({ ...o, resultado: Number(o.resultado) })).filter((o) => (!desde || o.fecha >= desde) && (!hasta || o.fecha <= hasta));
   const n = ops.length;
-  const om = ops.map((o) => ({ fecha: o.fecha, par: o.par, resultado: o.resultado, cierre: o.cierre ?? null, creado: o.created_at, direccion: o.direccion, sesion: o.sesion, setup: o.setup, emocion: o.emocion, plan: o.respeto_plan ?? null }));
+  const om = ops.map((o) => ({ fecha: o.fecha, par: o.par, resultado: o.resultado, apertura: o.apertura ?? null, cierre: o.cierre ?? null, creado: o.created_at, direccion: o.direccion, sesion: o.sesion, setup: o.setup, emocion: o.emocion, plan: o.respeto_plan ?? null }));
   const m = calcular(om);
   const gDir = agrupar(om, (o) => (o.direccion === "compra" ? "Compras" : o.direccion === "venta" ? "Ventas" : null));
   const gSes = agrupar(om, (o) => o.sesion);
@@ -82,6 +83,7 @@ export default async function Journal({ searchParams }: { searchParams: { error?
     comparar(gSet, (x) => "Tu estrategia con mejor resultado es \"" + x.clave + "\" (" + mp(x.neto) + ")."),
     comparar([...gPlan].sort((a, b) => a.clave.localeCompare(b.clave, "es")), () => { const si = gPlan.find((x) => x.clave === "Siguió su plan"), no = gPlan.find((x) => x.clave === "No siguió su plan"); return si && no ? "Cuando sigues tu plan promedias " + mp(si.prom) + " por operación; cuando no, " + mp(no.prom) + "." : ""; }),
   ].filter(Boolean);
+  const consejos = n >= 15 ? generarConsejos(om, m, capital, { mp, pc }) : [];
   const setupsUsados = Array.from(new Set(todas.map((o) => o.setup).filter(Boolean) as string[]));
   const importadas = todas.filter((o) => o.origen === "mt5").length;
   const visibles = ops.slice(0, 100);
@@ -277,6 +279,23 @@ export default async function Journal({ searchParams }: { searchParams: { error?
               ))}
             </section>
           </div>
+
+          <section className="box">
+            <h2>Recomendaciones para ti</h2>
+            {n < 15 ? (
+              <p className="mu">Carga al menos 15 operaciones (por ejemplo, importando tu reporte de MT5) para recibir recomendaciones personalizadas según tus horarios, pares, riesgo y disciplina.</p>
+            ) : consejos.length === 0 ? (
+              <p className="mu">Por ahora no hay patrones claros que corregir con los datos del período. Sigue cargando operaciones.</p>
+            ) : (
+              consejos.map((c, i) => (
+                <div key={i} style={{ margin: "10px 0", padding: "10px 12px", borderRadius: 8, borderLeft: "4px solid " + (c.nivel === "alerta" ? "#ef4444" : c.nivel === "ok" ? "#22c55e" : "#f59e0b"), background: "rgba(127,127,127,.08)" }}>
+                  <b>{c.nivel === "alerta" ? "⚠️ " : c.nivel === "ok" ? "✅ " : "💡 "}{c.titulo}</b>
+                  <div style={{ marginTop: 4 }}>{c.texto}</div>
+                </div>
+              ))
+            )}
+            <small className="mu">Recomendaciones automáticas calculadas con tu propio historial (según el período elegido). Son una guía educativa, no una asesoría financiera; mientras más operaciones cargues, más confiables son. Los horarios usan la hora del servidor de tu broker.</small>
+          </section>
 
           {frases.length > 0 && (
             <section className="box">
