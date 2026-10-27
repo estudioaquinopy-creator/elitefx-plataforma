@@ -19,6 +19,10 @@ export default function NuevaClave() {
     let vivo = true;
     (async () => {
       // El enlace trae un código/token que el navegador canjea por una sesión; damos unos segundos.
+      // Enlaces antiguos traen la sesión en el # de la dirección: se toma de ahí.
+      const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const at = hash.get("access_token"), rt = hash.get("refresh_token");
+      if (at && rt) await sb.auth.setSession({ access_token: at, refresh_token: rt });
       for (let i = 0; i < 10; i++) {
         const { data } = await sb.auth.getSession();
         if (!vivo) return;
