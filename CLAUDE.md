@@ -14,7 +14,7 @@ Plataforma propia de la academia ELITE FX (+900 alumnos, migrando desde Skool). 
 - Cambiar una variable exige un redeploy.
 
 ## Base de datos
-- Migraciones en `supabase/migrations/` (0001…0015). **Se ejecutan a mano** en Supabase → SQL Editor, en orden. Si agregas una, créala idempotente (`if not exists`, `drop policy if exists`) y avisa al dueño que la corra antes de usar la función nueva.
+- Migraciones en `supabase/migrations/` (0001…0016). **Se ejecutan a mano** en Supabase → SQL Editor, en orden. Si agregas una, créala idempotente (`if not exists`, `drop policy if exists`) y avisa al dueño que la corra antes de usar la función nueva.
 - Seguridad por RLS: helpers `es_admin()`, `es_miembro()`, `tiene_acceso(sec)`. Los alumnos solo pueden editar `nombre`, `telefono`, `avatar_url`, `notif_leidas_at` de su perfil.
 - Examen: las respuestas correctas nunca salen de la base (`examen_preguntas` y `calificar_examen` son funciones `security definer`).
 
@@ -26,7 +26,7 @@ Plataforma propia de la academia ELITE FX (+900 alumnos, migrando desde Skool). 
 ## Reglas de negocio
 - Niveles: admin / gratis / miembro (planes `live_trading`, `scanner`). Los miembros tienen acceso de por vida a los cursos; el calendario solo mientras `vence` esté vigente.
 - Gratis: solo cursos marcados "visible para el plan gratuito" (todos menos Curso intermedio, Curso avanzado y Data de nivel 2), la sección Tutoriales y el Broker recomendado (ruta `/aliados`). Calendario, Comunidad, Journal y Noticias son solo para miembros (el admin puede dar accesos puntuales por persona).
-- Los anuncios los publica solo el admin. El Journal es privado de cada persona.
+- Los anuncios los publica solo el admin. El Journal es privado de cada persona; se puede importar el reporte de MetaTrader 5 (HTML/XLSX/CSV) en `components/ImportarMT5.tsx` con el lector `lib/mt5.ts` (se lee en el navegador; usa `fflate` para XLSX) y las métricas están en `lib/metricas.ts`. Las operaciones importadas llevan `origen = 'mt5'` y `ticket` único por persona.
 - Examen: solo entre cursos de la ruta. Primeros pasos NO tiene examen; básico → intermedio, intermedio → avanzado y avanzado → Data de nivel 2 sí (10 preguntas al azar del banco, 7 correctas; el curso siguiente queda bloqueado hasta aprobar). Los admins no tienen bloqueos.
 - Zona horaria: Paraguay (`America/Asuncion`, UTC-3). Las sesiones fijas (Londres 6:00, Nueva York 10:00, Asia 21:00) se calculan en `lib/horario.ts`.
 - Las sesiones en vivo son por Google Meet; cada sesión tiene su propio enlace (no existe enlace general).
@@ -40,7 +40,7 @@ Plataforma propia de la academia ELITE FX (+900 alumnos, migrando desde Skool). 
 - Estilos globales en `app/globals.css` (variables CSS; los bloques se agregan al final y sobrescriben a los anteriores).
 
 ## Pendientes conocidos
-Importar alumnos desde CSV, recordatorios por correo/WhatsApp, cobros con Pagopar, certificados, foto de perfil en la comunidad, términos y condiciones, igualar la región de Vercel con la de Supabase.
+Recordatorios por correo/WhatsApp, cobros con Pagopar, certificados, foto de perfil en la comunidad, términos y condiciones, igualar la región de Vercel con la de Supabase.
 
 ## Al subir cambios
 Mensajes de commit en español, terminados con:
