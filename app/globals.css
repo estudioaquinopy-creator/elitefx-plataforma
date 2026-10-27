@@ -632,3 +632,12 @@ button.cargando{opacity:.75;cursor:wait}
 .calp .dc small{font-size:10px}
 .calp .dc.sem{background:var(--sf2);justify-content:center;align-items:center;text-align:center}
 @media (max-width:640px){.calp{gap:3px}.calp .dc{min-height:54px;padding:4px;border-radius:7px}.calp .dc b{font-size:10.5px}.calp .dc small{display:none}}
+
+/* Broker recomendado: destacado con el dorado de marca (suave) */
+.box.dest{border-color:var(--go);background:linear-gradient(135deg,rgba(255,193,7,.10),transparent 60%),var(--sf);box-shadow:0 0 0 1px rgba(255,193,7,.25),0 6px 22px rgba(255,193,7,.08)}
+.pill.rec{background:var(--go);color:#14110a;border-color:var(--go);font-weight:700}
+.box.dest .btn.sd{box-shadow:0 0 0 3px rgba(255,193,7,.18)}
+.nav[data-sec="aliados"]{background:rgba(255,193,7,.09);box-shadow:inset 3px 0 0 var(--go)}
+.nav[data-sec="aliados"]:hover{background:rgba(255,193,7,.15)}
+.nav[data-sec="aliados"].on{background:rgba(255,193,7,.18)}
+.nav[data-sec="aliados"] svg{color:var(--go);stroke:var(--go)}

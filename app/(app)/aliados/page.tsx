@@ -67,8 +67,8 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
           {aliados.map((a) => {
             const vid = youtubeId(a.tutorial_url);
             return (
-              <section key={a.id} className="box">
-                <div className="hd"><h2>{a.titulo}</h2><span className="pill">{a.tipo}</span></div>
+              <section key={a.id} className="box dest">
+                <div className="hd"><h2>{a.titulo}</h2><span className="pill rec">★ Recomendado</span></div>
                 <p className="mu">{a.descripcion}</p>
                 {a.url ? <a className="btn sd" href={a.url} target="_blank" rel="noopener noreferrer">{a.boton || "Abrir cuenta"}</a> : <p className="mu">Enlace pendiente.</p>}
                 {vid && (
