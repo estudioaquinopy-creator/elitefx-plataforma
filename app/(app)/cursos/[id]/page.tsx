@@ -25,7 +25,7 @@ export default async function CursoPage({ params, searchParams }: { params: { id
 
   // Examen: el curso siguiente se desbloquea al aprobar el examen del anterior.
   const { data: todos } = await supabase.from("cursos").select("id, nombre, grupo, orden");
-  const falta = admin ? undefined : (await bloqueosExamen(supabase, perfil.id, (todos ?? []) as { id: string; nombre: string; grupo: string; orden: number }[]))[params.id];
+  const falta = admin ? undefined : (await bloqueosExamen(supabase, perfil.id, (todos ?? []) as { id: string; nombre: string; grupo: string; orden: number }[], perfil.plan === "gratis"))[params.id];
   if (falta) {
     return (
       <>

@@ -20,7 +20,7 @@ export default async function Cursos({ searchParams }: { searchParams: { error?:
   const lista = (lecs ?? []) as { id: string; curso_id: string }[];
   const miembro = (await permisos(perfil)).cursos;
   const admin = perfil.rol === "admin";
-  const bloqueos = admin ? {} : await bloqueosExamen(supabase, perfil.id, cursos);
+  const bloqueos = admin ? {} : await bloqueosExamen(supabase, perfil.id, cursos, perfil.plan === "gratis");
 
   function tarjeta(c: Curso) {
     const total = lista.filter((l) => l.curso_id === c.id).length;

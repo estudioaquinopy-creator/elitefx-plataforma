@@ -4,7 +4,9 @@ type C = { id: string; nombre: string; grupo: string; orden: number };
 
 // Qué cursos de la ruta están bloqueados porque falta aprobar el examen del curso anterior.
 // Devuelve { cursoId: nombre del curso cuyo examen falta }.
-export async function bloqueosExamen(sb: SupabaseClient, userId: string, cursos: C[]): Promise<Record<string, { id: string; nombre: string }>> {
+export async function bloqueosExamen(sb: SupabaseClient, userId: string, cursos: C[], esGratis = false): Promise<Record<string, { id: string; nombre: string }>> {
+  // Quien tiene plan gratuito no ve avisos de examen: los cursos de pago le muestran "Miembros".
+  if (esGratis) return {};
   let cfg: unknown, ints: unknown;
   try {
     const r = await Promise.all([

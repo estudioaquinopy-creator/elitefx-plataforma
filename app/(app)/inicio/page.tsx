@@ -24,7 +24,7 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
   const prog = (pr ?? []) as { leccion_id: string; completada_at: string }[];
   const hechas = new Set(prog.map((x) => x.leccion_id));
   let bloqExamen: Record<string, { id: string; nombre: string }> = {};
-  if (!perm.admin) { try { bloqExamen = await bloqueosExamen(supabase, perfil.id, cursos); } catch { bloqExamen = {}; } }
+  if (!perm.admin) { try { bloqExamen = await bloqueosExamen(supabase, perfil.id, cursos, perfil.plan === "gratis"); } catch { bloqExamen = {}; } }
 
   // "Continúa donde lo dejaste": la lección que sigue a la última completada, o la primera disponible.
   let siguiente: Leccion | undefined;
