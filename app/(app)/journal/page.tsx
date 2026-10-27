@@ -29,7 +29,7 @@ function Tabla({ titulo, g }: { titulo: string; g: Grupo[] }) {
   );
 }
 
-export default async function Journal({ searchParams }: { searchParams: { error?: string; p?: string; d?: string; h?: string } }) {
+export default async function Journal({ searchParams }: { searchParams: { error?: string; p?: string; d?: string; h?: string; m?: string } }) {
   const perfil = await perfilActual();
   const perm = await permisos(perfil);
   if (!perm.journal) {
@@ -89,6 +89,34 @@ export default async function Journal({ searchParams }: { searchParams: { error?
   const cero = H - 8 - ((0 - mn) / rango) * (H - 16);
   const maxDia = Math.max(1, ...m.porDia.map((d) => Math.abs(d.neto)));
 
+  // Calendario de resultados (PNL por día) del mes elegido, con todas las operaciones.
+  const mesSel = /^\d{4}-(0[1-9]|1[0-2])$/.test(searchParams.m ?? "") ? searchParams.m! : hoy.slice(0, 7);
+  const [cy, cm] = mesSel.split("-").map(Number);
+  const diasMes = new Date(Date.UTC(cy, cm, 0)).getUTCDate();
+  const offIni = (new Date(Date.UTC(cy, cm - 1, 1)).getUTCDay() + 6) % 7; // lunes = 0
+  const porDiaMes = new Map<number, { n: number; neto: number }>();
+  for (const o of todas) {
+    if (!o.fecha.startsWith(mesSel)) continue;
+    const dnum = Number(o.fecha.slice(8, 10));
+    const v = porDiaMes.get(dnum) ?? { n: 0, neto: 0 };
+    v.n++; v.neto += Number(o.resultado);
+    porDiaMes.set(dnum, v);
+  }
+  const celdas: (number | null)[] = [...Array(offIni).fill(null), ...Array.from({ length: diasMes }, (_, i) => i + 1)];
+  while (celdas.length % 7) celdas.push(null);
+  const semanas: (number | null)[][] = [];
+  for (let i = 0; i < celdas.length; i += 7) semanas.push(celdas.slice(i, i + 7));
+  const totMes = Array.from(porDiaMes.values()).reduce((a, v) => a + v.neto, 0);
+  const opsMes = Array.from(porDiaMes.values()).reduce((a, v) => a + v.n, 0);
+  const diasGan = Array.from(porDiaMes.values()).filter((v) => v.neto > 0).length;
+  const diasPer = Array.from(porDiaMes.values()).filter((v) => v.neto < 0).length;
+  const maxAbs = Math.max(1, ...Array.from(porDiaMes.values()).map((v) => Math.abs(v.neto)));
+  const desplazar = (d: number) => { const t = cy * 12 + (cm - 1) + d; return Math.floor(t / 12) + "-" + String((t % 12) + 1).padStart(2, "0"); };
+  const qsMes = (mes: string) => { const q = new URLSearchParams(); if (searchParams.p) q.set("p", searchParams.p); if (searchParams.d) q.set("d", searchParams.d); if (searchParams.h) q.set("h", searchParams.h); q.set("m", mes); return "/journal?" + q.toString(); };
+  const NOMBRES_MES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+  const corto = (x: number) => (x < 0 ? "-" : "") + "$" + Math.abs(x).toLocaleString("es-PY", { maximumFractionDigits: Math.abs(x) >= 100 ? 0 : 2 });
+  const colorDia = (x: number) => (x > 0 ? "rgba(34,197,94," : "rgba(239,68,68,") + (0.12 + 0.4 * (Math.abs(x) / maxAbs)).toFixed(2) + ")";
+
   return (
     <>
       <h1>Journal</h1>
@@ -120,6 +148,46 @@ export default async function Journal({ searchParams }: { searchParams: { error?
           </form>
         )}
       </section>
+
+      {total > 0 && (
+        <section className="box">
+          <div className="hd" style={{ gap: 12, flexWrap: "wrap" }}>
+            <h2 style={{ margin: 0, textTransform: "capitalize" }}>Calendario de resultados · {NOMBRES_MES[cm - 1]} {cy}</h2>
+            <div className="no-print" style={{ display: "flex", gap: 8 }}>
+              <Link className="btn g s" href={qsMes(desplazar(-1))}>← Anterior</Link>
+              {mesSel !== hoy.slice(0, 7) && <Link className="btn g s" href={qsMes(hoy.slice(0, 7))}>Hoy</Link>}
+              <Link className="btn g s" href={qsMes(desplazar(1))}>Siguiente →</Link>
+            </div>
+          </div>
+          <p className="mu">Resultado del mes: <b className={totMes < 0 ? "neg" : totMes > 0 ? "pos" : ""}>{money(totMes)}</b> · {opsMes} operaciones · {diasGan} días en positivo · {diasPer} en negativo</p>
+          <div className="calp">
+            {["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"].map((d) => <div key={d} className="dn">{d}</div>)}
+            <div className="dn">Semana</div>
+            {semanas.map((sem, wi) => {
+              const totSem = sem.reduce<number>((a, d) => a + (d ? porDiaMes.get(d)?.neto ?? 0 : 0), 0);
+              const nSem = sem.reduce<number>((a, d) => a + (d ? porDiaMes.get(d)?.n ?? 0 : 0), 0);
+              return (
+                <div key={wi} style={{ display: "contents" }}>
+                  {sem.map((d, i) => {
+                    if (!d) return <div key={i} className="dc vacio" />;
+                    const v = porDiaMes.get(d);
+                    return (
+                      <div key={i} className="dc" style={v ? { background: colorDia(v.neto) } : undefined} title={v ? v.n + " operaciones" : "Sin operaciones"}>
+                        <span className="dd">{d}</span>
+                        {v && <b className={v.neto < 0 ? "neg" : v.neto > 0 ? "pos" : ""}>{corto(v.neto)}</b>}
+                        {v && <small className="mu">{v.n} op.</small>}
+                      </div>
+                    );
+                  })}
+                  <div className="dc sem">
+                    {nSem > 0 ? <><b className={totSem < 0 ? "neg" : "pos"}>{corto(totSem)}</b><small className="mu">{nSem} op.</small></> : <span className="mu">—</span>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {total > 0 && (
         <form method="get" className="box fm no-print" style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, alignItems: "flex-end" }}>

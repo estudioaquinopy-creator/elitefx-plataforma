@@ -621,3 +621,14 @@ button.cargando{opacity:.75;cursor:wait}
   .mu,small{color:#444 !important}
   .pos{color:#0a7a45 !important}.neg{color:#b3261e !important}
 }
+
+/* Calendario de resultados (PNL por día) del Journal */
+.calp{display:grid;grid-template-columns:repeat(7,minmax(0,1fr)) minmax(0,1.15fr);gap:6px;margin-top:10px}
+.calp .dn{font-size:12px;color:var(--mu);text-align:center;padding-bottom:2px}
+.calp .dc{min-height:68px;border:1px solid var(--bd);border-radius:10px;padding:6px;display:flex;flex-direction:column;justify-content:space-between;gap:2px;overflow:hidden}
+.calp .dc.vacio{border-color:transparent}
+.calp .dc .dd{font-size:11px;color:var(--mu)}
+.calp .dc b{font-size:13px;line-height:1.15;overflow-wrap:anywhere}
+.calp .dc small{font-size:10px}
+.calp .dc.sem{background:var(--sf2);justify-content:center;align-items:center;text-align:center}
+@media (max-width:640px){.calp{gap:3px}.calp .dc{min-height:54px;padding:4px;border-radius:7px}.calp .dc b{font-size:10.5px}.calp .dc small{display:none}}
