@@ -646,5 +646,4 @@ button.cargando{opacity:.75;cursor:wait}
 @media(min-width:761px){
   .side{position:sticky;top:0;height:100vh;align-self:start;overflow-y:auto}
 }
-.redes{position:sticky;bottom:-18px;margin-bottom:-18px;padding-bottom:18px;background:var(--sf);z-index:2}
-html[data-tema="claro"] .redes{background:#f2f7f4}
+.redes{position:sticky;bottom:-18px;margin-bottom:-18px;padding-bottom:18px;background:none;z-index:2}
