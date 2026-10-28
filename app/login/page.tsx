@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Tema from "@/components/Tema";
@@ -11,6 +11,8 @@ export default function Login() {
   const [pw, setPw] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+  const [expirada, setExpirada] = useState(false);
+  useEffect(() => { setExpirada(new URLSearchParams(window.location.search).get("expirada") === "1"); }, []);
 
   async function entrar(e: React.FormEvent) {
     e.preventDefault();
@@ -35,6 +37,7 @@ export default function Login() {
         <div className="logo"><img src="/logo-elitefx.png" alt="ELITE FX · Trading de Alta Precisión" /></div>
         <h1>Bienvenido de vuelta</h1>
         <p className="sub">Ingresa para continuar con tu formación.</p>
+        {expirada && <p className="err">Tu sesión se cerró por inactividad. Vuelve a ingresar.</p>}
         <label>Correo electrónico
           <input type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
         </label>

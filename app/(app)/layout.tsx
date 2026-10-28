@@ -1,6 +1,7 @@
 import EnLinea from "@/components/EnLinea";
 import ProgresoNav from "@/components/ProgresoNav";
 import Shell from "@/components/Shell";
+import InactividadAuto from "@/components/InactividadAuto";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual, permisos } from "@/lib/sesion";
 import { modoAlumno } from "./actions";
@@ -90,6 +91,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       )}
       <ProgresoNav />
       {children}
+      <InactividadAuto />
     </Shell>
   );
 }

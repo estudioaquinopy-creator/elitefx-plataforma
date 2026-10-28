@@ -38,6 +38,7 @@ Plataforma propia de la academia ELITE FX (+900 alumnos, migrando desde Skool). 
 ## Seguridad
 - Todas las acciones de administración comprueban el rol en el servidor (`soloAdmin()`); no confiar nunca en ocultar botones. Las rutas de retorno de formularios pasan por `rutaSegura()` y las imágenes subidas solo aceptan JPG/PNG/WEBP/GIF (`lib/seguridad.ts`).
 - Las acciones del admin (membresías, roles, contraseñas, invitaciones, eliminar, importar CSV) se registran con `registrar()` (`lib/auditoria.ts`, tabla `auditoria`, migración 0021); se ve en Accesos → Registro de acciones.
+- Sesión: se cierra tras 30 minutos sin actividad (cookie `ult` en `middleware.ts` + aviso y cierre en el navegador con `components/InactividadAuto.tsx`; el latido es `/api/actividad`).
 - Examen: exige acceso al curso y 10 minutos de espera entre intentos fallidos (los admins no esperan). Cabeceras de seguridad en `next.config.mjs`.
 
 ## Estructura
