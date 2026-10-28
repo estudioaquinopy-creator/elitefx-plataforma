@@ -14,7 +14,7 @@ Plataforma propia de la academia ELITE FX (+900 alumnos, migrando desde Skool). 
 - Cambiar una variable exige un redeploy.
 
 ## Base de datos
-- Migraciones en `supabase/migrations/` (0001…0020). **Se ejecutan a mano** en Supabase → SQL Editor, en orden. Si agregas una, créala idempotente (`if not exists`, `drop policy if exists`) y avisa al dueño que la corra antes de usar la función nueva.
+- Migraciones en `supabase/migrations/` (0001…0021). **Se ejecutan a mano** en Supabase → SQL Editor, en orden. Si agregas una, créala idempotente (`if not exists`, `drop policy if exists`) y avisa al dueño que la corra antes de usar la función nueva.
 - Seguridad por RLS: helpers `es_admin()`, `es_miembro()`, `tiene_acceso(sec)`. Los alumnos solo pueden editar `nombre`, `telefono`, `avatar_url`, `notif_leidas_at` de su perfil.
 - Examen: las respuestas correctas nunca salen de la base (`examen_preguntas` y `calificar_examen` son funciones `security definer`).
 
@@ -34,6 +34,11 @@ Plataforma propia de la academia ELITE FX (+900 alumnos, migrando desde Skool). 
 - Bienvenida: quien aún no marcó como visto el video "Bienvenido…" de Primeros pasos es llevado a él al entrar a `/inicio` (`lib/bienvenida.ts`); se busca por nombre del curso y título de la lección.
 - Modo alumno: el admin ve la plataforma como alumno miembro/gratis (cookie `ver_como`, ver `lib/sesion.ts`).
 - Diseño: tema oscuro verde por defecto (+ modo claro). Mantener el menú lateral en tono neutro. No agregar marcas de agua.
+
+## Seguridad
+- Todas las acciones de administración comprueban el rol en el servidor (`soloAdmin()`); no confiar nunca en ocultar botones. Las rutas de retorno de formularios pasan por `rutaSegura()` y las imágenes subidas solo aceptan JPG/PNG/WEBP/GIF (`lib/seguridad.ts`).
+- Las acciones del admin (membresías, roles, contraseñas, invitaciones, eliminar, importar CSV) se registran con `registrar()` (`lib/auditoria.ts`, tabla `auditoria`, migración 0021); se ve en Accesos → Registro de acciones.
+- Examen: exige acceso al curso y 10 minutos de espera entre intentos fallidos (los admins no esperan). Cabeceras de seguridad en `next.config.mjs`.
 
 ## Estructura
 - `app/(app)/…` secciones con sesión; `app/login`, `registro`, `recuperar`, `nueva-clave` son públicas (ver `middleware.ts`).

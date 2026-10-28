@@ -2,6 +2,7 @@
 import { clienteAdmin } from "@/lib/supabase/admin";
 import { headers } from "next/headers";
 import { perfilActual } from "@/lib/sesion";
+import { registrar } from "@/lib/auditoria";
 
 export type FilaImp = { nombre: string; email: string; telefono: string; plan: string; vence: string };
 export type ResImp = { email: string; estado: "creado" | "invitado" | "reenviado" | "actualizado" | "existe" | "error" | "limite"; detalle?: string };
@@ -79,5 +80,6 @@ export async function importarLote(filas: FilaImp[], actualizar: boolean, invita
     out.push(...(await Promise.all(filas.slice(i, i + paso).map(una))));
     if (out.some((r) => r.estado === "limite")) break;
   }
+  await registrar("importar CSV", null, filas.length + " filas: " + out.filter((r) => r.estado === "creado" || r.estado === "invitado").length + " nuevas, " + out.filter((r) => r.estado === "error").length + " con error" + (invitar ? " (con invitación)" : ""));
   return out;
 }

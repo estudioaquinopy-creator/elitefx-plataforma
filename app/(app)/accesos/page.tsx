@@ -58,7 +58,7 @@ export default async function Accesos({ searchParams }: { searchParams: { q?: st
       {searchParams.ok && <p className="okmsg">{searchParams.ok}</p>}
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
 
-      <p style={{ margin: "0 0 12px" }}><Link className="btn g s" href="/accesos/importar">Importar alumnos desde CSV</Link></p>
+      <p style={{ margin: "0 0 12px" }}><Link className="btn g s" href="/accesos/importar">Importar alumnos desde CSV</Link> <Link className="btn g s" href="/accesos/registro">Registro de acciones</Link></p>
 
       <details className="box adm">
         <summary>+ Agregar persona</summary>

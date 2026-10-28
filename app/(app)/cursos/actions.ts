@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual } from "@/lib/sesion";
+import { TIPOS_IMAGEN } from "@/lib/seguridad";
 
 async function soloAdmin() {
   const perfil = await perfilActual();
@@ -18,7 +19,7 @@ function fallo(ruta: string, msg: string): never {
 async function subirPortada(f: FormData, ruta: string): Promise<string | null> {
   const file = f.get("portada");
   if (!(file instanceof File) || file.size === 0) return null;
-  if (!file.type.startsWith("image/")) fallo(ruta, "El archivo de portada debe ser una imagen.");
+  if (!TIPOS_IMAGEN.includes(file.type)) fallo(ruta, "El archivo de portada debe ser una imagen JPG, PNG, WEBP o GIF.");
   if (file.size > 5 * 1024 * 1024) fallo(ruta, "La imagen pesa más de 5 MB.");
   const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
   const nombre = crypto.randomUUID() + "." + (ext || "jpg");

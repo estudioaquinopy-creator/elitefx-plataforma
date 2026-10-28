@@ -4,12 +4,14 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual, permisos } from "@/lib/sesion";
 import { fallo, subirImagen } from "@/lib/subida";
+import { rutaSegura } from "@/lib/seguridad";
 
 export async function publicar(f: FormData) {
   const perfil = await perfilActual();
   const perm = await permisos(perfil);
   const canal = String(f.get("canal") ?? "");
   const cuerpo = String(f.get("cuerpo") ?? "").trim();
+  if (cuerpo.length > 5000) fallo("/comunidad", "El mensaje es demasiado largo (máximo 5.000 caracteres).");
   const titulo = String(f.get("titulo") ?? "").trim().slice(0, 140);
   if (!["anuncios", "preguntas", "resultados"].includes(canal)) fallo("/comunidad", "Elige una etiqueta.");
   if (canal === "anuncios" && !perm.admin) fallo("/comunidad", "Solo el equipo de ELITE FX publica anuncios.");
@@ -62,20 +64,21 @@ export async function comentar(f: FormData) {
   if (!perm.comunidad) fallo("/comunidad", "Tu plan solo permite leer la comunidad.");
   const cuerpo = String(f.get("cuerpo") ?? "").trim();
   if (!cuerpo) fallo("/comunidad", "Escribe tu respuesta.");
+  if (cuerpo.length > 2000) fallo("/comunidad", "La respuesta es demasiado larga (máximo 2.000 caracteres).");
   const { data: rep } = await createClient().from("comentarios").select("id").eq("user_id", perfil.id).eq("post_id", String(f.get("id") ?? "")).eq("cuerpo", cuerpo).gte("created_at", new Date(Date.now() - 120000).toISOString()).limit(1);
-  if (rep && rep.length) redirect(String(f.get("volver") || "/comunidad") + "#p" + String(f.get("id") ?? ""));
+  if (rep && rep.length) redirect(rutaSegura(f.get("volver")) + "#p" + String(f.get("id") ?? ""));
   const { error } = await createClient().from("comentarios").insert({
     post_id: String(f.get("id") ?? ""), user_id: perfil.id,
     autor: perfil.nombre || perfil.email.split("@")[0], cuerpo,
   });
   if (error) fallo("/comunidad", "No se pudo responder: " + error.message);
   revalidatePath("/comunidad");
-  redirect(String(f.get("volver") || "/comunidad") + "#p" + String(f.get("id") ?? ""));
+  redirect(rutaSegura(f.get("volver")) + "#p" + String(f.get("id") ?? ""));
 }
 
 export async function borrarComentario(f: FormData) {
   await perfilActual();
   await createClient().from("comentarios").delete().eq("id", String(f.get("id") ?? ""));
   revalidatePath("/comunidad");
-  redirect(String(f.get("volver") || "/comunidad") + "#p" + String(f.get("post") ?? ""));
+  redirect(rutaSegura(f.get("volver")) + "#p" + String(f.get("post") ?? ""));
 }

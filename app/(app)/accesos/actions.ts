@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { clienteAdmin } from "@/lib/supabase/admin";
 import { hoyPY, perfilActual } from "@/lib/sesion";
 import { aviso, fallo } from "@/lib/subida";
+import { registrar } from "@/lib/auditoria";
 
 async function soloAdmin() {
   const p = await perfilActual();
@@ -27,6 +28,7 @@ function sumarMeses(base: string, n: number): string {
 async function actualizar(id: string, plan: string, vence: string | null, ruta: string, texto: string) {
   const { error } = await createClient().rpc("admin_actualizar_perfil", { p_id: id, p_plan: plan, p_vence: vence });
   if (error) fallo(ruta, "No se pudo actualizar: " + error.message);
+  await registrar("membresía", id, texto + " (plan " + (plan === "gratis" ? "gratuito" : "VIP") + ", vence " + (vence ?? "sin fecha") + ")");
   revalidatePath("/accesos");
   revalidatePath(ruta.split("?")[0]);
   aviso(ruta, texto);
@@ -134,6 +136,7 @@ export async function crearPersona(f: FormData) {
     vence: tipo === "miembro" ? vence : null,
   }).eq("id", data.user.id);
   if (e2) fallo("/accesos/" + data.user.id, "La cuenta se creó, pero no se pudieron guardar sus datos: " + e2.message);
+  await registrar("crear persona", data.user.id, email + " · " + (tipo === "admin" ? "administrador" : plan === "gratis" ? "gratuito" : "VIP"));
   revalidatePath("/accesos");
   aviso("/accesos/" + data.user.id, invitar ? "Invitación enviada a " + email + ". Al abrir el enlace, elegirá su contraseña." : "Persona creada. Pásale su correo y la contraseña que definiste (no se vuelve a mostrar).");
 }
@@ -149,6 +152,7 @@ export async function cambiarRol(f: FormData) {
   if (!admin) fallo(ruta, FALTA_CLAVE);
   const { error } = await admin.from("perfiles").update({ rol }).eq("id", id);
   if (error) fallo(ruta, "No se pudo cambiar el rol: " + error.message);
+  await registrar("rol", id, "Nuevo rol: " + rol);
   revalidatePath("/accesos"); revalidatePath(ruta);
   aviso(ruta, rol === "admin" ? "Ahora es administrador." : "Ahora es alumno.");
 }
@@ -163,6 +167,7 @@ export async function nuevaClave(f: FormData) {
   if (!admin) fallo(ruta, FALTA_CLAVE);
   const { error } = await admin.auth.admin.updateUserById(id, { password });
   if (error) fallo(ruta, "No se pudo cambiar la contraseña: " + error.message);
+  await registrar("contraseña", id, "El administrador cambió la contraseña");
   aviso(ruta, "Contraseña actualizada. Pásasela a la persona.");
 }
 
@@ -179,6 +184,7 @@ export async function enviarInvitacion(f: FormData) {
   const origen = h.get("origin") || ("https://" + (h.get("x-forwarded-host") || h.get("host")));
   const { error } = await createClient().auth.resetPasswordForEmail(email, { redirectTo: origen + "/nueva-clave" });
   if (error) fallo(ruta, "No se pudo enviar el correo: " + error.message);
+  await registrar("invitación", id, "Correo enviado a " + email);
   aviso(ruta, "Listo: se envió el correo a " + email + " para que cree su contraseña y entre.");
 }
 
@@ -196,6 +202,7 @@ export async function eliminarPersona(f: FormData) {
   if (!admin) fallo(ruta, "Falta configurar SUPABASE_SERVICE_ROLE_KEY en Vercel.");
   const { error } = await admin!.auth.admin.deleteUser(id);
   if (error) fallo(ruta, "No se pudo eliminar: " + error.message);
+  await registrar("eliminar cuenta", id, String(act!.email ?? ""));
   revalidatePath("/accesos");
   aviso("/accesos", "Cuenta eliminada.");
 }
