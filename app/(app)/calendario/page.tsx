@@ -137,6 +137,7 @@ export default async function Calendario({ searchParams }: { searchParams: { s?:
                       key={c.id}
                       titulo={c.titulo}
                       inicio={c.inicio}
+                      duracion={c.duracion_min}
                       zoom={c.zoom_url}
                       color={t.color}
                       tipo={t.nombre}

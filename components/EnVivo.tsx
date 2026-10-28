@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 export type SesionVivo = { id: string; titulo: string; inicio: string; zoom: string; duracion?: number };
 
 const VENTANA_AVISO = 60 * 60 * 1000;   // cuenta regresiva desde 60 min antes
+const ANTES_MS = 5 * 60 * 1000;         // el botón de unirse aparece 5 min antes
 const dos = (n: number) => String(n).padStart(2, "0");
 const hms = (s: number) => (s >= 3600 ? Math.floor(s / 3600) + ":" : "") + dos(Math.floor((s % 3600) / 60)) + ":" + dos(s % 60);
 const ZONA = "America/Asuncion";
@@ -20,6 +21,7 @@ export default function EnVivo({ sesiones, ahoraServidor }: { sesiones: SesionVi
 
   const lista = sesiones.map((s) => ({ ...s, t: new Date(s.inicio).getTime() })).sort((a, b) => a.t - b.t);
   const enCurso = [...lista].reverse().find((s) => s.t <= ahora && ahora < s.t + (s.duracion ?? 90) * 60000);
+  const puedeUnirse = (s: { t: number }) => s.t - ahora <= ANTES_MS;
   const proxima = lista.find((s) => s.t > ahora && s.t - ahora <= VENTANA_AVISO);
   const resto = lista.filter((s) => s.t > ahora && s !== proxima).slice(0, 3);
 
@@ -34,7 +36,7 @@ export default function EnVivo({ sesiones, ahoraServidor }: { sesiones: SesionVi
       {!enCurso && proxima && (
         <div className="live pre" role="status">
           <div><b>Empieza en {hms(Math.max(0, Math.ceil((proxima.t - ahora) / 1000)))}</b></div>
-          <span className="mu">El botón para unirte aparece al llegar a cero</span>
+          {puedeUnirse(proxima) ? (proxima.zoom ? <a className="btn sd" href={proxima.zoom} target="_blank" rel="noopener noreferrer">Unirme</a> : <span className="mu">Enlace pendiente</span>) : <span className="mu">El botón para unirte aparece 5 minutos antes</span>}
         </div>
       )}
       {!enCurso && !proxima && resto.length === 0 && <p className="mu">No hay sesiones programadas todavía.</p>}
