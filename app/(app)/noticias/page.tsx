@@ -1,28 +1,15 @@
 import Link from "next/link";
-import { cookies } from "next/headers";
+import { TODAS, monedasElegidas, cargarCalendario, URL_ESTA_SEMANA, URL_PROXIMA_SEMANA, type Ev } from "@/lib/noticias";
 import { hoyPY, ZONA, perfilActual, permisos } from "@/lib/sesion";
 import FiltroMonedas from "@/components/FiltroMonedas";
 import FilaNoticia from "@/components/FilaNoticia";
 
 export const dynamic = "force-dynamic";
 
-type Ev = { title: string; country: string; date: string; impact: string; forecast: string; previous: string };
-// Monedas disponibles en el filtro y las que se muestran por defecto (las que opera la academia).
-const TODAS = ["USD", "EUR", "GBP", "JPY", "AUD", "CAD", "CHF", "NZD"];
-const POR_DEFECTO = ["USD", "EUR", "GBP", "CAD"];
 const DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
 const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 const diaPY = (iso: string) => new Date(iso).toLocaleDateString("en-CA", { timeZone: ZONA });
 const horaPY = (iso: string) => new Date(iso).toLocaleTimeString("es-PY", { timeZone: ZONA, hour: "2-digit", minute: "2-digit", hour12: false });
-
-async function cargar(url: string): Promise<Ev[] | null> {
-  try {
-    const r = await fetch(url, { next: { revalidate: 1800 } });
-    if (!r.ok) return null;
-    const j = await r.json();
-    return Array.isArray(j) ? (j as Ev[]) : null;
-  } catch { return null; }
-}
 
 export default async function Noticias({ searchParams }: { searchParams: { d?: string } }) {
   const perm = await permisos(await perfilActual());
@@ -35,13 +22,12 @@ export default async function Noticias({ searchParams }: { searchParams: { d?: s
     );
   }
   const [esta, proxima] = await Promise.all([
-    cargar("https://nfs.faireconomy.media/ff_calendar_thisweek.json"),
-    cargar("https://nfs.faireconomy.media/ff_calendar_nextweek.json"),
+    cargarCalendario(URL_ESTA_SEMANA),
+    cargarCalendario(URL_PROXIMA_SEMANA),
   ]);
   const hoy = hoyPY();
   const ahoraMs = Date.now();
-  const guardadas = (cookies().get("noticias_monedas")?.value ?? "").split(/[.,]/).filter((m) => TODAS.includes(m));
-  const MONEDAS = guardadas.length ? TODAS.filter((m) => guardadas.includes(m)) : POR_DEFECTO;
+  const MONEDAS = monedasElegidas();
 
   if (!esta && !proxima) {
     return (

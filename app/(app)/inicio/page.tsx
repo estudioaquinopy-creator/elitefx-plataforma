@@ -3,6 +3,8 @@ import { ocurrencias, type Fijo } from "@/lib/horario";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { bienvenidaPendiente } from "@/lib/bienvenida";
+import { noticiasCercanas } from "@/lib/noticias";
+import AvisoNoticias from "@/components/AvisoNoticias";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual, permisos, primerNombre, ZONA, hoyPY } from "@/lib/sesion";
 import { youtubeId } from "@/lib/youtube";
@@ -68,6 +70,12 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
     vivo = [...vivo, { id: "sim", titulo: "Trading en vivo · SIMULACIÓN de prueba", inicio: new Date(Date.now() + sim * 60000 - 1000).toISOString(), zoom: "https://meet.google.com", duracion: 90 }];
   }
 
+  // Noticias de alto impacto (de las monedas que la persona eligió) que salen en las próximas horas: el aviso aparece cuando falta 1 hora.
+  let avisos: { titulo: string; moneda: string; inicio: string }[] = [];
+  if (perm.noticias) {
+    try { avisos = (await noticiasCercanas(180)).map((e) => ({ titulo: e.title, moneda: e.country, inicio: e.date })); } catch { avisos = []; }
+  }
+
   const pasos = cursos.map((c) => {
     const total = lecs.filter((l) => l.curso_id === c.id).length;
     const ok = lecs.filter((l) => l.curso_id === c.id && hechas.has(l.id)).length;
@@ -84,6 +92,8 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
       {!perfil.nombre && (
         <p className="okmsg">Completa tu nombre en <Link href="/perfil?t=editar" style={{ color: "inherit", fontWeight: 700 }}>Editar perfil</Link> para que aparezca aquí y en la comunidad.</p>
       )}
+
+      <AvisoNoticias noticias={avisos} />
 
       <div className="cols">
         <div>
