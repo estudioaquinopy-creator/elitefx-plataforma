@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 
 // Símbolos de la cinta (widget gratuito "Ticker Tape" de TradingView).
 const SIMBOLOS = [
@@ -17,22 +17,28 @@ const SIMBOLOS = [
   { description: "Plata", proName: "OANDA:XAGUSD" },
 ];
 
-// Cinta de cotizaciones en el pie de Inicio. Se carga dentro de un iframe aislado (sandbox sin acceso a nuestra sesión ni a nuestros datos).
+// Cinta de cotizaciones en el pie de Inicio: widget gratuito "Ticker Tape" de TradingView, con su método oficial (el script lee la configuración JSON de su propia etiqueta).
 export default function CintaCotizaciones() {
-  const [doc, setDoc] = useState<string | null>(null);
+  const caja = useRef<HTMLDivElement>(null);
   useEffect(() => {
+    const el = caja.current;
+    if (!el) return;
     const claro = document.documentElement.dataset.tema === "claro";
-    const cfg = { symbols: SIMBOLOS, showSymbolLogo: false, colorTheme: claro ? "light" : "dark", isTransparent: true, displayMode: "adaptive", locale: "es" };
-    setDoc(
-      '<!doctype html><html><head><meta charset="utf-8"><meta name="color-scheme" content="' + (claro ? "light" : "dark") + '">' +
-      "<style>html,body{margin:0;background:transparent;overflow:hidden}</style></head><body>" +
-      '<div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div>' +
-      '<script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>' + JSON.stringify(cfg) + "</scr" + "ipt></div></body></html>",
-    );
+    el.innerHTML = "";
+    const w = document.createElement("div");
+    w.className = "tradingview-widget-container__widget";
+    el.appendChild(w);
+    const sc = document.createElement("script");
+    sc.type = "text/javascript";
+    sc.src = "https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js";
+    sc.async = true;
+    sc.innerHTML = JSON.stringify({ symbols: SIMBOLOS, showSymbolLogo: false, colorTheme: claro ? "light" : "dark", isTransparent: true, displayMode: "adaptive", locale: "es" });
+    el.appendChild(sc);
+    return () => { el.innerHTML = ""; };
   }, []);
   return (
     <div className="cinta no-print" role="region" aria-label="Cotizaciones de los mercados">
-      {doc && <iframe title="Cotizaciones en vivo" srcDoc={doc} sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" loading="lazy" referrerPolicy="no-referrer" style={{ border: 0, width: "100%", height: 46, display: "block" }} />}
+      <div ref={caja} className="tradingview-widget-container" />
     </div>
   );
 }
