@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { perfilActual } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { leerAjustes } from "@/lib/ajustes";
@@ -38,6 +39,17 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
   const { data } = await createClient().from("aliados").select("*").order("orden").order("created_at");
   const aliados = (data ?? []) as Aliado[];
 
+  // Tutoriales del broker: se buscan en Tutoriales por el título (crear/abrir cuenta, depositar, retirar), mejor si están en la categoría "Broker".
+  const { data: tuts } = await createClient().from("tutoriales").select("id, titulo, categoria").order("created_at", { ascending: false });
+  const sinTildes = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  const lista = ((tuts ?? []) as { id: string; titulo: string; categoria: string }[]).map((t) => ({ ...t, n: sinTildes(t.titulo), esBroker: sinTildes(t.categoria).includes("broker") }));
+  const buscar = (re: RegExp) => lista.find((t) => t.esBroker && re.test(t.n)) ?? lista.find((t) => re.test(t.n));
+  const guias = [
+    { texto: "Cómo crear tu cuenta", t: buscar(/crear|abrir|registr/) },
+    { texto: "Cómo depositar", t: buscar(/deposit/) },
+    { texto: "Cómo retirar", t: buscar(/retir/) },
+  ];
+
   return (
     <>
       <h1>Broker recomendado</h1>
@@ -71,6 +83,17 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
                 <div className="hd"><h2>{a.titulo}</h2><span className="pill rec">★ Recomendado</span></div>
                 <p className="mu">{a.descripcion}</p>
                 {a.url ? <a className="btn sd" href={a.url} target="_blank" rel="noopener noreferrer">{a.boton || "Abrir cuenta"}</a> : <p className="mu">Enlace pendiente.</p>}
+                {a.tipo === "Broker" && (
+                  <div style={{ marginTop: 16 }}>
+                    <div className="tag">Tutoriales del broker</div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+                      {guias.map((g) => g.t
+                        ? <Link key={g.texto} className="btn g s" href={"/tutoriales?v=" + g.t.id}>▶ {g.texto}</Link>
+                        : <span key={g.texto} className="btn g s" style={{ opacity: 0.5, cursor: "default" }} title="Próximamente">{g.texto} · próximamente</span>)}
+                    </div>
+                    {admin && guias.some((g) => !g.t) && <small className="mu" style={{ display: "block", marginTop: 8 }}>Para activar los botones que faltan, sube el video en Tutoriales (categoría "Broker") con un título que incluya "crear cuenta", "depositar" o "retirar".</small>}
+                  </div>
+                )}
                 {vid && (
                   <div style={{ marginTop: 16 }}>
                     <div className="tag">Tutorial</div>
