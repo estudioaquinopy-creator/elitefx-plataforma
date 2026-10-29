@@ -682,3 +682,7 @@ button.chip{cursor:pointer;font-family:inherit;line-height:1.2}
 .rkl-f b{color:var(--tx)}
 .rkl small{margin:0;text-transform:none;letter-spacing:0;font:500 10px 'Manrope',sans-serif;color:var(--mu)}
 .rkl-yo{margin-top:2px !important;padding-top:3px;border-top:1px solid var(--bd);color:var(--tx) !important}
+.rkl-p{display:flex;align-items:baseline;gap:6px;flex:none}
+.rkl-p em{font-style:normal;font-size:10px;color:var(--mu)}
+.rkl-f.yo{color:var(--tx);background:rgba(255,193,7,.12);border-radius:6px;padding:1px 4px;margin:0 -4px}
+.rkl-mi{margin-top:3px}

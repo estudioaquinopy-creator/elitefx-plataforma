@@ -13,14 +13,25 @@ export default function RankingLateral({ d, alNavegar }: { d: Datos; alNavegar?:
       <span className="rkl-t"><b style={{ whiteSpace: "nowrap" }}>🏆 Ranking</b><CuentaRanking cierre={d.cierre} compacto /></span>
       {d.modo === "gratis" ? (
         <small>Premios en USDT para los miembros VIP</small>
-      ) : d.top.length === 0 ? (
-        <small>Nadie suma puntos todavía</small>
       ) : (
-        d.top.map((f, i) => (
-          <span key={i} className="rkl-f"><span>{MEDALLA[i]} {f.nombre}</span><b>{f.puntos}</b></span>
-        ))
+        <>
+          {[0, 1, 2].map((i) => {
+            const f = d.top[i];
+            return (
+              <span key={i} className={"rkl-f" + (f?.yo ? " yo" : "")}>
+                <span>{MEDALLA[i]} {f ? f.nombre + (f.yo ? " (tú)" : "") : "—"}</span>
+                <span className="rkl-p">{f ? <b>{f.puntos}</b> : null}<em>{d.premios[i]} USDT</em></span>
+              </span>
+            );
+          })}
+          {d.modo === "vip" && !d.top.some((f) => f.yo) && (
+            <span className="rkl-f yo rkl-mi">
+              <span>{d.yo ? "#" + d.yo.pos + " · Tú" : "Tú"}</span>
+              <span className="rkl-p">{d.yo ? <b>{d.yo.puntos}</b> : <em>Aún sin puntos</em>}</span>
+            </span>
+          )}
+        </>
       )}
-      {d.modo === "vip" && <small className="rkl-yo">{d.yo ? "Tu posición: #" + d.yo.pos + " · " + d.yo.puntos + " pts" : "Aún no tienes puntos"}</small>}
     </Link>
   );
 }

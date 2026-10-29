@@ -5,7 +5,7 @@ import { mesDeRanking, cierreISO, premiosRanking } from "@/lib/ranking";
 export type RankingLateral = {
   mes: string;
   cierre: string;
-  top: { nombre: string; puntos: number }[];
+  top: { nombre: string; puntos: number; yo: boolean }[];
   premios: number[];
   yo: { pos: number; puntos: number } | null;
   modo: "vip" | "admin" | "gratis";
@@ -39,7 +39,7 @@ export async function rankingLateral(
     const pos = filas.findIndex((f) => f.user_id === perfil.id);
     return {
       mes, cierre: cierreISO(mes), modo,
-      top: filas.slice(0, 3).map((f) => ({ nombre: f.nombre, puntos: f.puntos })),
+      top: filas.slice(0, 3).map((f) => ({ nombre: f.nombre, puntos: f.puntos, yo: f.user_id === perfil.id })),
       premios: premiosRanking(ajustes.ranking_premios),
       yo: pos >= 0 ? { pos: pos + 1, puntos: filas[pos].puntos } : null,
     };
