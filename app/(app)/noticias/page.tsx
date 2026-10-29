@@ -6,7 +6,7 @@ import FilaNoticia from "@/components/FilaNoticia";
 
 export const dynamic = "force-dynamic";
 
-type Ev = { title: string; country: string; date: string; impact: string; forecast: string; previous: string; actual?: string };
+type Ev = { title: string; country: string; date: string; impact: string; forecast: string; previous: string };
 // Monedas disponibles en el filtro y las que se muestran por defecto (las que opera la academia).
 const TODAS = ["USD", "EUR", "GBP", "JPY", "AUD", "CAD", "CHF", "NZD"];
 const POR_DEFECTO = ["USD", "EUR", "GBP", "CAD"];
@@ -100,7 +100,6 @@ export default async function Noticias({ searchParams }: { searchParams: { d?: s
             inicio={e.date}
             titulo={e.title}
             detalle={(e.country === "USD" ? "USD · afecta también al oro" : e.country) + (e.forecast ? " · Previsión " + e.forecast : "") + (e.previous ? " · Anterior " + e.previous : "")}
-            resultado={e.actual || undefined}
             pasadaServidor={new Date(e.date).getTime() <= ahoraMs}
           />
         ))}
