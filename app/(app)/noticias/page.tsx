@@ -2,12 +2,11 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { hoyPY, ZONA, perfilActual, permisos } from "@/lib/sesion";
 import FiltroMonedas from "@/components/FiltroMonedas";
-import CuentaNoticia from "@/components/CuentaNoticia";
-import SimuladorNoticia from "@/components/SimuladorNoticia";
+import FilaNoticia from "@/components/FilaNoticia";
 
 export const dynamic = "force-dynamic";
 
-type Ev = { title: string; country: string; date: string; impact: string; forecast: string; previous: string };
+type Ev = { title: string; country: string; date: string; impact: string; forecast: string; previous: string; actual?: string };
 // Monedas disponibles en el filtro y las que se muestran por defecto (las que opera la academia).
 const TODAS = ["USD", "EUR", "GBP", "JPY", "AUD", "CAD", "CHF", "NZD"];
 const POR_DEFECTO = ["USD", "EUR", "GBP", "CAD"];
@@ -40,6 +39,7 @@ export default async function Noticias({ searchParams }: { searchParams: { d?: s
     cargar("https://nfs.faireconomy.media/ff_calendar_nextweek.json"),
   ]);
   const hoy = hoyPY();
+  const ahoraMs = Date.now();
   const guardadas = (cookies().get("noticias_monedas")?.value ?? "").split(/[.,]/).filter((m) => TODAS.includes(m));
   const MONEDAS = guardadas.length ? TODAS.filter((m) => guardadas.includes(m)) : POR_DEFECTO;
 
@@ -94,25 +94,17 @@ export default async function Noticias({ searchParams }: { searchParams: { d?: s
 
         {lista.length === 0 && <p className="mu">No hay noticias de alto impacto este día para las monedas elegidas.</p>}
         {lista.map((e, k) => (
-          <div key={k} className="ses">
-            <div className="dt">{horaPY(e.date)}</div>
-            <div style={{ flex: 1 }}>
-              <b>{e.title}</b>
-              <small className="mu" style={{ display: "block" }}>
-                {e.country === "USD" ? "USD · afecta también al oro" : e.country}
-                {e.forecast ? " · Previsión " + e.forecast : ""}{e.previous ? " · Anterior " + e.previous : ""}
-              </small>
-            </div>
-            <span style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}><CuentaNoticia inicio={e.date} /><span className="pill st-vencido">Alto impacto</span></span>
-          </div>
+          <FilaNoticia
+            key={k}
+            hora={horaPY(e.date)}
+            inicio={e.date}
+            titulo={e.title}
+            detalle={(e.country === "USD" ? "USD · afecta también al oro" : e.country) + (e.forecast ? " · Previsión " + e.forecast : "") + (e.previous ? " · Anterior " + e.previous : "")}
+            resultado={e.actual || undefined}
+            pasadaServidor={new Date(e.date).getTime() <= ahoraMs}
+          />
         ))}
       </section>
-      {perm.admin && (
-        <details className="box adm">
-          <summary>Simulador del contador (solo administrador)</summary>
-          <SimuladorNoticia />
-        </details>
-      )}
       <p className="note">Fuente: calendario económico de Forex Factory (datos de terceros, pueden cambiar). Verifica siempre en tu plataforma antes de operar.</p>
     </>
   );
