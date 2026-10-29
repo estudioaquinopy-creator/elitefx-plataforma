@@ -24,13 +24,12 @@ const filasDelMes = unstable_cache(async (mes: string): Promise<Fila[] | null> =
 // Datos de la tarjeta del ranking del menú lateral. Si algo falla (p. ej. falta una migración), devuelve null y no se muestra.
 export async function rankingLateral(
   perfil: { id: string },
-  perm: { admin: boolean; comunidad: boolean },
+  perm: { admin: boolean },
   plan: string,
   ajustes: Record<string, string>,
   respaldo: () => Promise<Fila[] | null>, // consulta con la sesión de la persona, si no hay clave de servicio
   hoy: string,
 ): Promise<RankingLateral | null> {
-  if (!perm.comunidad) return null;
   const mes = mesDeRanking(hoy);
   const modo = perm.admin ? "admin" : plan === "gratis" ? "gratis" : "vip";
   try {

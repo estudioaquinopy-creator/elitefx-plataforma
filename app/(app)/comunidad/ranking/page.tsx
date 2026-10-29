@@ -19,14 +19,7 @@ const PUESTOS = ["Primer puesto", "Segundo puesto", "Tercer puesto"];
 export default async function Ranking({ searchParams }: { searchParams: { m?: string; error?: string } }) {
   const perfil = await perfilActual();
   const perm = await permisos(perfil);
-  if (!perm.comunidad) {
-    return (
-      <>
-        <h1>Ranking</h1>
-        <section className="box"><div className="tag">Solo miembros</div><p className="mu">El ranking de la comunidad es para miembros.</p></section>
-      </>
-    );
-  }
+  const gratis = !perm.admin && perfil.plan === "gratis"; // los miembros gratuitos pueden ver el ranking, pero no participan
   const sb = createClient();
   const aj = await leerAjustes();
   // El ranking en curso es el del mes cuyo último viernes todavía no pasó (desde el sábado ya corre el del mes siguiente).
@@ -55,9 +48,16 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
 
   return (
     <>
-      <Link href="/comunidad" className="back">← Comunidad</Link>
+      <Link href={perm.comunidad ? "/comunidad" : "/inicio"} className="back">{perm.comunidad ? "← Comunidad" : "← Inicio"}</Link>
       <h1>🏆 Ranking de la comunidad</h1>
       <p className="sub">Quienes más participan con calidad ganan puntos cada mes. Solo participan los miembros VIP; los administradores y el equipo de ELITE FX no participan.</p>
+      {gratis && (
+        <section className="box" style={{ borderColor: "var(--go)" }}>
+          <div className="tag" style={{ marginTop: 0 }}>Solo los miembros VIP participan</div>
+          <p className="mu">Estás viendo el ranking como miembro gratuito. Con la membresía VIP, lo que aportas en la comunidad suma puntos y puedes ganarte los premios en USDT cada mes.</p>
+          <a className="btn sd" href={"https://wa.me/595987174242?text=" + encodeURIComponent("Hola, quiero la membresía VIP de ELITE FX")} target="_blank" rel="noopener noreferrer">Quiero ser VIP</a>
+        </section>
+      )}
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
       {falta && <p className="alerta">Todavía no está activo: corre las migraciones 0022 a 0026 del ranking en Supabase.</p>}
 
@@ -104,7 +104,7 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
       <div className="cols">
         <section className="box">
           <h2>Top 10</h2>
-          {top.length === 0 && !falta && <p className="mu">Todavía nadie sumó puntos este mes. ¡Sé el primero!</p>}
+          {top.length === 0 && !falta && <p className="mu">Todavía nadie sumó puntos este mes.{gratis ? "" : " ¡Sé el primero!"}</p>}
           {top.map((f, i) => (
             <div key={f.user_id} className="ses" style={f.user_id === perfil.id ? { background: "var(--sf2)", borderRadius: 12, padding: "12px", borderBottom: 0 } : undefined}>
               <div className="dt" style={{ minWidth: 46 }}>{MEDALLA[i] ?? "#" + (i + 1)}</div>
@@ -115,7 +115,7 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
               <span style={{ textAlign: "right" }}><b style={{ fontSize: 18 }}>{f.puntos} pts</b>{i < 3 && <small className="mu" style={{ display: "block" }}>{premios[i]} USDT</small>}</span>
             </div>
           ))}
-          {perm.admin ? null : yo && miPos >= 10 ? (
+          {perm.admin || gratis ? null : yo && miPos >= 10 ? (
             <p className="mu" style={{ marginTop: 12 }}>Tu posición: <b>#{miPos + 1}</b> con {yo.puntos} puntos.</p>
           ) : !yo && !falta ? (
             <p className="mu" style={{ marginTop: 12 }}>Aún no tienes puntos este mes. Publica un resultado, haz una pregunta o ayuda a otros.</p>

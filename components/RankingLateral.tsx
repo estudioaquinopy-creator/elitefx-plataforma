@@ -11,9 +11,7 @@ export default function RankingLateral({ d, alNavegar }: { d: Datos; alNavegar?:
   return (
     <Link href="/comunidad/ranking" onClick={alNavegar} className="rkl" aria-label={"Ranking de " + mes}>
       <span className="rkl-t"><b style={{ whiteSpace: "nowrap" }}>🏆 Ranking</b><CuentaRanking cierre={d.cierre} compacto /></span>
-      {d.modo === "gratis" ? (
-        <small>Premios en USDT para los miembros VIP</small>
-      ) : (
+      {(
         <>
           {[0, 1, 2].map((i) => {
             const f = d.top[i];
@@ -24,6 +22,7 @@ export default function RankingLateral({ d, alNavegar }: { d: Datos; alNavegar?:
               </span>
             );
           })}
+          {d.modo === "gratis" && <small className="rkl-yo">Hazte VIP para participar</small>}
           {d.modo === "vip" && !d.top.some((f) => f.yo) && (
             <span className="rkl-f yo rkl-mi">
               <span>{d.yo ? "#" + d.yo.pos + " · Tú" : "Tú"}</span>
