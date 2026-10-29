@@ -38,7 +38,7 @@ export async function middleware(request: NextRequest) {
   const precarga = request.headers.get("next-router-prefetch") || request.headers.get("purpose") === "prefetch";
   if (user && !precarga) response.cookies.set("ult", String(ahora), { httpOnly: true, secure: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 30 });
   if (!user && request.cookies.get("ult")) response.cookies.delete("ult");
-  const publica = pathname.startsWith("/login") || pathname.startsWith("/registro") || pathname.startsWith("/recuperar") || pathname.startsWith("/nueva-clave") || pathname.startsWith("/auth");
+  const publica = pathname.startsWith("/login") || pathname.startsWith("/registro") || pathname.startsWith("/recuperar") || pathname.startsWith("/nueva-clave") || pathname.startsWith("/auth") || pathname.startsWith("/verificar");
   if (!user && !publica) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";

@@ -653,3 +653,20 @@ button.cargando{opacity:.75;cursor:wait}
 .sdia.hoy .sdh b{color:var(--ac)}
 .sdia.hoy .sdh span::after{content:" · hoy";color:var(--ac);font-weight:700;text-transform:lowercase}
 button.chip{cursor:pointer;font-family:inherit;line-height:1.2}
+
+/* Certificado de aprobación (hoja horizontal, siempre clara para imprimir bien) */
+.cert-wrap{max-width:980px;margin:0 auto}
+.cert{background:#fbf8ef;color:#14201a;border:2px solid #c9a227;border-radius:6px;padding:10px;aspect-ratio:1.414/1;display:flex}
+.cert-in{flex:1;border:1px solid #c9a227;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:4% 6%;gap:2%;position:relative}
+.cert-logo{width:24%;height:auto;margin-bottom:1%}
+.cert-k{font-family:Sora,sans-serif;letter-spacing:.22em;text-transform:uppercase;font-size:clamp(11px,1.9vw,19px);color:#8a6d00;font-weight:600}
+.cert-p{font-size:clamp(11px,1.6vw,16px);color:#44504a}
+.cert-n{font-family:Sora,sans-serif;font-weight:700;font-size:clamp(22px,4.6vw,46px);line-height:1.15;border-bottom:2px solid #c9a227;padding:0 4% 1%;margin:1% 0;color:#0b3d27;word-break:break-word}
+.cert-c{font-family:Sora,sans-serif;font-weight:700;font-size:clamp(16px,2.8vw,28px);color:#14201a}
+.cert-f{font-size:clamp(11px,1.5vw,15px);color:#44504a;margin-top:1%}
+.cert-pie{position:absolute;left:3%;right:3%;bottom:3%;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:clamp(8px,1.1vw,11px);color:#66736c}
+@page{size:A4 landscape;margin:8mm}
+@media print{
+  .cert-wrap{max-width:none}
+  .cert{-webkit-print-color-adjust:exact;print-color-adjust:exact;width:277mm;height:190mm;aspect-ratio:auto;break-inside:avoid;margin:0 auto}
+}

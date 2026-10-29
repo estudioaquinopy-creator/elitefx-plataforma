@@ -59,8 +59,9 @@ export default async function Examen({ params, searchParams }: { params: { id: s
           <div className="tag">{pasa ? "¡Aprobado!" : "Aún no alcanzas"}</div>
           <h2>{searchParams.a} de {searchParams.t} respuestas correctas</h2>
           <p className="mu">{pasa ? "Superaste el mínimo de " + searchParams.m + " respuestas correctas." : "Necesitas al menos " + searchParams.m + " respuestas correctas. Repasa las lecciones y vuelve a intentarlo: las preguntas cambian en cada intento."}</p>
+          {pasa && <p><Link className="btn sd" href={"/cursos/" + params.id + "/certificado"}>🎓 Obtener mi certificado</Link></p>}
           {pasa && siguiente
-            ? <Link className="btn sd" href={"/cursos/" + siguiente.id}>Ir a {siguiente.nombre}</Link>
+            ? <Link className="btn bl" href={"/cursos/" + siguiente.id}>Ir a {siguiente.nombre}</Link>
             : <Link className="btn sd" href={pasa ? "/cursos" : "/cursos/" + params.id + "/examen"}>{pasa ? "Ver cursos" : "Intentar de nuevo"}</Link>}
         </section>
       </>
@@ -144,7 +145,7 @@ export default async function Examen({ params, searchParams }: { params: { id: s
   return (
     <>
       {cabeza}
-      {aprobado && <p className="okmsg">Ya aprobaste este examen ({aprobado.aciertos}/{aprobado.total}). Puedes volver a rendirlo si quieres.</p>}
+      {aprobado && <p className="okmsg">Ya aprobaste este examen ({aprobado.aciertos}/{aprobado.total}). <Link href={"/cursos/" + params.id + "/certificado"} style={{ color: "inherit", fontWeight: 700 }}>Ver mi certificado</Link>. Puedes volver a rendirlo si quieres.</p>}
       <p className="sub">{preguntas.length} preguntas · necesitas {cfg.minimo} respuestas correctas para aprobar.</p>
       <form action={enviarExamen} className="fm">
         <input type="hidden" name="curso_id" value={params.id} />

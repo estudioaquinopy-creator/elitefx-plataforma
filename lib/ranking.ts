@@ -31,3 +31,9 @@ export function textoFecha(f: string): string {
   const [y, m, d] = f.split("-").map(Number);
   return DIAS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()] + " " + d + " de " + MESES[m - 1];
 }
+
+// Premios en USDT del 1.º, 2.º y 3.º puesto a partir del ajuste "ranking_premios" (por defecto 200, 100 y 50).
+export function premiosRanking(texto: string | undefined | null): number[] {
+  const p = (texto ?? "").split(",").map((x) => Number(x.trim().replace(",", "."))).filter((n) => Number.isFinite(n) && n > 0);
+  return [p[0] ?? 200, p[1] ?? 100, p[2] ?? 50];
+}

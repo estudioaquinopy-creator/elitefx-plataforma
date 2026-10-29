@@ -158,6 +158,7 @@ export default async function CursoPage({ params, searchParams }: { params: { id
                 <small className="mu">Completa todas las lecciones para desbloquearlo.</small>
               )}
               {(admin || completo || aprobE) && <Link className="btn sd s" href={"/cursos/" + curso.id + "/examen"}>{admin ? "Configurar examen" : aprobE ? "Repetir examen" : "Rendir examen"}</Link>}
+              {!admin && aprobE && <Link className="btn bl s" href={"/cursos/" + curso.id + "/certificado"}>🎓 Mi certificado</Link>}
             </div>
           )}
         </section>

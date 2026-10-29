@@ -9,6 +9,9 @@ import { createClient } from "@/lib/supabase/server";
 import { perfilActual, permisos, primerNombre, ZONA, hoyPY } from "@/lib/sesion";
 import { youtubeId } from "@/lib/youtube";
 import { bloqueosExamen } from "@/lib/examen";
+import { leerAjustes } from "@/lib/ajustes";
+import { mesDeRanking, cierreISO, premiosRanking } from "@/lib/ranking";
+import TarjetaRanking from "@/components/TarjetaRanking";
 
 export const dynamic = "force-dynamic";
 
@@ -74,6 +77,21 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
   let avisos: { titulo: string; moneda: string; inicio: string }[] = [];
   if (perm.noticias) {
     try { avisos = (await noticiasCercanas(180)).map((e) => ({ titulo: e.title, moneda: e.country, inicio: e.date })); } catch { avisos = []; }
+  }
+
+  // Tarjeta del ranking del mes (si la migración del ranking aún no está, simplemente no aparece).
+  let rank: { mes: string; top: { nombre: string; puntos: number }[]; premios: number[]; yo: { pos: number; puntos: number } | null; modo: "vip" | "admin" | "gratis" } | null = null;
+  if (perm.comunidad) {
+    const mesR = mesDeRanking(hoyPY());
+    const modo = perm.admin ? "admin" : perfil.plan === "gratis" ? "gratis" : "vip";
+    try {
+      const [aj, r] = await Promise.all([leerAjustes(), supabase.rpc("ranking_mes", { p_mes: mesR })]);
+      if (!r.error) {
+        const filas = (r.data ?? []) as { user_id: string; nombre: string; puntos: number }[];
+        const pos = filas.findIndex((f) => f.user_id === perfil.id);
+        rank = { mes: mesR, top: filas.slice(0, 3).map((f) => ({ nombre: f.nombre, puntos: f.puntos })), premios: premiosRanking(aj.ranking_premios), yo: pos >= 0 ? { pos: pos + 1, puntos: filas[pos].puntos } : null, modo };
+      }
+    } catch { rank = null; }
   }
 
   const pasos = cursos.map((c) => {
@@ -151,6 +169,7 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
               <Link className="btn bl s" href="/calendario" style={{ marginTop: 10 }}>Ver calendario</Link>
             </section>
           )}
+          {rank && <TarjetaRanking mes={rank.mes} cierre={cierreISO(rank.mes)} top={rank.top} premios={rank.premios} yo={rank.yo} modo={rank.modo} />}
           <section className="box">
             <div className="hd"><h2>Broker recomendado</h2></div>
             <p className="mu">Abre tu cuenta con Liquid, nuestro broker recomendado, para desbloquear el Scanner Elite y las sesiones en vivo.</p>

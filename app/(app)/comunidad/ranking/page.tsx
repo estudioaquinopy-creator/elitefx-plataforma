@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { leerAjustes } from "@/lib/ajustes";
 import { guardarTextos } from "../../ajustes-actions";
 import { ajustarPuntos } from "../actions";
-import { mesDeRanking, ultimoViernes, cierreISO, textoFecha } from "@/lib/ranking";
+import { mesDeRanking, ultimoViernes, cierreISO, textoFecha, premiosRanking } from "@/lib/ranking";
 import CuentaRanking from "@/components/CuentaRanking";
 
 export const dynamic = "force-dynamic";
@@ -34,8 +34,7 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
   const mes = /^\d{4}-(0[1-9]|1[0-2])$/.test(searchParams.m ?? "") && (searchParams.m as string) <= actual ? (searchParams.m as string) : actual;
   const previo = sumaMes(mes, -1);
   // Premios en USDT por puesto (1.º, 2.º y 3.º); el administrador puede cambiarlos. Por defecto 200, 100 y 50.
-  const parseados = (aj.ranking_premios ?? "").split(",").map((x) => Number(x.trim().replace(",", "."))).filter((n) => Number.isFinite(n) && n > 0);
-  const premios = [parseados[0] ?? 200, parseados[1] ?? 100, parseados[2] ?? 50];
+  const premios = premiosRanking(aj.ranking_premios);
 
   const [r1, r2] = await Promise.all([sb.rpc("ranking_mes", { p_mes: mes }), sb.rpc("ranking_mes", { p_mes: previo })]);
   const falta = !!r1.error;
