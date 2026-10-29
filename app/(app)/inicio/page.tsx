@@ -9,6 +9,10 @@ import { createClient } from "@/lib/supabase/server";
 import { perfilActual, permisos, primerNombre, ZONA, hoyPY } from "@/lib/sesion";
 import { youtubeId } from "@/lib/youtube";
 import { bloqueosExamen } from "@/lib/examen";
+import { leerAjustes } from "@/lib/ajustes";
+import { mesDeRanking } from "@/lib/ranking";
+import { rankingLateral, type RankingLateral as DatosRanking } from "@/lib/rankingLateral";
+import TarjetaRanking from "@/components/TarjetaRanking";
 
 export const dynamic = "force-dynamic";
 
@@ -75,6 +79,15 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
   if (perm.noticias) {
     try { avisos = (await noticiasCercanas(180)).map((e) => ({ titulo: e.title, moneda: e.country, inicio: e.date })); } catch { avisos = []; }
   }
+
+  // Ranking del mes (si la migración del ranking aún no está corrida, la tarjeta no aparece).
+  let ranking: DatosRanking | null = null;
+  try {
+    ranking = await rankingLateral(perfil, perm, perfil.plan, await leerAjustes(), async () => {
+      const { data, error } = await supabase.rpc("ranking_mes", { p_mes: mesDeRanking(hoyPY()) });
+      return error ? null : ((data ?? []) as { user_id: string; nombre: string; puntos: number }[]);
+    }, hoyPY());
+  } catch { ranking = null; }
 
   const pasos = cursos.map((c) => {
     const total = lecs.filter((l) => l.curso_id === c.id).length;
@@ -151,6 +164,7 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
               <Link className="btn bl s" href="/calendario" style={{ marginTop: 10 }}>Ver calendario</Link>
             </section>
           )}
+          {ranking && <TarjetaRanking d={ranking} />}
           <section className="box">
             <div className="hd"><h2>Broker recomendado</h2></div>
             <p className="mu">Abre tu cuenta con Liquid, nuestro broker recomendado, para desbloquear el Scanner Elite y las sesiones en vivo.</p>

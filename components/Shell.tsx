@@ -4,14 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { GrupoRedes } from "@/lib/redes";
 import Cabecera, { type Notif } from "./Cabecera";
-import RankingLateral from "./RankingLateral";
-import type { RankingLateral as DatosRanking } from "@/lib/rankingLateral";
 
 type Item = { href: string; label: string; lock: boolean; icon: string };
 
-type Props = { items: Item[]; nombre: string; email: string; iniciales: string; avatar?: string; notifs: Notif[]; noLeidas: number; real: boolean; vista: string; redes: GrupoRedes[]; editarRedes: boolean; ranking?: DatosRanking | null; enLinea?: React.ReactNode; children: React.ReactNode };
+type Props = { items: Item[]; nombre: string; email: string; iniciales: string; avatar?: string; notifs: Notif[]; noLeidas: number; real: boolean; vista: string; redes: GrupoRedes[]; editarRedes: boolean; enLinea?: React.ReactNode; children: React.ReactNode };
 
-export default function Shell({ items, nombre, email, iniciales, avatar, notifs, noLeidas, real, vista, redes, editarRedes, ranking, enLinea, children }: Props) {
+export default function Shell({ items, nombre, email, iniciales, avatar, notifs, noLeidas, real, vista, redes, editarRedes, enLinea, children }: Props) {
   const [open, setOpen] = useState(false);
   const path = usePathname();
   return (
@@ -34,9 +32,8 @@ export default function Shell({ items, nombre, email, iniciales, avatar, notifs,
             {it.lock && <span className="pill">Miembros</span>}
           </Link>
         ))}
-        {(redes.length > 0 || editarRedes || ranking) && (
+        {(redes.length > 0 || editarRedes) && (
           <div className="redes">
-            {ranking && <RankingLateral d={ranking} alNavegar={() => setOpen(false)} />}
             {redes.flatMap((g) => g.items.map((r) => ({ g: g.grupo, ...r }))).map((r) => (
               <a key={r.g + r.nombre} href={r.url} target="_blank" rel="noopener noreferrer" className="ig">
                 <span className="igi">
