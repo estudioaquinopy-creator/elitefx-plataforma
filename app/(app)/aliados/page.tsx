@@ -99,7 +99,7 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
         <section className="box">
           <div className="hd"><h2>Tus primeros pasos</h2></div>
           {["Abre y verifica tu cuenta con nuestro enlace", "Realiza tu primer depósito", "Empieza a operar con la fórmula"].map((t, i) => (
-            <div key={i} className="ses"><div className="dt">{i + 1}</div><div><b>{t}</b></div></div>
+            <div key={i} className="ses" style={{ flexWrap: "nowrap", alignItems: "center" }}><div className="dt" style={{ flexShrink: 0 }}>{i + 1}</div><div style={{ flex: 1, minWidth: 0 }}><b>{t}</b></div></div>
           ))}
         </section>
       </div>
