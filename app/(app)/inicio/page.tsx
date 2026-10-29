@@ -103,7 +103,7 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
 
   return (
     <>
-      <AvisoSorpresa texto={SORPRESA.texto} hasta={SORPRESA.hasta} etiqueta={SORPRESA.etiqueta} />
+      <AvisoSorpresa texto={SORPRESA.texto} hasta={SORPRESA.hasta} etiqueta={SORPRESA.etiqueta} anuncio={SORPRESA.anuncio} linkVip={!perm.admin && perfil.plan === "gratis" ? "https://wa.me/595987174242?text=" + encodeURIComponent("Hola, quiero la membresía VIP de ELITE FX") : undefined} />
       <h1>Hola, {primerNombre(perfil)}</h1>
       <p className="sub">Este es tu siguiente paso en la academia.</p>
       {!perfil.nombre && (

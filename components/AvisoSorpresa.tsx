@@ -3,8 +3,11 @@ import { useEffect, useState } from "react";
 
 const dos = (n: number) => String(n).padStart(2, "0");
 
-// Cabecera de Inicio: aviso con cuenta regresiva hasta una fecha. Pasada la hora, muestra "¡Llegó el momento!" durante 1 hora y luego desaparece.
-export default function AvisoSorpresa({ texto, hasta, etiqueta }: { texto: string; hasta: string; etiqueta: string }) {
+type Precio = { nombre: string; antes: string; ahora: string; gs: string };
+type Anuncio = { titulo: string; precios: Precio[]; nota: string; visibleDias: number };
+
+// Cabecera de Inicio: cuenta regresiva hasta una fecha. Al llegar la hora muestra el anuncio (precios nuevos) durante `visibleDias` días y luego desaparece.
+export default function AvisoSorpresa({ texto, hasta, etiqueta, anuncio, linkVip }: { texto: string; hasta: string; etiqueta: string; anuncio: Anuncio; linkVip?: string }) {
   const [ahora, setAhora] = useState<number | null>(null);
   useEffect(() => {
     setAhora(Date.now());
@@ -13,7 +16,31 @@ export default function AvisoSorpresa({ texto, hasta, etiqueta }: { texto: strin
   }, []);
   if (ahora === null) return null;
   const falta = Math.ceil((new Date(hasta).getTime() - ahora) / 1000);
-  if (falta < -3600) return null;
+  if (falta < -anuncio.visibleDias * 86400) return null;
+
+  if (falta <= 0) {
+    return (
+      <section className="box" role="status" style={{ borderColor: "var(--go)", boxShadow: "inset 3px 0 0 var(--go)", marginBottom: 18 }}>
+        <div className="tag" style={{ marginTop: 0 }}>🎉 ¡Llegó la sorpresa!</div>
+        <h2 style={{ margin: "4px 0 12px" }}>{anuncio.titulo}</h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: 12 }}>
+          {anuncio.precios.map((p) => (
+            <div key={p.nombre} style={{ background: "var(--sf2)", border: "1px solid var(--bd)", borderRadius: 14, padding: "14px 16px" }}>
+              <b>{p.nombre}</b>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap", marginTop: 6 }}>
+                <span className="mu" style={{ textDecoration: "line-through" }}>{p.antes}</span>
+                <span style={{ fontSize: 28, fontWeight: 800, color: "var(--go)", lineHeight: 1.1 }}>{p.ahora}</span>
+              </div>
+              <small className="mu">{p.gs}</small>
+            </div>
+          ))}
+        </div>
+        <small className="mu" style={{ display: "block", marginTop: 10 }}>{anuncio.nota}</small>
+        {linkVip && <a className="btn sd s" href={linkVip} target="_blank" rel="noopener noreferrer" style={{ marginTop: 10 }}>Quiero aprovecharlo</a>}
+      </section>
+    );
+  }
+
   const d = Math.floor(falta / 86400), h = Math.floor((falta % 86400) / 3600), m = Math.floor((falta % 3600) / 60), s = falta % 60;
   const caja = (n: number, et: string) => (
     <div style={{ textAlign: "center", minWidth: 58 }}>
@@ -25,14 +52,12 @@ export default function AvisoSorpresa({ texto, hasta, etiqueta }: { texto: strin
     <section className="box" role="status" style={{ borderColor: "var(--go)", boxShadow: "inset 3px 0 0 var(--go)", display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap", marginBottom: 18 }}>
       <div style={{ flex: 1, minWidth: 220 }}>
         <div className="tag" style={{ marginTop: 0 }}>🎁 Muy pronto</div>
-        <h2 style={{ margin: "4px 0 2px" }}>{falta <= 0 ? "¡Llegó el momento de la sorpresa!" : texto}</h2>
+        <h2 style={{ margin: "4px 0 2px" }}>{texto}</h2>
         <small className="mu">{etiqueta}</small>
       </div>
-      {falta > 0 && (
-        <div style={{ display: "flex", gap: 10 }} aria-label="Tiempo que falta">
-          {caja(d, d === 1 ? "día" : "días")}{caja(h, "horas")}{caja(m, "min")}{caja(s, "seg")}
-        </div>
-      )}
+      <div style={{ display: "flex", gap: 10 }} aria-label="Tiempo que falta">
+        {caja(d, d === 1 ? "día" : "días")}{caja(h, "horas")}{caja(m, "min")}{caja(s, "seg")}
+      </div>
     </section>
   );
 }
