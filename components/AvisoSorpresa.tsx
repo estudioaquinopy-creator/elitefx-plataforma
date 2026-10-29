@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 const dos = (n: number) => String(n).padStart(2, "0");
 
 type Precio = { nombre: string; antes: string; ahora: string; gs: string };
-type Anuncio = { titulo: string; precios: Precio[]; nota: string; visibleDias: number };
+type Anuncio = { titulo: string; motivo: string; vigencia: string; precios: Precio[]; nota: string; visibleDias: number };
 
 // Cabecera de Inicio: cuenta regresiva hasta una fecha. Al llegar la hora muestra el anuncio (precios nuevos) durante `visibleDias` días y luego desaparece.
 export default function AvisoSorpresa({ texto, hasta, etiqueta, anuncio, linkVip }: { texto: string; hasta: string; etiqueta: string; anuncio: Anuncio; linkVip?: string }) {
@@ -22,7 +22,8 @@ export default function AvisoSorpresa({ texto, hasta, etiqueta, anuncio, linkVip
     return (
       <section className="box" role="status" style={{ borderColor: "var(--go)", boxShadow: "inset 3px 0 0 var(--go)", marginBottom: 18 }}>
         <div className="tag" style={{ marginTop: 0 }}>🎉 ¡Llegó la sorpresa!</div>
-        <h2 style={{ margin: "4px 0 12px" }}>{anuncio.titulo}</h2>
+        <h2 style={{ margin: "4px 0 6px" }}>{anuncio.titulo}</h2>
+        <p style={{ margin: "0 0 12px" }}>{anuncio.motivo}</p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: 12 }}>
           {anuncio.precios.map((p) => (
             <div key={p.nombre} style={{ background: "var(--sf2)", border: "1px solid var(--bd)", borderRadius: 14, padding: "14px 16px" }}>
@@ -35,7 +36,8 @@ export default function AvisoSorpresa({ texto, hasta, etiqueta, anuncio, linkVip
             </div>
           ))}
         </div>
-        <small className="mu" style={{ display: "block", marginTop: 10 }}>{anuncio.nota}</small>
+        <p style={{ margin: "12px 0 0" }}><b>📅 {anuncio.vigencia}</b></p>
+        <small className="mu" style={{ display: "block", marginTop: 6 }}>{anuncio.nota}</small>
         {linkVip && <a className="btn sd s" href={linkVip} target="_blank" rel="noopener noreferrer" style={{ marginTop: 10 }}>Quiero aprovecharlo</a>}
       </section>
     );
