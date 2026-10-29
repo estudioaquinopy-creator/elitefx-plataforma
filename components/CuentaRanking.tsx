@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 const dos = (n: number) => String(n).padStart(2, "0");
 
 // Cuenta regresiva hasta el cierre del ranking del mes (último viernes, 23:59 hora de Paraguay).
-export default function CuentaRanking({ cierre }: { cierre: string }) {
+export default function CuentaRanking({ cierre, compacto = false }: { cierre: string; compacto?: boolean }) {
   const [ahora, setAhora] = useState<number | null>(null);
   useEffect(() => {
     setAhora(Date.now());
@@ -17,6 +17,11 @@ export default function CuentaRanking({ cierre }: { cierre: string }) {
   const m = total === null ? 0 : Math.floor((total % 3600) / 60);
   const s = total === null ? 0 : total % 60;
   const ultimas = total !== null && total <= 86400;
+  if (compacto) {
+    if (total === null) return null;
+    if (total === 0) return <span className="rkl-c">Cerrado</span>;
+    return <span className="rkl-c" style={ultimas ? { color: "var(--go)" } : undefined} title="Tiempo para el cierre del ranking">⏱ {d > 0 ? d + "d " : ""}{dos(h)}:{dos(m)}:{dos(s)}</span>;
+  }
   const caja = (n: number, et: string) => (
     <div style={{ textAlign: "center", minWidth: 58 }}>
       <b style={{ fontSize: 26, fontVariantNumeric: "tabular-nums", display: "block", lineHeight: 1.1, ...(ultimas ? { color: "var(--go)" } : {}) }}>{total === null ? "--" : dos(n)}</b>

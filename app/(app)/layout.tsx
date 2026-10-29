@@ -9,6 +9,8 @@ import { ocurrencias, type Fijo } from "@/lib/horario";
 import { hoyPY } from "@/lib/sesion";
 import { leerAjustes } from "@/lib/ajustes";
 import { armarRedes } from "@/lib/redes";
+import { rankingLateral } from "@/lib/rankingLateral";
+import { mesDeRanking } from "@/lib/ranking";
 import type { Notif } from "@/components/Cabecera";
 
 export const dynamic = "force-dynamic";
@@ -77,12 +79,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     }
   }
   const redes = armarRedes(aj);
+  const ranking = await rankingLateral(perfil, perm, perfil.plan, aj, async () => {
+    const { data, error } = await supabase.rpc("ranking_mes", { p_mes: mesDeRanking(hoyPY()) });
+    return error ? null : ((data ?? []) as { user_id: string; nombre: string; puntos: number }[]);
+  }, hoyPY());
   const noLeidas = notifs.filter((n) => n.nueva).length;
   const nombre = perfil.nombre || perfil.email;
   const iniciales = nombre.split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((x) => x[0].toUpperCase()).join("");
 
   return (
-    <Shell items={items} nombre={nombre} email={perfil.email} iniciales={iniciales} avatar={perfil.avatar_url ?? ""} notifs={notifs} noLeidas={noLeidas} real={perfil.rol === "admin" || !!perfil.vista} vista={perfil.vista ?? ""} redes={redes} editarRedes={perfil.rol === "admin"} enLinea={<EnLinea id={perfil.id} nombre={nombre} />}>
+    <Shell items={items} nombre={nombre} email={perfil.email} iniciales={iniciales} avatar={perfil.avatar_url ?? ""} notifs={notifs} noLeidas={noLeidas} real={perfil.rol === "admin" || !!perfil.vista} vista={perfil.vista ?? ""} redes={redes} ranking={ranking} editarRedes={perfil.rol === "admin"} enLinea={<EnLinea id={perfil.id} nombre={nombre} />}>
       {perfil.vista && (
         <form action={modoAlumno} className="vbar">
           <span>Estás viendo la plataforma como <b>alumno {perfil.vista === "gratis" ? "gratis" : "miembro"}</b>. Los cambios de administrador están ocultos.</span>

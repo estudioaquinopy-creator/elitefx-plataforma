@@ -670,3 +670,15 @@ button.chip{cursor:pointer;font-family:inherit;line-height:1.2}
   .cert-wrap{max-width:none}
   .cert{-webkit-print-color-adjust:exact;print-color-adjust:exact;width:277mm;height:190mm;aspect-ratio:auto;break-inside:avoid;margin:0 auto}
 }
+
+/* Ranking compacto en el menú lateral (tono neutro), encima de Síguenos / Sígueme */
+.rkl{display:flex;flex-direction:column;gap:2px;padding:8px 10px;border-radius:10px;border:1px solid var(--bd);background:var(--sf2);color:var(--tx);text-decoration:none;font-size:11px;line-height:1.35}
+.rkl:hover{border-color:var(--go)}
+.rkl-t{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:2px}
+.rkl-t b{font:700 11px 'Sora',sans-serif}
+.rkl-c{font-variant-numeric:tabular-nums;color:var(--mu);font-size:10px;white-space:nowrap}
+.rkl-f{display:flex;justify-content:space-between;gap:8px;color:var(--mu)}
+.rkl-f span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.rkl-f b{color:var(--tx)}
+.rkl small{margin:0;text-transform:none;letter-spacing:0;font:500 10px 'Manrope',sans-serif;color:var(--mu)}
+.rkl-yo{margin-top:2px !important;padding-top:3px;border-top:1px solid var(--bd);color:var(--tx) !important}
