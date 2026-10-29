@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { perfilActual, permisos } from "@/lib/sesion";
 import { fallo, subirImagen } from "@/lib/subida";
 import { rutaSegura } from "@/lib/seguridad";
+import { registrar } from "@/lib/auditoria";
 
 export async function publicar(f: FormData) {
   const perfil = await perfilActual();
@@ -81,4 +82,34 @@ export async function borrarComentario(f: FormData) {
   await createClient().from("comentarios").delete().eq("id", String(f.get("id") ?? ""));
   revalidatePath("/comunidad");
   redirect(rutaSegura(f.get("volver")) + "#p" + String(f.get("post") ?? ""));
+}
+
+// Respuesta útil: la marca quien hizo la pregunta (o el administrador) y suma puntos al ranking de quien respondió.
+export async function marcarUtil(f: FormData) {
+  await perfilActual();
+  const volver = rutaSegura(f.get("volver"));
+  const util = f.get("util") === "1";
+  const { error } = await createClient().rpc("marcar_comentario_util", { p_id: String(f.get("id") ?? ""), p_valor: util });
+  if (error) fallo("/comunidad", error.message.includes("marcar_comentario_util") ? "Falta correr la migración 0022 en Supabase." : error.message);
+  revalidatePath("/comunidad");
+  redirect(volver + "#p" + String(f.get("post") ?? ""));
+}
+
+// Solo administrador: suma o resta puntos a una persona en el ranking de un mes (con motivo).
+export async function ajustarPuntos(f: FormData) {
+  const yo = await perfilActual();
+  if (yo.rol !== "admin") throw new Error("Solo el administrador puede hacer esto.");
+  const ruta = "/comunidad/ranking";
+  const mes = String(f.get("mes") ?? "");
+  const user_id = String(f.get("user_id") ?? "");
+  const puntos = Math.trunc(Number(f.get("puntos")));
+  const motivo = String(f.get("motivo") ?? "").trim().slice(0, 200);
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(mes) || !user_id) fallo(ruta, "Elige a la persona.");
+  if (!Number.isFinite(puntos) || puntos === 0 || Math.abs(puntos) > 1000) fallo(ruta, "Escribe los puntos a sumar o restar (por ejemplo 10 o -5).");
+  if (!motivo) fallo(ruta, "Escribe el motivo del ajuste.");
+  const { error } = await createClient().from("ranking_ajustes").insert({ mes, user_id, puntos, motivo, admin_id: yo.id });
+  if (error) fallo(ruta, "No se pudo guardar el ajuste: " + error.message);
+  await registrar("ranking", user_id, (puntos > 0 ? "+" : "") + puntos + " puntos (" + mes + "): " + motivo);
+  revalidatePath(ruta);
+  redirect(ruta + "?m=" + mes);
 }

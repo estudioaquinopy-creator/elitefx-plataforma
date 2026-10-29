@@ -5,12 +5,12 @@ import CajaTexto from "@/components/CajaTexto";
 import Compositor from "@/components/Compositor";
 import BotonEnvio from "@/components/BotonEnvio";
 import PostModal from "@/components/PostModal";
-import { borrarPublicacion, publicar, alternarLike, comentar, borrarComentario } from "./actions";
+import { borrarPublicacion, publicar, alternarLike, comentar, borrarComentario, marcarUtil } from "./actions";
 
 export const dynamic = "force-dynamic";
 
 type Pub = { id: string; user_id: string; autor: string; canal: string; titulo: string; cuerpo: string; imagen_url: string | null; created_at: string };
-type Com = { id: string; post_id: string; user_id: string; autor: string; cuerpo: string; created_at: string };
+type Com = { id: string; post_id: string; user_id: string; autor: string; cuerpo: string; created_at: string; util?: boolean };
 const CANALES: Record<string, string> = { anuncios: "Anuncios", preguntas: "Preguntas generales", resultados: "Resultados" };
 const cuando = (iso: string) => new Date(iso).toLocaleString("es-PY", { timeZone: "America/Asuncion", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
 const ini = (n: string) => (n.trim()[0] || "?").toUpperCase();
@@ -43,6 +43,7 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
     <>
       <h1>Comunidad</h1>
       <p className="sub">Comparte tus resultados, resuelve dudas y apoya a otros alumnos.</p>
+      <p style={{ margin: "0 0 14px" }}><Link className="btn sd s" href="/comunidad/ranking">🏆 Ranking del mes</Link></p>
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
 
       {perm.comunidad ? (
@@ -104,9 +105,12 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
                   <div key={c.id} className="resp">
                     <span className="av2 s">{ini(c.autor)}</span>
                     <div style={{ flex: 1 }}>
-                      <b>{c.autor}</b> <small className="mu">{cuando(c.created_at)}</small>
+                      <b>{c.autor}</b> <small className="mu">{cuando(c.created_at)}</small>{c.util && <span className="pill pos" style={{ marginLeft: 8 }}>✓ Respuesta útil</span>}
                       <p style={{ whiteSpace: "pre-wrap", margin: "2px 0 0" }}>{c.cuerpo}</p>
                     </div>
+                    {(perm.admin || p.user_id === perfil.id) && c.user_id !== p.user_id && (
+                      <form action={marcarUtil}><input type="hidden" name="id" value={c.id} /><input type="hidden" name="post" value={p.id} /><input type="hidden" name="volver" value={volver} /><input type="hidden" name="util" value={c.util ? "0" : "1"} /><button className="lk">{c.util ? "Quitar útil" : "Marcar útil"}</button></form>
+                    )}
                     {(perm.admin || c.user_id === perfil.id) && (
                       <form action={borrarComentario}><input type="hidden" name="id" value={c.id} /><input type="hidden" name="post" value={p.id} /><input type="hidden" name="volver" value={volver} /><button className="lk">Eliminar</button></form>
                     )}
