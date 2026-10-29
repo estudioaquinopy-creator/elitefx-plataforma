@@ -37,7 +37,7 @@ export default function AvisoSorpresa({ texto, hasta, etiqueta, anuncio, linkVip
           ))}
         </div>
         <p style={{ margin: "12px 0 0" }}><b>📅 {anuncio.vigencia}</b></p>
-        <small className="mu" style={{ display: "block", marginTop: 6 }}>{anuncio.nota}</small>
+        {anuncio.nota && <small className="mu" style={{ display: "block", marginTop: 6 }}>{anuncio.nota}</small>}
         {linkVip && <a className="btn sd s" href={linkVip} target="_blank" rel="noopener noreferrer" style={{ marginTop: 10 }}>Quiero aprovecharlo</a>}
       </section>
     );
