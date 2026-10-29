@@ -57,7 +57,7 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
     <>
       <Link href="/comunidad" className="back">← Comunidad</Link>
       <h1>🏆 Ranking de la comunidad</h1>
-      <p className="sub">Quienes más participan con calidad ganan puntos cada mes. Solo participan los miembros VIP.</p>
+      <p className="sub">Quienes más participan con calidad ganan puntos cada mes. Solo participan los miembros VIP; los administradores y el equipo de ELITE FX no participan.</p>
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
       {falta && <p className="alerta">Todavía no está activo: corre la migración 0022_ranking.sql en Supabase.</p>}
 
