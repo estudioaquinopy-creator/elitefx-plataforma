@@ -1,10 +1,15 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { hoyPY, ZONA, perfilActual, permisos } from "@/lib/sesion";
+import FiltroMonedas from "@/components/FiltroMonedas";
+import CuentaNoticia from "@/components/CuentaNoticia";
 
 export const dynamic = "force-dynamic";
 
 type Ev = { title: string; country: string; date: string; impact: string; forecast: string; previous: string };
-const MONEDAS = ["USD", "GBP", "EUR", "CAD"];
+// Monedas disponibles en el filtro y las que se muestran por defecto (las que opera la academia).
+const TODAS = ["USD", "EUR", "GBP", "JPY", "AUD", "CAD", "CHF", "NZD"];
+const POR_DEFECTO = ["USD", "EUR", "GBP", "CAD"];
 const DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
 const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 const diaPY = (iso: string) => new Date(iso).toLocaleDateString("en-CA", { timeZone: ZONA });
@@ -34,6 +39,8 @@ export default async function Noticias({ searchParams }: { searchParams: { d?: s
     cargar("https://nfs.faireconomy.media/ff_calendar_nextweek.json"),
   ]);
   const hoy = hoyPY();
+  const guardadas = (cookies().get("noticias_monedas")?.value ?? "").split(/[.,]/).filter((m) => TODAS.includes(m));
+  const MONEDAS = guardadas.length ? TODAS.filter((m) => guardadas.includes(m)) : POR_DEFECTO;
 
   if (!esta && !proxima) {
     return (
@@ -67,9 +74,10 @@ export default async function Noticias({ searchParams }: { searchParams: { d?: s
   return (
     <>
       <h1>Noticias</h1>
-      <p className="sub">Noticias de alto impacto de USD, GBP, EUR y CAD · horario de Paraguay.</p>
+      <p className="sub">Noticias de alto impacto · horario de Paraguay. Elige las monedas que quieres seguir.</p>
 
       <section className="box">
+        <FiltroMonedas todas={TODAS} activas={MONEDAS} dia={sel} />
         <div className="calnav">
           {i > 0 ? <Link href={"/noticias?d=" + dias[i - 1]} aria-label="Día anterior">←</Link> : <span />}
           <b>{nombre} {d} de {MESES[m - 1]}</b>
@@ -83,7 +91,7 @@ export default async function Noticias({ searchParams }: { searchParams: { d?: s
           ))}
         </div>
 
-        {lista.length === 0 && <p className="mu">No hay noticias de alto impacto este día.</p>}
+        {lista.length === 0 && <p className="mu">No hay noticias de alto impacto este día para las monedas elegidas.</p>}
         {lista.map((e, k) => (
           <div key={k} className="ses">
             <div className="dt">{horaPY(e.date)}</div>
@@ -94,7 +102,7 @@ export default async function Noticias({ searchParams }: { searchParams: { d?: s
                 {e.forecast ? " · Previsión " + e.forecast : ""}{e.previous ? " · Anterior " + e.previous : ""}
               </small>
             </div>
-            <span className="pill st-vencido">Alto impacto</span>
+            <span style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}><CuentaNoticia inicio={e.date} /><span className="pill st-vencido">Alto impacto</span></span>
           </div>
         ))}
       </section>

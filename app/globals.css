@@ -652,3 +652,4 @@ button.cargando{opacity:.75;cursor:wait}
 .sdia.hoy{border-color:var(--bd);box-shadow:none;background:var(--sf2)}
 .sdia.hoy .sdh b{color:var(--ac)}
 .sdia.hoy .sdh span::after{content:" · hoy";color:var(--ac);font-weight:700;text-transform:lowercase}
+button.chip{cursor:pointer;font-family:inherit;line-height:1.2}
