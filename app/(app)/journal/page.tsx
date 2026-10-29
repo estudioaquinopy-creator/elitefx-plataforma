@@ -83,6 +83,10 @@ export default async function Journal({ searchParams }: { searchParams: { error?
     comparar(gSet, (x) => "Tu estrategia con mejor resultado es \"" + x.clave + "\" (" + mp(x.neto) + ")."),
     comparar([...gPlan].sort((a, b) => a.clave.localeCompare(b.clave, "es")), () => { const si = gPlan.find((x) => x.clave === "Siguió su plan"), no = gPlan.find((x) => x.clave === "No siguió su plan"); return si && no ? "Cuando sigues tu plan promedias " + mp(si.prom) + " por operación; cuando no, " + mp(no.prom) + "." : ""; }),
   ].filter(Boolean);
+  // Video del tutorial "Descargar historial de MetaTrader" (se busca en Tutoriales por el título).
+  const { data: tutsMT } = await sb.from("tutoriales").select("id, titulo").order("created_at", { ascending: false });
+  const normT = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  const videoMT = ((tutsMT ?? []) as { id: string; titulo: string }[]).find((t) => /historial/.test(normT(t.titulo)) && /(metatrader|mt5|mt4)/.test(normT(t.titulo))) ?? ((tutsMT ?? []) as { id: string; titulo: string }[]).find((t) => /descargar.*historial/.test(normT(t.titulo)));
   const consejos = n >= 15 ? generarConsejos(om, m, capital, { mp, pc }) : [];
   const setupsUsados = Array.from(new Set(todas.map((o) => o.setup).filter(Boolean) as string[]));
   const importadas = todas.filter((o) => o.origen === "mt5").length;
@@ -162,8 +166,9 @@ export default async function Journal({ searchParams }: { searchParams: { error?
       <section className="box no-print">
         <h2>Importar reporte de MetaTrader 5</h2>
         <p className="mu">Sube el reporte de tu historial y se cargan todas tus operaciones y métricas de una vez. Si vuelves a subir el mismo reporte, no se duplican.</p>
+        {videoMT && <p style={{ margin: "0 0 10px" }}><Link className="btn sd s" href={"/tutoriales?v=" + videoMT.id}>▶ ¿Cómo descargo el reporte desde MT5? Ver el video</Link></p>}
         <details>
-          <summary>¿Cómo descargo el reporte desde MT5?</summary>
+          <summary>{videoMT ? "Prefiero leer los pasos" : "¿Cómo descargo el reporte desde MT5?"}</summary>
           <ol className="mu">
             <li>En MetaTrader 5 abre la pestaña <b>Historial</b> (abajo, en la caja de herramientas) y elige el período que quieres (por ejemplo, "Todo el historial").</li>
             <li>Haz clic derecho sobre la tabla → <b>Reporte</b> → <b>HTML</b> o <b>Excel (XLSX)</b>.</li>
