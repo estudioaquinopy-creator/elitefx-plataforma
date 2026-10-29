@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual } from "@/lib/sesion";
 import BotonEnvio from "@/components/BotonEnvio";
+import { cursoSinExamen } from "@/lib/examen";
 import { agregarPregunta, borrarPregunta, enviarExamen, guardarConfig, importarPreguntas } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +25,7 @@ export default async function Examen({ params, searchParams }: { params: { id: s
   const admin = perfil.rol === "admin";
   const sb = createClient();
   const { data: curso } = await sb.from("cursos").select("id, nombre, orden").eq("id", params.id).single();
-  if (!curso) notFound();
+  if (!curso || cursoSinExamen(curso.nombre)) notFound();
   const { data: cfgRaw } = await sb.from("examen_config").select("*").eq("curso_id", params.id).maybeSingle();
   const cfg = cfgRaw as { activo: boolean; preguntas: number; minimo: number } | null;
 

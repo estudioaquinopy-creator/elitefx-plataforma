@@ -2,6 +2,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 type C = { id: string; nombre: string; grupo: string; orden: number };
 
+const sinTildes = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+// Cursos que no tienen examen propio: "Primeros pasos" (es el inicio de la ruta) y "Data de nivel 2" (es el último).
+export function cursoSinExamen(nombre: string): boolean {
+  const n = sinTildes(nombre);
+  return n.startsWith("primeros pasos") || /data.*nivel\s*2/.test(n);
+}
+
 // Qué cursos de la ruta están bloqueados porque falta aprobar el examen del curso anterior.
 // Devuelve { cursoId: nombre del curso cuyo examen falta }.
 export async function bloqueosExamen(sb: SupabaseClient, userId: string, cursos: C[], esGratis = false): Promise<Record<string, { id: string; nombre: string }>> {
@@ -15,7 +22,8 @@ export async function bloqueosExamen(sb: SupabaseClient, userId: string, cursos:
     ]);
     cfg = r[0].data; ints = r[1].data;
   } catch { return {}; } // si las tablas del examen aún no existen, no se bloquea nada
-  const activos = new Set(((cfg ?? []) as { curso_id: string; activo: boolean }[]).filter((c) => c.activo).map((c) => c.curso_id));
+  const sinExamen = new Set(cursos.filter((c) => cursoSinExamen(c.nombre)).map((c) => c.id));
+  const activos = new Set(((cfg ?? []) as { curso_id: string; activo: boolean }[]).filter((c) => c.activo && !sinExamen.has(c.curso_id)).map((c) => c.curso_id));
   const aprob = new Set(((ints ?? []) as { curso_id: string }[]).map((i) => i.curso_id));
   const out: Record<string, { id: string; nombre: string }> = {};
   // Cada curso bloqueado muestra el examen del curso inmediato anterior (el más cercano con examen activo).

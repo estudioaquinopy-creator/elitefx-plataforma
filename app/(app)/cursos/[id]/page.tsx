@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual } from "@/lib/sesion";
 import { embedUrl } from "@/lib/video";
-import { bloqueosExamen } from "@/lib/examen";
+import { bloqueosExamen, cursoSinExamen } from "@/lib/examen";
 import { alternarCompletada, completarBienvenida, editarCurso, eliminarCurso, eliminarLeccion, guardarLeccion, reordenarLecciones } from "../actions";
 import ListaLeccionesAdmin from "@/components/ListaLeccionesAdmin";
 
@@ -145,7 +145,7 @@ export default async function CursoPage({ params, searchParams }: { params: { id
               ))}
             </div>
           )}
-          {(cfgE?.activo || admin) && (
+          {!cursoSinExamen(curso.nombre) && (cfgE?.activo || admin) && (
             <div className="exam-card">
               <b>Examen del curso</b>
               {admin ? (
