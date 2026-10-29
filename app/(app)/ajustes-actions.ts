@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual } from "@/lib/sesion";
 import { fallo, subirImagen } from "@/lib/subida";
+import { normalizarInstagram } from "@/lib/redes";
 
 async function soloAdmin() {
   const p = await perfilActual();
@@ -32,7 +33,15 @@ export async function guardarPortada(f: FormData) {
 export async function guardarTextos(f: FormData) {
   await soloAdmin();
   const ruta = String(f.get("ruta") ?? "/inicio");
-  const filas = CLAVES_TEXTO.filter((k) => f.has(k)).map((k) => ({ clave: k, valor: String(f.get(k) ?? "").trim() }));
+  const filas = CLAVES_TEXTO.filter((k) => f.has(k)).map((k) => {
+    let valor = String(f.get(k) ?? "").trim();
+    if (k.endsWith("_instagram")) {
+      const ok = normalizarInstagram(valor);
+      if (ok === null) fallo(ruta, "El enlace de Instagram no es válido. Debe ser como https://www.instagram.com/tu_usuario");
+      valor = ok;
+    }
+    return { clave: k, valor };
+  });
   const { error } = await createClient().from("ajustes").upsert(filas);
   if (error) fallo(ruta, "No se pudo guardar: " + error.message);
   revalidatePath(ruta);
