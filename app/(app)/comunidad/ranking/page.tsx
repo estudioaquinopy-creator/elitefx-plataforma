@@ -113,10 +113,10 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
 
         <section className="box">
           <h2>Cómo se ganan puntos</h2>
-          <div className="ses"><div style={{ flex: 1 }}><b>Publicar un resultado</b></div><b>3 pts</b></div>
+          <div className="ses"><div style={{ flex: 1 }}><b>Publicar un resultado</b><small className="mu" style={{ display: "block" }}>Máx. 2 puntuables al día</small></div><b>3 pts</b></div>
           <div className="ses"><div style={{ flex: 1 }}><b>…con imagen (captura)</b></div><b>+1 pt</b></div>
-          <div className="ses"><div style={{ flex: 1 }}><b>Hacer una pregunta</b></div><b>2 pts</b></div>
-          <div className="ses"><div style={{ flex: 1 }}><b>Responder a otro (mín. 20 caracteres)</b></div><b>1 pt</b></div>
+          <div className="ses"><div style={{ flex: 1 }}><b>Hacer una pregunta</b><small className="mu" style={{ display: "block" }}>Máx. 2 puntuables al día</small></div><b>2 pts</b></div>
+          <div className="ses"><div style={{ flex: 1 }}><b>Responder a otro (mín. 20 caracteres)</b><small className="mu" style={{ display: "block" }}>Solo cuenta la primera respuesta en cada publicación (máx. 5 al día)</small></div><b>1 pt</b></div>
           <div className="ses"><div style={{ flex: 1 }}><b>Tu respuesta marcada como útil</b><small className="mu" style={{ display: "block" }}>La marca quien preguntó</small></div><b>5 pts</b></div>
           <div className="ses"><div style={{ flex: 1 }}><b>Me gusta recibido</b><small className="mu" style={{ display: "block" }}>Máx. 10 por publicación</small></div><b>1 pt</b></div>
           <small className="mu" style={{ display: "block", marginTop: 10 }}>Máximo 12 puntos por día (las respuestas útiles no cuentan para ese tope). No suman: publicaciones muy cortas, responder a tu propia publicación ni dar me gusta a lo tuyo. Si se elimina una publicación, se pierden sus puntos. ELITE FX puede ajustar o descalificar puntos por conductas de spam o trampa.</small>
