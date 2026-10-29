@@ -37,3 +37,8 @@ export function premiosRanking(texto: string | undefined | null): number[] {
   const p = (texto ?? "").split(",").map((x) => Number(x.trim().replace(",", "."))).filter((n) => Number.isFinite(n) && n > 0);
   return [p[0] ?? 200, p[1] ?? 100, p[2] ?? 50];
 }
+
+// Puntos que suma cada certificado (por defecto 10; se cambia con el ajuste "ranking_pts_certificado").
+export function puntosCertificado(texto: string | undefined | null): number {
+  return /^\s*\d{1,3}\s*$/.test(texto ?? "") ? Number((texto as string).trim()) : 10;
+}

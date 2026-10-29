@@ -52,6 +52,8 @@ export default async function Examen({ params, searchParams }: { params: { id: s
   // Resultado recién calificado
   if (searchParams.ok !== undefined) {
     const pasa = searchParams.ok === "1";
+    // Al aprobar se emite el certificado (suma puntos en el ranking); si ya existía, no cambia nada.
+    if (pasa) { try { await sb.rpc("emitir_certificado", { p_curso: params.id }); } catch { /* el certificado se emite al abrirlo */ } }
     return (
       <>
         {cabeza}
