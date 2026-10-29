@@ -670,3 +670,7 @@ button.chip{cursor:pointer;font-family:inherit;line-height:1.2}
   .cert-wrap{max-width:none}
   .cert{-webkit-print-color-adjust:exact;print-color-adjust:exact;width:277mm;height:190mm;aspect-ratio:auto;break-inside:avoid;margin:0 auto}
 }
+
+/* Cinta de cotizaciones fija en el pie de Inicio */
+.cinta{position:fixed;bottom:0;left:224px;right:0;height:46px;z-index:30;background:var(--sf);border-top:1px solid var(--bd);overflow:hidden}
+@media(max-width:760px){.cinta{left:0}}

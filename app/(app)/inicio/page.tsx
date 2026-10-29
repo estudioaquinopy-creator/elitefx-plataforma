@@ -13,6 +13,9 @@ import { leerAjustes } from "@/lib/ajustes";
 import { mesDeRanking } from "@/lib/ranking";
 import { rankingLateral, type RankingLateral as DatosRanking } from "@/lib/rankingLateral";
 import TarjetaRanking from "@/components/TarjetaRanking";
+import AvisoSorpresa from "@/components/AvisoSorpresa";
+import CintaCotizaciones from "@/components/CintaCotizaciones";
+import { SORPRESA } from "@/lib/sorpresa";
 
 export const dynamic = "force-dynamic";
 
@@ -100,6 +103,7 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
 
   return (
     <>
+      <AvisoSorpresa texto={SORPRESA.texto} hasta={SORPRESA.hasta} etiqueta={SORPRESA.etiqueta} />
       <h1>Hola, {primerNombre(perfil)}</h1>
       <p className="sub">Este es tu siguiente paso en la academia.</p>
       {!perfil.nombre && (
@@ -173,6 +177,8 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
           {ranking && <TarjetaRanking d={ranking} />}
         </div>
       </div>
+      <div style={{ height: 60 }} aria-hidden="true" />
+      <CintaCotizaciones />
     </>
   );
 }
