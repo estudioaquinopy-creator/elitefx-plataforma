@@ -166,7 +166,7 @@ export default async function Journal({ searchParams }: { searchParams: { error?
       <section className="box no-print">
         <h2>Importar reporte de MetaTrader 5</h2>
         <p className="mu">Sube el reporte de tu historial y se cargan todas tus operaciones y métricas de una vez. Si vuelves a subir el mismo reporte, no se duplican.</p>
-        {videoMT && <p style={{ margin: "0 0 10px" }}><Link className="btn sd s" href={"/tutoriales?v=" + videoMT.id}>▶ ¿Cómo descargo el reporte desde MT5? Ver el video</Link></p>}
+        {videoMT && <p style={{ margin: "0 0 10px" }}><Link className="btn sd s" style={{ fontSize: 12, padding: "6px 12px", minHeight: 0 }} href={"/tutoriales?v=" + videoMT.id}>▶ ¿Cómo descargo el reporte? Ver video</Link></p>}
         <details>
           <summary>{videoMT ? "Prefiero leer los pasos" : "¿Cómo descargo el reporte desde MT5?"}</summary>
           <ol className="mu">
