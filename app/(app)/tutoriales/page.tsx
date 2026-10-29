@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual, permisos } from "@/lib/sesion";
 import { leerAjustes } from "@/lib/ajustes";
-import { youtubeId } from "@/lib/youtube";
+import { miniatura } from "@/lib/miniatura";
 import { embedUrl } from "@/lib/video";
 import Portada from "@/components/Portada";
 import { agregarTutorial, eliminarTutorial } from "./actions";
@@ -31,6 +31,7 @@ export default async function Tutoriales({ searchParams }: { searchParams: { c?:
   const todos = (data ?? []) as Tut[];
   const cats = Array.from(new Set(todos.map((t) => t.categoria)));
   const lista = searchParams.c ? todos.filter((t) => t.categoria === searchParams.c) : todos;
+  const minis = new Map(await Promise.all(lista.map(async (t) => [t.id, await miniatura(t.youtube_url)] as const)));
   const actual = todos.find((t) => t.id === searchParams.v);
   const vid = actual ? embedUrl(actual.youtube_url, "&autoplay=1") : null;
 
@@ -72,11 +73,11 @@ export default async function Tutoriales({ searchParams }: { searchParams: { c?:
       {lista.length === 0 && <section className="box"><p className="mu">Todavía no hay tutoriales.</p></section>}
       <div className="grid">
         {lista.map((t) => {
-          const id = youtubeId(t.youtube_url);
+          const mini = minis.get(t.id);
           return (
             <div key={t.id} className="crs">
               <Link href={"/tutoriales?v=" + t.id + (searchParams.c ? "&c=" + encodeURIComponent(searchParams.c) : "")} className="tlink">
-                <div className="cov" style={id ? { backgroundImage: "url(https://img.youtube.com/vi/" + id + "/hqdefault.jpg)" } : undefined} />
+                <div className="cov" style={mini ? { backgroundImage: "url(" + mini + ")" } : undefined} />
                 <div className="cb"><b>{t.titulo}</b><small className="mu">{t.categoria}</small></div>
               </Link>
               {perm.admin && (
