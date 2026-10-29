@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { leerAjustes } from "@/lib/ajustes";
 import { guardarTextos } from "../../ajustes-actions";
 import { ajustarPuntos } from "../actions";
+import { mesDeRanking, ultimoViernes, cierreISO, textoFecha } from "@/lib/ranking";
+import CuentaRanking from "@/components/CuentaRanking";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +29,8 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
   }
   const sb = createClient();
   const aj = await leerAjustes();
-  const actual = hoyPY().slice(0, 7);
+  // El ranking en curso es el del mes cuyo último viernes todavía no pasó (desde el sábado ya corre el del mes siguiente).
+  const actual = mesDeRanking(hoyPY());
   const mes = /^\d{4}-(0[1-9]|1[0-2])$/.test(searchParams.m ?? "") && (searchParams.m as string) <= actual ? (searchParams.m as string) : actual;
   const previo = sumaMes(mes, -1);
   // Premios en USDT por puesto (1.º, 2.º y 3.º); el administrador puede cambiarlos. Por defecto 200, 100 y 50.
@@ -37,15 +40,12 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
   const [r1, r2] = await Promise.all([sb.rpc("ranking_mes", { p_mes: mes }), sb.rpc("ranking_mes", { p_mes: previo })]);
   const falta = !!r1.error;
   const filas = (r1.data ?? []) as Fila[];
-  const ganadorPrevio = ((r2.data ?? []) as Fila[])[0];
+  const ganadoresPrevio = ((r2.data ?? []) as Fila[]).slice(0, 3);
   const miPos = filas.findIndex((f) => f.user_id === perfil.id);
   const yo = miPos >= 0 ? filas[miPos] : null;
   const top = filas.slice(0, 10);
   const esActual = mes === actual;
-  // Días que quedan del mes (solo para el mes en curso).
-  const [y, mm] = mes.split("-").map(Number);
-  const diasMes = new Date(Date.UTC(y, mm, 0)).getUTCDate();
-  const quedan = esActual ? diasMes - Number(hoyPY().slice(8, 10)) : 0;
+  const viernes = ultimoViernes(mes);
 
   let vips: { id: string; nombre: string; email: string }[] = [];
   if (perm.admin) {
@@ -59,7 +59,7 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
       <h1>🏆 Ranking de la comunidad</h1>
       <p className="sub">Quienes más participan con calidad ganan puntos cada mes. Solo participan los miembros VIP; los administradores y el equipo de ELITE FX no participan.</p>
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
-      {falta && <p className="alerta">Todavía no está activo: corre la migración 0022_ranking.sql en Supabase.</p>}
+      {falta && <p className="alerta">Todavía no está activo: corre las migraciones 0022, 0023 y 0024 del ranking en Supabase.</p>}
 
       <section className="box" style={{ borderColor: "var(--go)" }}>
         <div className="tag" style={{ marginTop: 0 }}>Premios de {nombreMes(mes)}</div>
@@ -70,8 +70,18 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
             <b style={{ fontSize: 18 }}>{n} USDT</b>
           </div>
         ))}
-        <small className="mu">{esActual ? (quedan === 0 ? "Hoy es el último día del mes." : "Faltan " + quedan + (quedan === 1 ? " día" : " días") + " para que cierre el mes.") : "Mes cerrado."} Horario de Paraguay.</small>
-        {ganadorPrevio && <p className="mu" style={{ margin: "10px 0 0" }}>Ganador de {nombreMes(previo)}: <b>{ganadorPrevio.nombre}</b> ({ganadorPrevio.puntos} puntos)</p>}
+        {esActual && (
+          <>
+            <div className="tag">El ranking cierra en</div>
+            <CuentaRanking cierre={cierreISO(mes)} />
+          </>
+        )}
+        <small className="mu">{esActual ? "Cierra el " + textoFecha(viernes) + " a las 23:59 (último viernes del mes, hora de Paraguay). Lo que publiques desde el sábado cuenta para el mes siguiente." : "Mes cerrado el " + textoFecha(viernes) + " a las 23:59 (hora de Paraguay)."}</small>
+        {ganadoresPrevio.length > 0 && (
+          <p className="mu" style={{ margin: "10px 0 0" }}>
+            Ganadores de {nombreMes(previo)}: {ganadoresPrevio.map((g, i) => <span key={g.user_id}>{i > 0 ? " · " : ""}{MEDALLA[i]} <b>{g.nombre}</b> ({g.puntos} pts)</span>)}
+          </p>
+        )}
         {perm.admin && (
           <details className="adm" style={{ marginTop: 10 }}>
             <summary>Editar los premios</summary>
@@ -119,7 +129,7 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
           <div className="ses"><div style={{ flex: 1 }}><b>Responder a otro (mín. 20 caracteres)</b><small className="mu" style={{ display: "block" }}>Solo cuenta la primera respuesta en cada publicación (máx. 5 al día)</small></div><b>1 pt</b></div>
           <div className="ses"><div style={{ flex: 1 }}><b>Tu respuesta marcada como útil</b><small className="mu" style={{ display: "block" }}>La marca quien preguntó</small></div><b>5 pts</b></div>
           <div className="ses"><div style={{ flex: 1 }}><b>Me gusta recibido</b><small className="mu" style={{ display: "block" }}>Máx. 10 por publicación</small></div><b>1 pt</b></div>
-          <small className="mu" style={{ display: "block", marginTop: 10 }}>Máximo 12 puntos por día (las respuestas útiles no cuentan para ese tope). No suman: publicaciones muy cortas, responder a tu propia publicación ni dar me gusta a lo tuyo. Si se elimina una publicación, se pierden sus puntos. ELITE FX puede ajustar o descalificar puntos por conductas de spam o trampa.</small>
+          <small className="mu" style={{ display: "block", marginTop: 10 }}>Máximo 12 puntos por día (las respuestas útiles no cuentan para ese tope). No suman: publicaciones muy cortas, responder a tu propia publicación ni dar me gusta a lo tuyo. El mes cierra el último viernes a las 23:59 (hora de Paraguay). Si se elimina una publicación, se pierden sus puntos. ELITE FX puede ajustar o descalificar puntos por conductas de spam o trampa.</small>
         </section>
       </div>
 
