@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { hoyPY, ZONA, perfilActual, permisos } from "@/lib/sesion";
 import FiltroMonedas from "@/components/FiltroMonedas";
 import CuentaNoticia from "@/components/CuentaNoticia";
+import SimuladorNoticia from "@/components/SimuladorNoticia";
 
 export const dynamic = "force-dynamic";
 
@@ -106,6 +107,12 @@ export default async function Noticias({ searchParams }: { searchParams: { d?: s
           </div>
         ))}
       </section>
+      {perm.admin && (
+        <details className="box adm">
+          <summary>Simulador del contador (solo administrador)</summary>
+          <SimuladorNoticia />
+        </details>
+      )}
       <p className="note">Fuente: calendario económico de Forex Factory (datos de terceros, pueden cambiar). Verifica siempre en tu plataforma antes de operar.</p>
     </>
   );
