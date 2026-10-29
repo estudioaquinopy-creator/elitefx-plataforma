@@ -3,10 +3,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 type C = { id: string; nombre: string; grupo: string; orden: number };
 
 const sinTildes = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-// Cursos que no tienen examen propio: "Primeros pasos" (es el inicio de la ruta) y "Data de nivel 2" (es el último).
+// Solo llevan examen Curso básico (habilita el intermedio), Curso intermedio (habilita el avanzado) y Curso avanzado (habilita Data de nivel 2).
+// Primeros pasos, Data de nivel 2, Scanner Elite, Tutoriales y cualquier otro curso no tienen examen.
 export function cursoSinExamen(nombre: string): boolean {
-  const n = sinTildes(nombre);
-  return n.startsWith("primeros pasos") || /data.*nivel\s*2/.test(n);
+  return !/^curso\s+(basico|intermedio|avanzado)/.test(sinTildes(nombre));
 }
 
 // Qué cursos de la ruta están bloqueados porque falta aprobar el examen del curso anterior.
