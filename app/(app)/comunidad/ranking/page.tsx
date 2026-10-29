@@ -12,6 +12,7 @@ const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "
 const nombreMes = (m: string) => MESES[Number(m.slice(5, 7)) - 1] + " de " + m.slice(0, 4);
 const sumaMes = (m: string, d: number) => { const t = Number(m.slice(0, 4)) * 12 + Number(m.slice(5, 7)) - 1 + d; return Math.floor(t / 12) + "-" + String((t % 12) + 1).padStart(2, "0"); };
 const MEDALLA = ["🥇", "🥈", "🥉"];
+const PUESTOS = ["Primer puesto", "Segundo puesto", "Tercer puesto"];
 
 export default async function Ranking({ searchParams }: { searchParams: { m?: string; error?: string } }) {
   const perfil = await perfilActual();
@@ -29,6 +30,9 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
   const actual = hoyPY().slice(0, 7);
   const mes = /^\d{4}-(0[1-9]|1[0-2])$/.test(searchParams.m ?? "") && (searchParams.m as string) <= actual ? (searchParams.m as string) : actual;
   const previo = sumaMes(mes, -1);
+  // Premios en USDT por puesto (1.º, 2.º y 3.º); el administrador puede cambiarlos. Por defecto 200, 100 y 50.
+  const parseados = (aj.ranking_premios ?? "").split(",").map((x) => Number(x.trim().replace(",", "."))).filter((n) => Number.isFinite(n) && n > 0);
+  const premios = [parseados[0] ?? 200, parseados[1] ?? 100, parseados[2] ?? 50];
 
   const [r1, r2] = await Promise.all([sb.rpc("ranking_mes", { p_mes: mes }), sb.rpc("ranking_mes", { p_mes: previo })]);
   const falta = !!r1.error;
@@ -58,16 +62,22 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
       {falta && <p className="alerta">Todavía no está activo: corre la migración 0022_ranking.sql en Supabase.</p>}
 
       <section className="box" style={{ borderColor: "var(--go)" }}>
-        <div className="tag" style={{ marginTop: 0 }}>Premio de {nombreMes(mes)}</div>
-        <p style={{ margin: "6px 0", fontSize: 18 }}><b>{aj.ranking_premio?.trim() || "Premio por definir"}</b></p>
+        <div className="tag" style={{ marginTop: 0 }}>Premios de {nombreMes(mes)}</div>
+        {premios.map((n, i) => (
+          <div key={i} className="ses" style={{ padding: "8px 0" }}>
+            <div className="dt" style={{ minWidth: 46 }}>{MEDALLA[i]}</div>
+            <div style={{ flex: 1 }}><b>{PUESTOS[i]}</b></div>
+            <b style={{ fontSize: 18 }}>{n} USDT</b>
+          </div>
+        ))}
         <small className="mu">{esActual ? (quedan === 0 ? "Hoy es el último día del mes." : "Faltan " + quedan + (quedan === 1 ? " día" : " días") + " para que cierre el mes.") : "Mes cerrado."} Horario de Paraguay.</small>
         {ganadorPrevio && <p className="mu" style={{ margin: "10px 0 0" }}>Ganador de {nombreMes(previo)}: <b>{ganadorPrevio.nombre}</b> ({ganadorPrevio.puntos} puntos)</p>}
         {perm.admin && (
           <details className="adm" style={{ marginTop: 10 }}>
-            <summary>Editar el premio</summary>
+            <summary>Editar los premios</summary>
             <form action={guardarTextos} className="fm">
               <input type="hidden" name="ruta" value="/comunidad/ranking" />
-              <label>Premio (texto que ven todos)<input name="ranking_premio" defaultValue={aj.ranking_premio ?? ""} placeholder="Ej.: 50 USDT para el primer puesto" /></label>
+              <label>Premios en USDT del 1.º, 2.º y 3.º puesto, separados por coma<input name="ranking_premios" defaultValue={premios.join(", ")} placeholder="200, 100, 50" /></label>
               <button className="btn s">Guardar</button>
             </form>
           </details>
@@ -91,7 +101,7 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
                 <b>{f.nombre}{f.user_id === perfil.id ? " (tú)" : ""}</b>
                 <small className="mu" style={{ display: "block" }}>{f.resultados} resultados · {f.preguntas} preguntas · {f.respuestas} respuestas · {f.utiles} útiles · {f.likes} me gusta</small>
               </div>
-              <b style={{ fontSize: 18 }}>{f.puntos} pts</b>
+              <span style={{ textAlign: "right" }}><b style={{ fontSize: 18 }}>{f.puntos} pts</b>{i < 3 && <small className="mu" style={{ display: "block" }}>{premios[i]} USDT</small>}</span>
             </div>
           ))}
           {perm.admin ? null : yo && miPos >= 10 ? (
