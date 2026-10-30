@@ -38,7 +38,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const supabase = createClient();
   const ahora = Date.now();
   const limite = new Date(); limite.setDate(limite.getDate() + 7);
-  const [rNot, rVen, rFx, rCl, aj] = await Promise.all([
+  const hace14 = new Date(ahora - 14 * 86400000).toISOString();
+  const [rNot, rVen, rFx, rCl, aj, rVisMias, rVisPend] = await Promise.all([
     supabase.from("notificaciones").select("*").order("created_at", { ascending: false }).limit(15),
     perfil.rol === "admin"
       ? supabase.from("perfiles").select("id, nombre, email, vence").not("vence", "is", null).lte("vence", limite.toISOString().slice(0, 10)).order("vence").limit(5)
@@ -48,6 +49,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       ? supabase.from("clases").select("id, titulo, inicio, zoom_url").gte("inicio", new Date(ahora).toISOString()).lte("inicio", new Date(ahora + 61 * 60000).toISOString())
       : Promise.resolve({ data: null }),
     leerAjustes(),
+    // Avisos de visitas: a la persona, cuando se aprueba o rechaza su solicitud; al admin, cuántas hay por aprobar.
+    perfil.rol !== "admin"
+      ? supabase.from("visitas").select("id, fecha, hora, estado, revisado_at").eq("user_id", perfil.id).in("estado", ["aprobada", "rechazada"]).gte("revisado_at", hace14).order("revisado_at", { ascending: false }).limit(5)
+      : Promise.resolve({ data: null }),
+    perfil.rol === "admin"
+      ? supabase.from("visitas").select("id", { count: "exact", head: true }).eq("estado", "pendiente").gte("fecha", hoyPY())
+      : Promise.resolve({ count: 0 }),
   ]);
   const vistas = perfil.notif_leidas_at ? new Date(perfil.notif_leidas_at).getTime() : 0;
   const fmt = (d: string) => new Date(d).toLocaleDateString("es-PY");
@@ -70,6 +78,20 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       nueva: true,
     });
   }
+  for (const v of (rVisMias.data ?? []) as { id: string; fecha: string; hora: string; estado: string; revisado_at: string }[]) {
+    const dia = new Date(v.fecha + "T12:00:00Z").toLocaleDateString("es-PY", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" });
+    notifs.unshift({
+      id: "vis-" + v.id,
+      titulo: v.estado === "aprobada" ? "Tu visita fue aprobada" : "Tu visita no pudo aprobarse",
+      cuerpo: dia + " a las " + String(v.hora).slice(0, 5),
+      enlace: "/visitas",
+      fecha: fmt(v.revisado_at),
+      nueva: new Date(v.revisado_at).getTime() > vistas,
+    });
+  }
+  if (perfil.rol === "admin" && (rVisPend.count ?? 0) > 0) {
+    notifs.unshift({ id: "vis-pend", titulo: (rVisPend.count ?? 0) + (rVisPend.count === 1 ? " visita por aprobar" : " visitas por aprobar"), cuerpo: "Solicitudes de miembros VIP", enlace: "/visitas", fecha: "", nueva: true });
+  }
   // Recordatorio: 30 minutos antes de cada sesión en vivo (para quien tiene calendario).
   if (perm.calendario) {
     const fijos = ((rFx.data ?? []) as Fijo[]).map((f) => ({ ...f, hora: String(f.hora) }));
@@ -86,6 +108,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     const pos = items.findIndex((i) => i.href === "/noticias") + 1;
     const ya = referidosActivos(hoyPY(), aj, perfil.rol === "admin");
     items.splice(pos, 0, { href: "/referidos", label: "Referidos", lock: false, soon: ya ? undefined : fechaReferidos(aj).corto, icon: "M16 11a3 3 0 1 0 0-6a3 3 0 0 0 0 6zM8 12a3 3 0 1 0 0-6a3 3 0 0 0 0 6zM2 20a6 6 0 0 1 12 0M14 14.5A6 6 0 0 1 22 20" });
+  }
+  // Agendar visita: solo VIP y administrador (al final del menú de estudio, después de Referidos).
+  if ((perfil.rol === "admin" && perfil.vista !== "gratis") || perfil.plan !== "gratis") {
+    const pos = items.findIndex((i) => i.href === "/referidos") + 1 || items.findIndex((i) => i.href === "/noticias") + 1;
+    items.splice(pos, 0, { href: "/visitas", label: perfil.rol === "admin" ? "Visitas" : "Agendar visita", lock: false, icon: "M3 21V8l9-5l9 5v13M9 21v-6h6v6M7 11h2M15 11h2" });
   }
   const redes = armarRedes(aj);
   const noLeidas = notifs.filter((n) => n.nueva).length;
