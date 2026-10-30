@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import EnLinea from "@/components/EnLinea";
 import ProgresoNav from "@/components/ProgresoNav";
 import Shell from "@/components/Shell";
@@ -17,6 +18,8 @@ export const dynamic = "force-dynamic";
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const perfil = await perfilActual();
   const perm = await permisos(perfil);
+  // La foto de perfil es obligatoria (excepto para administradores y su modo alumno).
+  if (perfil.rol !== "admin" && !perfil.vista && !perfil.avatar_url) redirect("/foto");
   const items: { href: string; label: string; lock: boolean; icon: string; soon?: string }[] = [
     { href: "/inicio", label: "Inicio", lock: false, icon: "M3 11l9-8 9 8M5 10v10h14V10" },
     { href: "/cursos", label: "Cursos", lock: false, icon: "M4 5h7a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H4zM20 5h-3a3 3 0 0 0-3 3" },
