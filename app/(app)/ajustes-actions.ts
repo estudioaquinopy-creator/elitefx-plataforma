@@ -13,7 +13,7 @@ async function soloAdmin() {
 const CLAVES_PORTADA = ["portada_calendario", "portada_tutoriales"];
 const CLAVES_TEXTO = [
   "aliados_broker_url", "aliados_broker_desc", "aliados_tarjeta_url", "aliados_tarjeta_desc",
-  "aliados_video", "aliados_legal", "zoom_general", "ranking_premio", "ranking_premios", "ranking_pts_certificado",
+  "aliados_video", "aliados_legal", "zoom_general", "ranking_premio", "ranking_premios", "ranking_pts_certificado", "ranking_pts_ref", "ranking_pts_ref_vip", "ranking_ref_tope", "referidos_desde",
   ...["academia", "personal"].flatMap((g) => ["instagram"].map((n) => "red_" + g + "_" + n)),
 ];
 

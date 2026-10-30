@@ -1,9 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Tema from "@/components/Tema";
 import { createClient } from "@/lib/supabase/client";
+import { REFERIDOS_DESDE } from "@/lib/referidos";
 
 export default function Registro() {
   const router = useRouter();
@@ -12,6 +13,13 @@ export default function Registro() {
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [pw2, setPw2] = useState("");
+  const [codigo, setCodigo] = useState("");
+  // El campo de código solo se muestra desde la fecha de inicio de los referidos (la base de datos también la controla).
+  const [verCodigo, setVerCodigo] = useState(false);
+  useEffect(() => {
+    setVerCodigo(new Date() >= new Date(REFERIDOS_DESDE + "T00:00:00-03:00"));
+    try { const r = new URLSearchParams(window.location.search).get("ref"); if (r) setCodigo(r.trim().toUpperCase().slice(0, 20)); } catch { /* sin enlace de referido */ }
+  }, []);
   const [err, setErr] = useState("");
   const [listo, setListo] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -25,9 +33,11 @@ export default function Registro() {
     if (t.replace(/\D/g, "").length < 8) return setErr("Escribe un número de teléfono válido, con código de país (ej.: +595981123456).");
     if (pw.length < 8) return setErr("La contraseña debe tener al menos 8 caracteres.");
     if (pw !== pw2) return setErr("Las contraseñas no coinciden.");
+    const cod = codigo.trim().toUpperCase();
+    if (verCodigo && cod && !/^EFX-[A-Z0-9]{6}$/.test(cod)) return setErr("El código de referido no es válido (ejemplo: EFX-1A2B3C). Déjalo vacío si no tienes uno.");
     setBusy(true);
     const sb = createClient();
-    const { data, error } = await sb.auth.signUp({ email: email.trim(), password: pw, options: { data: { nombre: n, telefono: t } } });
+    const { data, error } = await sb.auth.signUp({ email: email.trim(), password: pw, options: { data: { nombre: n, telefono: t, ...(cod ? { codigo_ref: cod } : {}) } } });
     if (error) {
       setBusy(false);
       const m = error.message.toLowerCase();
@@ -64,6 +74,7 @@ export default function Registro() {
             <label>Correo electrónico<input type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></label>
             <label>Contraseña (mínimo 8 caracteres)<input type="password" autoComplete="new-password" minLength={8} required value={pw} onChange={(e) => setPw(e.target.value)} /></label>
             <label>Repite la contraseña<input type="password" autoComplete="new-password" minLength={8} required value={pw2} onChange={(e) => setPw2(e.target.value)} /></label>
+            {verCodigo && <label>Código de referido (opcional)<input value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder="EFX-1A2B3C" maxLength={20} autoComplete="off" /></label>}
             {err && <p className="err">{err}</p>}
             <button className="btn" disabled={busy}>{busy ? "Creando tu cuenta…" : "Crear cuenta"}</button>
             <p className="mu" style={{ textAlign: "center", marginTop: 12 }}>¿Ya tienes cuenta? <Link href="/login" className="lk">Inicia sesión</Link></p>

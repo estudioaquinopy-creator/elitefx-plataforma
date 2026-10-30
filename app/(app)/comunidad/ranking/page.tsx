@@ -4,12 +4,13 @@ import { createClient } from "@/lib/supabase/server";
 import { leerAjustes } from "@/lib/ajustes";
 import { guardarTextos } from "../../ajustes-actions";
 import { ajustarPuntos } from "../actions";
+import { referidosActivos, puntosReferidos, REFERIDOS_DESDE } from "@/lib/referidos";
 import { mesDeRanking, ultimoViernes, cierreISO, textoFecha, premiosRanking, puntosCertificado } from "@/lib/ranking";
 import CuentaRanking from "@/components/CuentaRanking";
 
 export const dynamic = "force-dynamic";
 
-type Fila = { user_id: string; nombre: string; puntos: number; resultados: number; preguntas: number; respuestas: number; utiles: number; likes: number; certificados?: number };
+type Fila = { user_id: string; nombre: string; puntos: number; resultados: number; preguntas: number; respuestas: number; utiles: number; likes: number; certificados?: number; referidos?: number };
 const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 const nombreMes = (m: string) => MESES[Number(m.slice(5, 7)) - 1] + " de " + m.slice(0, 4);
 const sumaMes = (m: string, d: number) => { const t = Number(m.slice(0, 4)) * 12 + Number(m.slice(5, 7)) - 1 + d; return Math.floor(t / 12) + "-" + String((t % 12) + 1).padStart(2, "0"); };
@@ -29,6 +30,8 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
   // Premios en USDT por puesto (1.º, 2.º y 3.º); el administrador puede cambiarlos. Por defecto 200, 100 y 50.
   const premios = premiosRanking(aj.ranking_premios);
   const ptsCert = puntosCertificado(aj.ranking_pts_certificado);
+  const refAct = referidosActivos(hoyPY(), aj, perm.admin || !!perfil.vista); // los referidos se muestran desde el 9 de noviembre (antes, solo al administrador)
+  const pr = puntosReferidos(aj);
 
   const [r1, r2] = await Promise.all([sb.rpc("ranking_mes", { p_mes: mes }), sb.rpc("ranking_mes", { p_mes: previo })]);
   const falta = !!r1.error;
@@ -89,6 +92,10 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
               <input type="hidden" name="ruta" value="/comunidad/ranking" />
               <label>Premios en USDT del 1.º, 2.º y 3.º puesto, separados por coma<input name="ranking_premios" defaultValue={premios.join(", ")} placeholder="200, 100, 50" /></label>
               <label>Puntos por cada certificado<input name="ranking_pts_certificado" type="number" min={0} max={999} step={1} defaultValue={ptsCert} /></label>
+              <label>Referidos · puntos cuando el referido se activa<input name="ranking_pts_ref" type="number" min={0} max={999} step={1} defaultValue={pr.registro} /></label>
+              <label>Referidos · puntos extra cuando pasa a VIP<input name="ranking_pts_ref_vip" type="number" min={0} max={999} step={1} defaultValue={pr.vip} /></label>
+              <label>Referidos · máximo de activaciones puntuables por mes<input name="ranking_ref_tope" type="number" min={0} max={999} step={1} defaultValue={pr.tope} /></label>
+              <label>Referidos · fecha de inicio (la base de datos usa esta fecha; por defecto {REFERIDOS_DESDE})<input name="referidos_desde" type="date" defaultValue={(aj.referidos_desde ?? "").trim() || REFERIDOS_DESDE} /></label>
               <button className="btn s">Guardar</button>
             </form>
           </details>
@@ -110,7 +117,7 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
               <div className="dt" style={{ minWidth: 46 }}>{MEDALLA[i] ?? "#" + (i + 1)}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <b>{f.nombre}{f.user_id === perfil.id ? " (tú)" : ""}</b>
-                <small className="mu" style={{ display: "block" }}>{f.resultados} resultados · {f.preguntas} preguntas · {f.respuestas} respuestas · {f.utiles} útiles · {f.likes} me gusta{f.certificados ? " · " + f.certificados + (f.certificados === 1 ? " certificado" : " certificados") : ""}</small>
+                <small className="mu" style={{ display: "block" }}>{f.resultados} resultados · {f.preguntas} preguntas · {f.respuestas} respuestas · {f.utiles} útiles · {f.likes} me gusta{f.certificados ? " · " + f.certificados + (f.certificados === 1 ? " certificado" : " certificados") : ""}{f.referidos ? " · " + f.referidos + (f.referidos === 1 ? " referido" : " referidos") : ""}</small>
               </div>
               <span style={{ textAlign: "right" }}><b style={{ fontSize: 18 }}>{f.puntos} pts</b>{i < 3 && <small className="mu" style={{ display: "block" }}>{premios[i]} USDT</small>}</span>
             </div>
@@ -131,7 +138,10 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
           <div className="ses"><div style={{ flex: 1 }}><b>Tu respuesta marcada como útil</b><small className="mu" style={{ display: "block" }}>La marca quien preguntó</small></div><b>5 pts</b></div>
           <div className="ses"><div style={{ flex: 1 }}><b>Me gusta recibido</b><small className="mu" style={{ display: "block" }}>Máx. 10 por publicación</small></div><b>1 pt</b></div>
           <div className="ses"><div style={{ flex: 1 }}><b>🎓 Obtener un certificado</b><small className="mu" style={{ display: "block" }}>Al aprobar el examen de Curso básico, intermedio o avanzado (suma en el mes en que apruebas)</small></div><b>{ptsCert} pts</b></div>
-          <small className="mu" style={{ display: "block", marginTop: 10 }}>Máximo 12 puntos por día (las respuestas útiles y los certificados no cuentan para ese tope). No suman: publicaciones muy cortas, responder a tu propia publicación ni dar me gusta a lo tuyo. El mes cierra el último viernes a las 23:59 (hora de Paraguay). Si se elimina una publicación, se pierden sus puntos. ELITE FX puede ajustar o descalificar puntos por conductas de spam o trampa.</small>
+          {refAct && <div className="ses"><div style={{ flex: 1 }}><b>👥 Tu referido se activa</b><small className="mu" style={{ display: "block" }}>Se registra con tu código y completa su primera lección (máx. {pr.tope} al mes)</small></div><b>{pr.registro} pts</b></div>}
+          {refAct && <div className="ses"><div style={{ flex: 1 }}><b>⭐ Tu referido pasa a VIP</b><small className="mu" style={{ display: "block" }}>Se suma además de los puntos anteriores, en el mes en que se hace VIP</small></div><b>+{pr.vip} pts</b></div>}
+          <small className="mu" style={{ display: "block", marginTop: 10 }}>Máximo 12 puntos por día (las respuestas útiles, los certificados y los referidos no cuentan para ese tope). No suman: publicaciones muy cortas, responder a tu propia publicación ni dar me gusta a lo tuyo. El mes cierra el último viernes a las 23:59 (hora de Paraguay). Si se elimina una publicación, se pierden sus puntos. ELITE FX puede ajustar o descalificar puntos por conductas de spam o trampa.</small>
+          {refAct && !gratis && <Link className="btn sd s" href="/referidos" style={{ marginTop: 12 }}>👥 Invitar amigos y ganar puntos</Link>}
         </section>
       </div>
 
