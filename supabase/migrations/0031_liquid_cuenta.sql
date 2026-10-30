@@ -1,28 +1,28 @@
--- 0031 · ID de Liquid (broker): 5 puntos en el ranking cuando el administrador lo aprueba. Idempotente. Correr después de 0030.
--- La persona escribe su ID; el administrador comprueba a mano que es cliente nuestro (creó la cuenta con nuestro enlace) y lo aprueba o rechaza.
+-- 0031 · Número de cuenta de trading de Liquid (broker): 5 puntos en el ranking cuando el administrador lo aprueba. Idempotente. Correr después de 0030.
+-- La persona escribe el número de su cuenta de trading; el administrador lo compara a mano con el reporte de clientes de Liquid (CSV), comprueba que es cliente nuestro y lo aprueba o rechaza.
 -- Suma ranking_pts_liquid (por defecto 5), una sola vez, en el mes en que se aprueba; no cuenta para el tope diario de 12.
 
-create table if not exists public.liquid_ids (
+create table if not exists public.liquid_cuentas (
   user_id uuid primary key references public.perfiles(id) on delete cascade,
-  liquid_id text not null check (liquid_id ~ '^[A-Za-z0-9._-]{3,40}$'),
+  cuenta text not null check (cuenta ~ '^[A-Za-z0-9-]{4,20}$'),
   estado text not null default 'pendiente' check (estado in ('pendiente', 'aprobado', 'rechazado')),
   enviado_at timestamptz not null default now(),
   revisado_at timestamptz,
   revisado_por uuid references public.perfiles(id) on delete set null,
   nota text not null default ''
 );
--- Un mismo ID no puede usarse en dos cuentas (salvo que haya sido rechazado).
-create unique index if not exists liquid_ids_id_uq on public.liquid_ids (lower(liquid_id)) where estado <> 'rechazado';
-alter table public.liquid_ids enable row level security;
-drop policy if exists "liquid ver" on public.liquid_ids;
-create policy "liquid ver" on public.liquid_ids for select to authenticated using (user_id = auth.uid() or public.es_admin());
-drop policy if exists "liquid enviar" on public.liquid_ids;
-create policy "liquid enviar" on public.liquid_ids for insert to authenticated with check (user_id = auth.uid() and estado = 'pendiente' and revisado_at is null);
-drop policy if exists "liquid corregir" on public.liquid_ids;
-create policy "liquid corregir" on public.liquid_ids for update to authenticated
+-- Un mismo número de cuenta no puede usarse en dos perfiles (salvo que haya sido rechazado).
+create unique index if not exists liquid_cuentas_cuenta_uq on public.liquid_cuentas (lower(cuenta)) where estado <> 'rechazado';
+alter table public.liquid_cuentas enable row level security;
+drop policy if exists "liquid ver" on public.liquid_cuentas;
+create policy "liquid ver" on public.liquid_cuentas for select to authenticated using (user_id = auth.uid() or public.es_admin());
+drop policy if exists "liquid enviar" on public.liquid_cuentas;
+create policy "liquid enviar" on public.liquid_cuentas for insert to authenticated with check (user_id = auth.uid() and estado = 'pendiente' and revisado_at is null);
+drop policy if exists "liquid corregir" on public.liquid_cuentas;
+create policy "liquid corregir" on public.liquid_cuentas for update to authenticated
   using (user_id = auth.uid() and estado <> 'aprobado') with check (user_id = auth.uid() and estado = 'pendiente' and revisado_at is null);
-drop policy if exists "liquid admin" on public.liquid_ids;
-create policy "liquid admin" on public.liquid_ids for update to authenticated using (public.es_admin()) with check (public.es_admin());
+drop policy if exists "liquid admin" on public.liquid_cuentas;
+create policy "liquid admin" on public.liquid_cuentas for update to authenticated using (public.es_admin()) with check (public.es_admin());
 
 drop function if exists public.ranking_mes(text);
 create or replace function public.ranking_mes(p_mes text)
@@ -96,7 +96,7 @@ begin
     from public.perfiles pf where pf.avatar_desde >= t0 and pf.avatar_desde < t1
     union all
     select li.user_id, (li.revisado_at at time zone 'America/Asuncion')::date, pliq, 'liquid'
-    from public.liquid_ids li where li.estado = 'aprobado' and li.revisado_at >= t0 and li.revisado_at < t1
+    from public.liquid_cuentas li where li.estado = 'aprobado' and li.revisado_at >= t0 and li.revisado_at < t1
     union all
     select p.user_id, (l.created_at at time zone 'America/Asuncion')::date, 1, 'like'
     from (select l2.post_id, l2.user_id, l2.created_at, row_number() over (partition by l2.post_id order by l2.created_at) as rn from public.likes l2) l

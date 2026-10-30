@@ -39,8 +39,8 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
   const aj = await leerAjustes();
   const { data } = await createClient().from("aliados").select("*").order("orden").order("created_at");
   const aliados = (data ?? []) as Aliado[];
-  const { data: miLiq } = admin ? { data: null } : await createClient().from("liquid_ids").select("liquid_id, estado, nota").eq("user_id", perfil.id).maybeSingle();
-  const liq = miLiq as { liquid_id: string; estado: string; nota: string } | null;
+  const { data: miLiq } = admin ? { data: null } : await createClient().from("liquid_cuentas").select("cuenta, estado, nota").eq("user_id", perfil.id).maybeSingle();
+  const liq = miLiq as { cuenta: string; estado: string; nota: string } | null;
   const ptsLiq = puntosLiquid(aj.ranking_pts_liquid);
 
   // Tutoriales del broker: se buscan en Tutoriales por el título (crear/abrir cuenta, depositar, retirar), mejor si están en la categoría "Broker".
@@ -132,25 +132,25 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
         </section>
         {!admin && (
           <section className="box">
-            <div className="hd"><h2>Registra tu ID de Liquid</h2>{liq && <span className={"pill " + (liq.estado === "aprobado" ? "ok" : "")}>{liq.estado === "aprobado" ? "✓ Aprobado" : liq.estado === "rechazado" ? "Rechazado" : "En revisión"}</span>}</div>
-            <p className="mu">Si abriste tu cuenta con nuestro enlace, escribe aquí tu ID de Liquid. Lo revisamos a mano y, si eres cliente nuestro, sumas <b>{ptsLiq} puntos</b> en el ranking mensual (solo para miembros VIP).</p>
+            <div className="hd"><h2>Registra tu cuenta de Liquid</h2>{liq && <span className={"pill " + (liq.estado === "aprobado" ? "ok" : "")}>{liq.estado === "aprobado" ? "✓ Aprobado" : liq.estado === "rechazado" ? "Rechazado" : "En revisión"}</span>}</div>
+            <p className="mu">Si abriste tu cuenta con nuestro enlace, escribe aquí el número de tu cuenta de trading de Liquid (el que ves en tu cuenta, no tu correo). Lo revisamos a mano y, si eres cliente nuestro, sumas <b>{ptsLiq} puntos</b> en el ranking mensual (solo para miembros VIP).</p>
             {liq?.estado === "aprobado"
-              ? <p className="okmsg">Tu ID <b>{liq.liquid_id}</b> fue aprobado. ¡Gracias!</p>
+              ? <p className="okmsg">Tu cuenta <b>{liq.cuenta}</b> fue aprobada. ¡Gracias!</p>
               : (
                 <form action={enviarLiquid} className="fm">
-                  {liq?.estado === "rechazado" && <p className="alerta">No pudimos confirmar ese ID{liq.nota ? ": " + liq.nota : ""}. Puedes corregirlo y enviarlo de nuevo.</p>}
-                  {liq?.estado === "pendiente" && <p className="mu">Enviaste el ID <b>{liq.liquid_id}</b>; está en revisión. Si te equivocaste, puedes enviarlo otra vez.</p>}
-                  <label>Tu ID de Liquid<input name="liquid_id" defaultValue={liq?.estado === "rechazado" ? liq.liquid_id : ""} maxLength={40} required placeholder="Ej.: 12345678" /></label>
-                  <button className="btn s">{liq ? "Enviar de nuevo" : "Enviar mi ID"}</button>
+                  {liq?.estado === "rechazado" && <p className="alerta">No pudimos confirmar ese número de cuenta{liq.nota ? ": " + liq.nota : ""}. Puedes corregirlo y enviarlo de nuevo.</p>}
+                  {liq?.estado === "pendiente" && <p className="mu">Enviaste la cuenta <b>{liq.cuenta}</b>; está en revisión. Si te equivocaste, puedes enviarlo otra vez.</p>}
+                  <label>Número de tu cuenta de trading de Liquid<input name="cuenta" defaultValue={liq?.estado === "rechazado" ? liq.cuenta : ""} maxLength={20} required placeholder="Ej.: 12345678" /></label>
+                  <button className="btn s">{liq ? "Enviar de nuevo" : "Enviar mi cuenta"}</button>
                 </form>
               )}
           </section>
         )}
         {admin && (
           <section className="box">
-            <div className="hd"><h2>IDs de Liquid</h2></div>
-            <p className="mu">Revisa los IDs que envían los alumnos y apruébalos si son clientes nuestros.</p>
-            <Link className="btn g s" href="/accesos/liquid">Revisar IDs de Liquid</Link>
+            <div className="hd"><h2>Cuentas de Liquid</h2></div>
+            <p className="mu">Revisa los números de cuenta que envían los alumnos y apruébalos si son clientes nuestros.</p>
+            <Link className="btn g s" href="/accesos/liquid">Revisar cuentas de Liquid</Link>
           </section>
         )}
       </div>

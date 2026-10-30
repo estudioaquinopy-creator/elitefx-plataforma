@@ -224,7 +224,7 @@ export async function alternarAnclaje(formData: FormData) {
   redirect(volver);
 }
 
-// Aprueba o rechaza el ID de Liquid de un alumno (después de comprobar a mano que es cliente nuestro).
+// Aprueba o rechaza el número de cuenta de Liquid de un alumno (después de comprobar a mano que es cliente nuestro).
 export async function revisarLiquid(formData: FormData) {
   await soloAdmin();
   const yo = await perfilActual();
@@ -233,14 +233,14 @@ export async function revisarLiquid(formData: FormData) {
   const nota = String(formData.get("nota") ?? "").trim().slice(0, 200);
   if (!/^[0-9a-f-]{36}$/i.test(uid) || !["aprobar", "rechazar"].includes(decision)) redirect("/accesos/liquid");
   const sb = createClient();
-  const { data: ant } = await sb.from("liquid_ids").select("estado, liquid_id").eq("user_id", uid).maybeSingle();
-  const a = ant as { estado: string; liquid_id: string } | null;
+  const { data: ant } = await sb.from("liquid_cuentas").select("estado, cuenta").eq("user_id", uid).maybeSingle();
+  const a = ant as { estado: string; cuenta: string } | null;
   if (!a) redirect("/accesos/liquid");
   if (decision === "aprobar" && a.estado === "aprobado") redirect("/accesos/liquid");
   const estado = decision === "aprobar" ? "aprobado" : "rechazado";
-  const { error } = await sb.from("liquid_ids").update({ estado, revisado_at: new Date().toISOString(), revisado_por: yo.id, nota }).eq("user_id", uid);
+  const { error } = await sb.from("liquid_cuentas").update({ estado, revisado_at: new Date().toISOString(), revisado_por: yo.id, nota }).eq("user_id", uid);
   if (error) fallo("/accesos/liquid", "No se pudo guardar: " + error.message);
-  await registrar("liquid", uid, (estado === "aprobado" ? "Aprobó" : "Rechazó") + " el ID de Liquid " + a.liquid_id + (nota ? " (" + nota + ")" : ""));
+  await registrar("liquid", uid, (estado === "aprobado" ? "Aprobó" : "Rechazó") + " la cuenta de Liquid " + a.cuenta + (nota ? " (" + nota + ")" : ""));
   revalidatePath("/accesos/liquid");
-  aviso("/accesos/liquid", estado === "aprobado" ? "ID aprobado: ya suma sus puntos." : "ID rechazado.");
+  aviso("/accesos/liquid", estado === "aprobado" ? "Cuenta aprobada: ya suma sus puntos." : "Cuenta rechazada.");
 }
