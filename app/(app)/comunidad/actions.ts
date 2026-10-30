@@ -61,12 +61,15 @@ export async function alternarLike(postId: string): Promise<{ ok: boolean; mio: 
 
 export async function comentar(f: FormData) {
   const perfil = await perfilActual();
-  const perm = await permisos(perfil);
-  if (!perm.comunidad) fallo("/comunidad", "Tu plan solo permite leer la comunidad.");
   const cuerpo = String(f.get("cuerpo") ?? "").trim();
+  // Permisos y comprobación de respuesta repetida a la vez (una consulta menos en fila).
+  const [perm, { data: rep }] = await Promise.all([
+    permisos(perfil),
+    createClient().from("comentarios").select("id").eq("user_id", perfil.id).eq("post_id", String(f.get("id") ?? "")).eq("cuerpo", cuerpo).gte("created_at", new Date(Date.now() - 120000).toISOString()).limit(1),
+  ]);
+  if (!perm.comunidad) fallo("/comunidad", "Tu plan solo permite leer la comunidad.");
   if (!cuerpo) fallo("/comunidad", "Escribe tu respuesta.");
   if (cuerpo.length > 2000) fallo("/comunidad", "La respuesta es demasiado larga (máximo 2.000 caracteres).");
-  const { data: rep } = await createClient().from("comentarios").select("id").eq("user_id", perfil.id).eq("post_id", String(f.get("id") ?? "")).eq("cuerpo", cuerpo).gte("created_at", new Date(Date.now() - 120000).toISOString()).limit(1);
   if (rep && rep.length) redirect(rutaSegura(f.get("volver")) + "#p" + String(f.get("id") ?? ""));
   const { error } = await createClient().from("comentarios").insert({
     post_id: String(f.get("id") ?? ""), user_id: perfil.id,

@@ -32,8 +32,11 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
   if (filtro) q = q.eq("canal", filtro);
   const pubs = ((await q).data ?? []) as Pub[];
   const ids = pubs.map((p) => p.id);
-  const { data: lk } = ids.length ? await sb.from("likes").select("post_id, user_id").in("post_id", ids) : { data: [] };
-  const { data: cm } = ids.length ? await sb.from("comentarios").select("*").in("post_id", ids).order("created_at") : { data: [] };
+  // Me gusta y respuestas se piden a la vez (antes iban una detrás de otra).
+  const [{ data: lk }, { data: cm }] = await Promise.all([
+    ids.length ? sb.from("likes").select("post_id, user_id").in("post_id", ids) : Promise.resolve({ data: [] }),
+    ids.length ? sb.from("comentarios").select("*").in("post_id", ids).order("created_at") : Promise.resolve({ data: [] }),
+  ]);
   const likes = (lk ?? []) as { post_id: string; user_id: string }[];
   const coms = (cm ?? []) as Com[];
   const opciones = perm.admin ? ["anuncios", "preguntas", "resultados"] : ["preguntas", "resultados"];
