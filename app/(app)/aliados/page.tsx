@@ -127,6 +127,7 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
           })}
           {aj.aliados_legal && <p className="note" style={{ lineHeight: 1.55 }}>{aj.aliados_legal}</p>}
         </div>
+        <div>
         <section className="box">
           <div className="hd"><h2>Tus primeros pasos</h2></div>
           {["Abre y verifica tu cuenta con nuestro enlace", "Realiza tu primer depósito", "Empieza a operar con la fórmula"].map((t, i) => (
@@ -178,6 +179,7 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
             <Link className="btn g s" href="/accesos/liquid">Revisar cuentas de Liquid</Link>
           </section>
         )}
+        </div>
       </div>
     </>
   );
