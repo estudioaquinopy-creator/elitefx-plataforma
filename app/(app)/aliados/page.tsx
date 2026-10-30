@@ -39,8 +39,10 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
   const aj = await leerAjustes();
   const { data } = await createClient().from("aliados").select("*").order("orden").order("created_at");
   const aliados = (data ?? []) as Aliado[];
-  const { data: miLiq } = admin ? { data: null } : await createClient().from("liquid_cuentas").select("cuenta, estado, nota, reward").eq("user_id", perfil.id).eq("mes", hoyPY().slice(0, 7)).maybeSingle();
-  const liq = miLiq as { cuenta: string; estado: string; nota: string; reward: number } | null;
+  const { data: misLiq } = admin ? { data: null } : await createClient().from("liquid_cuentas").select("cuenta, estado, nota, reward, mes").eq("user_id", perfil.id).order("mes", { ascending: false });
+  const todasLiq = (misLiq ?? []) as { cuenta: string; estado: string; nota: string; reward: number; mes: string }[];
+  const liq = todasLiq.find((x) => x.mes === hoyPY().slice(0, 7)) ?? null;
+  const anteriores = todasLiq.filter((x) => x.mes !== hoyPY().slice(0, 7) && x.estado === "aprobado");
   const ptsLiq = puntosLiquid(aj.ranking_pts_liquid);
   const ptsLiqR = puntosLiquidReal(aj.ranking_pts_liquid_real);
 
@@ -154,6 +156,18 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
                 <label>Número de tu cuenta de trading de Liquid<input name="cuenta" defaultValue={liq?.estado === "rechazado" ? liq.cuenta : ""} maxLength={30} required placeholder="Ej.: ECN_2617822_1" /></label>
                 <button className="btn s">{liq ? "Enviar de nuevo" : "Enviar mi cuenta"}</button>
               </form>
+            )}
+            {anteriores.length > 0 && (
+              <div style={{ marginTop: 14 }}>
+                <div className="tag">Tus cuentas de meses anteriores</div>
+                {anteriores.map((x) => (
+                  <div key={x.mes} className="ses">
+                    <div style={{ flex: 1 }}><b>{x.cuenta}</b><small className="mu" style={{ display: "block" }}>Registrada en {x.mes}</small></div>
+                    <span className={"pill " + (Number(x.reward) > 0 ? "ok" : "")}>{Number(x.reward) > 0 ? "✓ Opera en real" : "Aún sin operar en real"}</span>
+                  </div>
+                ))}
+                <small className="mu" style={{ display: "block", marginTop: 6 }}>Si una de estas cuentas empieza a operar en real, lo detectamos (se actualiza cada día) y sumas los puntos extra en el mes en que se detecta.</small>
+              </div>
             )}
           </section>
         )}
