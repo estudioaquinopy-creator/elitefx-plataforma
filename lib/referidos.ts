@@ -10,6 +10,17 @@ export function referidosActivos(hoy: string, ajustes: Record<string, string>, e
   return hoy >= desde;
 }
 
+// Fecha de inicio vigente (la del ajuste si es válida) y sus textos para mostrar.
+export function fechaReferidos(ajustes: Record<string, string>) {
+  const iso = /^\d{4}-\d{2}-\d{2}$/.test((ajustes.referidos_desde ?? "").trim()) ? ajustes.referidos_desde.trim() : REFERIDOS_DESDE;
+  const d = new Date(iso + "T12:00:00-03:00");
+  return {
+    iso,
+    corto: d.toLocaleDateString("es-PY", { timeZone: "America/Asuncion", day: "numeric", month: "short" }).replace(".", ""),
+    largo: d.toLocaleDateString("es-PY", { timeZone: "America/Asuncion", day: "numeric", month: "long" }),
+  };
+}
+
 const num = (t: string | undefined, def: number) => (/^\s*\d{1,3}\s*$/.test(t ?? "") ? Number((t as string).trim()) : def);
 // Puntos configurables (mismos valores por defecto que la base de datos).
 export function puntosReferidos(ajustes: Record<string, string>) {

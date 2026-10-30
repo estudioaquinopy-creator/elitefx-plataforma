@@ -9,7 +9,7 @@ import { ocurrencias, type Fijo } from "@/lib/horario";
 import { hoyPY } from "@/lib/sesion";
 import { leerAjustes } from "@/lib/ajustes";
 import { armarRedes } from "@/lib/redes";
-import { referidosActivos } from "@/lib/referidos";
+import { referidosActivos, fechaReferidos } from "@/lib/referidos";
 import type { Notif } from "@/components/Cabecera";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const perfil = await perfilActual();
   const perm = await permisos(perfil);
-  const items = [
+  const items: { href: string; label: string; lock: boolean; icon: string; soon?: string }[] = [
     { href: "/inicio", label: "Inicio", lock: false, icon: "M3 11l9-8 9 8M5 10v10h14V10" },
     { href: "/cursos", label: "Cursos", lock: false, icon: "M4 5h7a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H4zM20 5h-3a3 3 0 0 0-3 3" },
     { href: "/calendario", label: "Calendario", lock: !perm.calendario, icon: "M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v13H3zM3 11h18M8 3v4M16 3v4" },
@@ -78,9 +78,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     }
   }
   // Referidos: solo VIP (y el admin), desde la fecha de activación (antes, solo el admin lo ve como vista previa).
-  if ((perfil.rol === "admin" || perfil.plan !== "gratis") && referidosActivos(hoyPY(), aj, perfil.rol === "admin" || !!perfil.vista)) {
+  // Antes de la fecha, el miembro VIP lo ve en el menú pero sin enlace (con la fecha en pequeño).
+  if (perfil.rol === "admin" || perfil.plan !== "gratis") {
     const pos = items.findIndex((i) => i.href === "/noticias") + 1;
-    items.splice(pos, 0, { href: "/referidos", label: "Referidos", lock: false, icon: "M16 11a3 3 0 1 0 0-6a3 3 0 0 0 0 6zM8 12a3 3 0 1 0 0-6a3 3 0 0 0 0 6zM2 20a6 6 0 0 1 12 0M14 14.5A6 6 0 0 1 22 20" });
+    const ya = referidosActivos(hoyPY(), aj, perfil.rol === "admin" || !!perfil.vista);
+    items.splice(pos, 0, { href: "/referidos", label: "Referidos", lock: false, soon: ya ? undefined : fechaReferidos(aj).corto, icon: "M16 11a3 3 0 1 0 0-6a3 3 0 0 0 0 6zM8 12a3 3 0 1 0 0-6a3 3 0 0 0 0 6zM2 20a6 6 0 0 1 12 0M14 14.5A6 6 0 0 1 22 20" });
   }
   const redes = armarRedes(aj);
   const noLeidas = notifs.filter((n) => n.nueva).length;

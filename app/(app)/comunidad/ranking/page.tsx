@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { leerAjustes } from "@/lib/ajustes";
 import { guardarTextos } from "../../ajustes-actions";
 import { ajustarPuntos } from "../actions";
-import { referidosActivos, puntosReferidos, REFERIDOS_DESDE } from "@/lib/referidos";
+import { referidosActivos, puntosReferidos, fechaReferidos, REFERIDOS_DESDE } from "@/lib/referidos";
 import { mesDeRanking, ultimoViernes, cierreISO, textoFecha, premiosRanking, puntosCertificado } from "@/lib/ranking";
 import CuentaRanking from "@/components/CuentaRanking";
 
@@ -32,6 +32,7 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
   const ptsCert = puntosCertificado(aj.ranking_pts_certificado);
   const refAct = referidosActivos(hoyPY(), aj, perm.admin || !!perfil.vista); // los referidos se muestran desde el 9 de noviembre (antes, solo al administrador)
   const pr = puntosReferidos(aj);
+  const fr = fechaReferidos(aj);
 
   const [r1, r2] = await Promise.all([sb.rpc("ranking_mes", { p_mes: mes }), sb.rpc("ranking_mes", { p_mes: previo })]);
   const falta = !!r1.error;
@@ -138,10 +139,12 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
           <div className="ses"><div style={{ flex: 1 }}><b>Tu respuesta marcada como útil</b><small className="mu" style={{ display: "block" }}>La marca quien preguntó</small></div><b>5 pts</b></div>
           <div className="ses"><div style={{ flex: 1 }}><b>Me gusta recibido</b><small className="mu" style={{ display: "block" }}>Máx. 10 por publicación</small></div><b>1 pt</b></div>
           <div className="ses"><div style={{ flex: 1 }}><b>🎓 Obtener un certificado</b><small className="mu" style={{ display: "block" }}>Al aprobar el examen de Curso básico, intermedio o avanzado (suma en el mes en que apruebas)</small></div><b>{ptsCert} pts</b></div>
-          {refAct && <div className="ses"><div style={{ flex: 1 }}><b>👥 Tu referido se activa</b><small className="mu" style={{ display: "block" }}>Se registra con tu código y completa su primera lección (máx. {pr.tope} al mes)</small></div><b>{pr.registro} pts</b></div>}
-          {refAct && <div className="ses"><div style={{ flex: 1 }}><b>⭐ Tu referido pasa a VIP</b><small className="mu" style={{ display: "block" }}>Se suma además de los puntos anteriores, en el mes en que se hace VIP</small></div><b>+{pr.vip} pts</b></div>}
+          {<div className="ses"><div style={{ flex: 1 }}><b>👥 Tu referido se activa</b><small className="mu" style={{ display: "block" }}>Se registra con tu código y completa su primera lección (máx. {pr.tope} al mes){!refAct && " · desde el " + fr.largo}</small></div><b>{pr.registro} pts</b></div>}
+          {<div className="ses"><div style={{ flex: 1 }}><b>⭐ Tu referido pasa a VIP</b><small className="mu" style={{ display: "block" }}>Se suma además de los puntos anteriores, en el mes en que se hace VIP</small></div><b>+{pr.vip} pts</b></div>}
           <small className="mu" style={{ display: "block", marginTop: 10 }}>Máximo 12 puntos por día (las respuestas útiles, los certificados y los referidos no cuentan para ese tope). No suman: publicaciones muy cortas, responder a tu propia publicación ni dar me gusta a lo tuyo. El mes cierra el último viernes a las 23:59 (hora de Paraguay). Si se elimina una publicación, se pierden sus puntos. ELITE FX puede ajustar o descalificar puntos por conductas de spam o trampa.</small>
-          {refAct && !gratis && <Link className="btn sd s" href="/referidos" style={{ marginTop: 12 }}>👥 Invitar amigos y ganar puntos</Link>}
+          {!gratis && (refAct
+            ? <Link className="btn sd s" href="/referidos" style={{ marginTop: 12 }}>👥 Invitar amigos y ganar puntos</Link>
+            : <small className="mu" style={{ display: "block", marginTop: 12 }}>👥 Invitar amigos y ganar puntos: disponible desde el {fr.largo}.</small>)}
         </section>
       </div>
 
