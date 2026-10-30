@@ -9,6 +9,7 @@ import { ocurrencias, type Fijo } from "@/lib/horario";
 import { hoyPY } from "@/lib/sesion";
 import { leerAjustes } from "@/lib/ajustes";
 import { armarRedes } from "@/lib/redes";
+import { referidosActivos } from "@/lib/referidos";
 import type { Notif } from "@/components/Cabecera";
 
 export const dynamic = "force-dynamic";
@@ -75,6 +76,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       const min = Math.max(1, Math.round((new Date(o.inicio).getTime() - ahora) / 60000));
       notifs.unshift({ id: "r-" + o.id, titulo: "Empieza en " + min + " min", cuerpo: o.titulo, enlace: "/calendario", fecha: "", nueva: true });
     }
+  }
+  // Referidos: solo VIP (y el admin), desde la fecha de activación (antes, solo el admin lo ve como vista previa).
+  if ((perfil.rol === "admin" || perfil.plan !== "gratis") && referidosActivos(hoyPY(), aj, perfil.rol === "admin" || !!perfil.vista)) {
+    const pos = items.findIndex((i) => i.href === "/noticias") + 1;
+    items.splice(pos, 0, { href: "/referidos", label: "Referidos", lock: false, icon: "M16 11a3 3 0 1 0 0-6a3 3 0 0 0 0 6zM8 12a3 3 0 1 0 0-6a3 3 0 0 0 0 6zM2 20a6 6 0 0 1 12 0M14 14.5A6 6 0 0 1 22 20" });
   }
   const redes = armarRedes(aj);
   const noLeidas = notifs.filter((n) => n.nueva).length;
