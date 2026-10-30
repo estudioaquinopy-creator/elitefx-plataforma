@@ -13,7 +13,7 @@ const cuando = (iso: string) => new Date(iso).toLocaleDateString("es-PY", { time
 export default async function Referidos() {
   const perfil = await perfilActual();
   const aj = await leerAjustes();
-  const adminReal = perfil.rol === "admin" || !!perfil.vista;
+  const adminReal = perfil.rol === "admin"; // en modo alumno se comporta como un alumno real (sin atajo)
   const activo = referidosActivos(hoyPY(), aj, adminReal);
   const vip = perfil.plan !== "gratis" || adminReal;
   const pts = puntosReferidos(aj);

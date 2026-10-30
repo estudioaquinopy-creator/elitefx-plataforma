@@ -30,7 +30,7 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
   // Premios en USDT por puesto (1.º, 2.º y 3.º); el administrador puede cambiarlos. Por defecto 200, 100 y 50.
   const premios = premiosRanking(aj.ranking_premios);
   const ptsCert = puntosCertificado(aj.ranking_pts_certificado);
-  const refAct = referidosActivos(hoyPY(), aj, perm.admin || !!perfil.vista); // los referidos se muestran desde el 9 de noviembre (antes, solo al administrador)
+  const refAct = referidosActivos(hoyPY(), aj, perfil.rol === "admin"); // los referidos se muestran desde el 9 de noviembre (antes, solo al administrador)
   const pr = puntosReferidos(aj);
   const fr = fechaReferidos(aj);
 

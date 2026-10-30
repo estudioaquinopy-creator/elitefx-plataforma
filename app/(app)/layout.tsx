@@ -81,7 +81,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // Antes de la fecha, el miembro VIP lo ve en el menú pero sin enlace (con la fecha en pequeño).
   if (perfil.rol === "admin" || perfil.plan !== "gratis") {
     const pos = items.findIndex((i) => i.href === "/noticias") + 1;
-    const ya = referidosActivos(hoyPY(), aj, perfil.rol === "admin" || !!perfil.vista);
+    const ya = referidosActivos(hoyPY(), aj, perfil.rol === "admin");
     items.splice(pos, 0, { href: "/referidos", label: "Referidos", lock: false, soon: ya ? undefined : fechaReferidos(aj).corto, icon: "M16 11a3 3 0 1 0 0-6a3 3 0 0 0 0 6zM8 12a3 3 0 1 0 0-6a3 3 0 0 0 0 6zM2 20a6 6 0 0 1 12 0M14 14.5A6 6 0 0 1 22 20" });
   }
   const redes = armarRedes(aj);
