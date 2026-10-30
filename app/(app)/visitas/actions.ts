@@ -47,7 +47,7 @@ export async function revisarVisita(f: FormData) {
   if (!vis) fallo("/visitas", "No se encontró la solicitud.");
   const estado = decision === "aprobar" ? "aprobada" : "rechazada";
   const { error } = await sb.from("visitas").update({ estado, nota, revisado_at: new Date().toISOString(), revisado_por: yo.id }).eq("id", id);
-  if (error) fallo("/visitas", error.code === "23505" ? "Ese horario ya está aprobado para otra persona." : "No se pudo guardar: " + error.message);
+  if (error) fallo("/visitas", error.message.includes("cupo") ? "Ese horario ya tiene el cupo completo." : "No se pudo guardar: " + error.message);
   await registrar("visita", vis.user_id, (estado === "aprobada" ? "Aprobó" : "Rechazó") + " la visita del " + vis.fecha + " a las " + vis.hora.slice(0, 5) + (nota ? " (" + nota + ")" : ""));
   revalidatePath("/visitas");
   aviso("/visitas", estado === "aprobada" ? "Visita aprobada: la persona verá el aviso en sus notificaciones." : "Solicitud rechazada.");
