@@ -7,7 +7,7 @@ import SubirCsvLiquid from "@/components/SubirCsvLiquid";
 
 export const dynamic = "force-dynamic";
 
-type Fila = { user_id: string; cuenta: string; estado: string; enviado_at: string; revisado_at: string | null; nota: string };
+type Fila = { user_id: string; cuenta: string; estado: string; enviado_at: string; revisado_at: string | null; nota: string; reward?: number };
 
 // El administrador comprueba en el panel de Liquid que el ID es cliente nuestro y lo aprueba o rechaza.
 export default async function Liquid({ searchParams }: { searchParams: { ok?: string; error?: string } }) {
@@ -30,6 +30,7 @@ export default async function Liquid({ searchParams }: { searchParams: { ok?: st
           <b>{p?.nombre || p?.email || "—"}</b>{p && p.plan === "gratis" && <span className="pill" style={{ marginLeft: 8 }}>Gratis</span>}
           <small className="mu" style={{ display: "block" }}>{p?.email} · enviado {fecha(f.enviado_at)}</small>
           <small style={{ display: "block" }}>Cuenta de Liquid: <b>{f.cuenta}</b></small>
+          {f.estado === "aprobado" && <small className="mu" style={{ display: "block" }}>{Number(f.reward) > 0 ? "Opera en real (reward " + f.reward + ")" : "Sin operar en real todavía"}</small>}
           {f.estado !== "pendiente" && <small className="mu" style={{ display: "block" }}>{f.estado === "aprobado" ? "Aprobado" : "Rechazado"}{f.revisado_at ? " el " + fecha(f.revisado_at) : ""}{f.nota ? " · " + f.nota : ""}</small>}
         </div>
         <form action={revisarLiquid} style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
@@ -51,7 +52,7 @@ export default async function Liquid({ searchParams }: { searchParams: { ok?: st
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
       <section className="box">
         <h2>Aprobar con el CSV de Liquid</h2>
-        <p className="mu">Sube cada día el CSV actualizado de tus clientes: las cuentas pendientes cuyo número aparezca en la columna que elijas se aprueban solas y suman sus puntos. Las que no aparezcan quedan pendientes para revisarlas a mano.</p>
+        <p className="mu">Sube cada día el CSV actualizado de tus clientes: las cuentas pendientes cuyo número aparezca en la columna "account" se aprueban solas y suman sus puntos; y las cuentas aprobadas cuya columna "reward" sea mayor a 0 (operan en real) suman los puntos extra. Las que no aparezcan quedan pendientes para revisarlas a mano.</p>
         <SubirCsvLiquid />
       </section>
       <section className="box">

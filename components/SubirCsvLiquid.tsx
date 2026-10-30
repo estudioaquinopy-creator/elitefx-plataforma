@@ -2,8 +2,8 @@
 import { useState } from "react";
 import { aprobarPorCsv } from "@/app/(app)/accesos/actions";
 
-// Lee el CSV de clientes de Liquid en el navegador, deja elegir la columna con el número de cuenta y aprueba
-// las cuentas pendientes que aparezcan en esa columna (solo esa columna: así un monto o un saldo no puede coincidir).
+// Lee el CSV de clientes de Liquid en el navegador. Columna "account": confirma la cuenta (aprueba las pendientes).
+// Columna "reward": si es mayor a 0, la cuenta opera en real y suma los puntos extra. Solo se usan esas dos columnas.
 function filas(texto: string): string[][] {
   const t = texto.replace(/^﻿/, "");
   const primera = t.split(/\r?\n/, 1)[0] ?? "";
@@ -25,6 +25,7 @@ function filas(texto: string): string[][] {
 export default function SubirCsvLiquid() {
   const [datos, setDatos] = useState<string[][]>([]);
   const [col, setCol] = useState(0);
+  const [colR, setColR] = useState(-1);
   const [nombre, setNombre] = useState("");
   const [err, setErr] = useState("");
 
@@ -39,10 +40,12 @@ export default function SubirCsvLiquid() {
     const enc = d[0].map((x) => x.toLowerCase());
     const guess = enc.findIndex((x) => /cuenta|account|login|trading/.test(x));
     setCol(guess >= 0 ? guess : 0);
+    setColR(enc.findIndex((x) => /reward/.test(x)));
   }
 
   const encabezado = datos[0] ?? [];
-  const valores = datos.slice(1).map((f) => (f[col] ?? "").trim()).filter(Boolean);
+  const pares = datos.slice(1).map((f) => [(f[col] ?? "").trim(), colR >= 0 ? (f[colR] ?? "").trim() : ""]).filter((x) => x[0]);
+  const valores = pares.map((x) => x[0]);
   const muestra = valores.slice(0, 3).join(", ");
 
   return (
@@ -53,14 +56,22 @@ export default function SubirCsvLiquid() {
       {err && <p className="alerta">{err}</p>}
       {datos.length > 0 && (
         <>
-          <label>Columna con el número de cuenta de trading
-            <select value={col} onChange={(e) => setCol(Number(e.target.value))}>
-              {encabezado.map((h, i) => <option key={i} value={i}>{h.trim() || "Columna " + (i + 1)}</option>)}
-            </select>
-          </label>
+          <div className="f2">
+            <label>Columna con el número de cuenta (account)
+              <select value={col} onChange={(e) => setCol(Number(e.target.value))}>
+                {encabezado.map((h, i) => <option key={i} value={i}>{h.trim() || "Columna " + (i + 1)}</option>)}
+              </select>
+            </label>
+            <label>Columna reward (opera en real si es mayor a 0)
+              <select value={colR} onChange={(e) => setColR(Number(e.target.value))}>
+                <option value={-1}>— No usar —</option>
+                {encabezado.map((h, i) => <option key={i} value={i}>{h.trim() || "Columna " + (i + 1)}</option>)}
+              </select>
+            </label>
+          </div>
           <small className="mu">{nombre} · {valores.length} filas · ejemplo: {muestra || "—"}</small>
-          <input type="hidden" name="cuentas" value={JSON.stringify(valores)} />
-          <button className="btn s">Aprobar las cuentas que estén en el CSV</button>
+          <input type="hidden" name="cuentas" value={JSON.stringify(pares)} />
+          <button className="btn s">Procesar el CSV</button>
         </>
       )}
     </form>

@@ -245,26 +245,55 @@ export async function revisarLiquid(formData: FormData) {
   aviso("/accesos/liquid", estado === "aprobado" ? "Cuenta aprobada: ya suma sus puntos." : "Cuenta rechazada.");
 }
 
-// Aprueba automáticamente las cuentas pendientes cuyo número aparece en la columna elegida del CSV de clientes de Liquid.
+// Procesa el CSV de clientes de Liquid: (1) aprueba las cuentas pendientes cuyo número aparece en la columna "account";
+// (2) en las cuentas aprobadas, si "reward" es mayor a 0 (opera en real) marca la fecha para sumar los puntos extra (una sola vez).
+function numero(t: string): number {
+  let x = t.replace(/[^0-9.,-]/g, "");
+  if (x.includes(",") && x.includes(".")) x = x.lastIndexOf(",") > x.lastIndexOf(".") ? x.replace(/\./g, "").replace(",", ".") : x.replace(/,/g, "");
+  else if (x.includes(",")) x = /,\d{1,2}$/.test(x) ? x.replace(",", ".") : x.replace(/,/g, "");
+  const n = Number(x);
+  return Number.isFinite(n) ? n : 0;
+}
+
 export async function aprobarPorCsv(formData: FormData) {
   await soloAdmin();
   const yo = await perfilActual();
   let lista: unknown;
   try { lista = JSON.parse(String(formData.get("cuentas") ?? "[]")); } catch { lista = null; }
   if (!Array.isArray(lista) || lista.length === 0) fallo("/accesos/liquid", "No se pudo leer el CSV.");
-  const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, "").replace(/^0+(?=.)/, "");
-  const enCsv = new Set((lista as unknown[]).map((x) => norm(String(x))).filter(Boolean));
-  const sb = createClient();
-  const { data } = await sb.from("liquid_cuentas").select("user_id, cuenta").eq("estado", "pendiente");
-  const pendientes = (data ?? []) as { user_id: string; cuenta: string }[];
-  const coinciden = pendientes.filter((p) => enCsv.has(norm(p.cuenta)));
-  const ahora = new Date().toISOString();
-  let ok = 0;
-  for (const p of coinciden) {
-    const { error } = await sb.from("liquid_cuentas").update({ estado: "aprobado", revisado_at: ahora, revisado_por: yo.id, nota: "Aprobada automáticamente con el CSV" }).eq("user_id", p.user_id).eq("estado", "pendiente");
-    if (!error) ok++;
+  const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, "");
+  // Cada cuenta del CSV (p. ej. ECN_2617822_1) se busca completa; si la persona escribió solo el número del medio (2617822), también coincide.
+  const csv = new Map<string, number>();
+  const numerico = new Map<string, number>();
+  for (const f of lista as unknown[]) {
+    if (!Array.isArray(f)) continue;
+    const cta = norm(String(f[0] ?? ""));
+    if (!cta) continue;
+    const rw = numero(String(f[1] ?? ""));
+    csv.set(cta, Math.max(csv.get(cta) ?? 0, rw));
+    for (const t of cta.split(/[_-]/)) if (/^\d{6,}$/.test(t)) numerico.set(t, Math.max(numerico.get(t) ?? 0, rw));
   }
-  await registrar("liquid", null, "CSV de Liquid: " + ok + " cuentas aprobadas de " + pendientes.length + " pendientes");
+  const buscar = (c: string): number | undefined => csv.get(norm(c)) ?? (/^\d{6,}$/.test(norm(c)) ? numerico.get(norm(c)) : undefined);
+  const sb = createClient();
+  const { data } = await sb.from("liquid_cuentas").select("user_id, cuenta, estado, reward, reward_at").in("estado", ["pendiente", "aprobado"]);
+  const filas = (data ?? []) as { user_id: string; cuenta: string; estado: string; reward: number; reward_at: string | null }[];
+  const ahora = new Date().toISOString();
+  let aprobadas = 0, reales = 0;
+  for (const p of filas) {
+    const rw = buscar(p.cuenta);
+    if (rw === undefined) continue;
+    const cambios: Record<string, unknown> = {};
+    if (p.estado === "pendiente") Object.assign(cambios, { estado: "aprobado", revisado_at: ahora, revisado_por: yo.id, nota: "Aprobada automáticamente con el CSV" });
+    if (Number(p.reward) !== rw) cambios.reward = rw;
+    if (rw > 0 && !p.reward_at) cambios.reward_at = ahora;
+    if (Object.keys(cambios).length === 0) continue;
+    const { error } = await sb.from("liquid_cuentas").update(cambios).eq("user_id", p.user_id).eq("estado", p.estado);
+    if (error) continue;
+    if (p.estado === "pendiente") aprobadas++;
+    if (cambios.reward_at) reales++;
+  }
+  const pendientes = filas.filter((p) => p.estado === "pendiente").length;
+  await registrar("liquid", null, "CSV de Liquid: " + aprobadas + " cuentas aprobadas de " + pendientes + " pendientes; " + reales + " con puntos por operar en real");
   revalidatePath("/accesos/liquid");
-  aviso("/accesos/liquid", ok + " cuenta(s) aprobada(s) automáticamente con el CSV; " + (pendientes.length - ok) + " siguen pendientes.");
+  aviso("/accesos/liquid", aprobadas + " cuenta(s) aprobada(s) y " + reales + " con puntos extra por operar en real; " + (pendientes - aprobadas) + " siguen pendientes.");
 }

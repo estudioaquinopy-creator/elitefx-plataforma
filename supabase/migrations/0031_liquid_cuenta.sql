@@ -4,7 +4,7 @@
 
 create table if not exists public.liquid_cuentas (
   user_id uuid primary key references public.perfiles(id) on delete cascade,
-  cuenta text not null check (cuenta ~ '^[A-Za-z0-9-]{4,20}$'),
+  cuenta text not null check (cuenta ~ '^[A-Za-z0-9_-]{4,30}$'),
   estado text not null default 'pendiente' check (estado in ('pendiente', 'aprobado', 'rechazado')),
   enviado_at timestamptz not null default now(),
   revisado_at timestamptz,

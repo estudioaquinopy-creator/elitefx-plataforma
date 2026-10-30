@@ -5,7 +5,7 @@ import { leerAjustes } from "@/lib/ajustes";
 import { youtubeId } from "@/lib/youtube";
 import { guardarTextos } from "../ajustes-actions";
 import { crearAliado, guardarAliado, eliminarAliado, enviarLiquid } from "./actions";
-import { puntosLiquid } from "@/lib/ranking";
+import { puntosLiquid, puntosLiquidReal } from "@/lib/ranking";
 
 export const dynamic = "force-dynamic";
 
@@ -39,9 +39,10 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
   const aj = await leerAjustes();
   const { data } = await createClient().from("aliados").select("*").order("orden").order("created_at");
   const aliados = (data ?? []) as Aliado[];
-  const { data: miLiq } = admin ? { data: null } : await createClient().from("liquid_cuentas").select("cuenta, estado, nota").eq("user_id", perfil.id).maybeSingle();
-  const liq = miLiq as { cuenta: string; estado: string; nota: string } | null;
+  const { data: miLiq } = admin ? { data: null } : await createClient().from("liquid_cuentas").select("cuenta, estado, nota, reward").eq("user_id", perfil.id).maybeSingle();
+  const liq = miLiq as { cuenta: string; estado: string; nota: string; reward: number } | null;
   const ptsLiq = puntosLiquid(aj.ranking_pts_liquid);
+  const ptsLiqR = puntosLiquidReal(aj.ranking_pts_liquid_real);
 
   // Tutoriales del broker: se buscan en Tutoriales por el título (crear/abrir cuenta, depositar, retirar), mejor si están en la categoría "Broker".
   const { data: tuts } = await createClient().from("tutoriales").select("id, titulo, categoria").order("created_at", { ascending: false });
@@ -133,14 +134,14 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
         {!admin && (
           <section className="box">
             <div className="hd"><h2>Registra tu cuenta de Liquid</h2>{liq && <span className={"pill " + (liq.estado === "aprobado" ? "ok" : "")}>{liq.estado === "aprobado" ? "✓ Aprobado" : liq.estado === "rechazado" ? "Rechazado" : "En revisión"}</span>}</div>
-            <p className="mu">Si abriste tu cuenta con nuestro enlace, escribe aquí el número de tu cuenta de trading de Liquid (el que ves en tu cuenta, no tu correo). Lo revisamos a mano y, si eres cliente nuestro, sumas <b>{ptsLiq} puntos</b> en el ranking mensual (solo para miembros VIP).</p>
+            <p className="mu">Si abriste tu cuenta con nuestro enlace, escribe aquí el número de tu cuenta de trading de Liquid (el que ves en tu cuenta, no tu correo). Lo revisamos a mano y, si eres cliente nuestro, sumas <b>{ptsLiq} puntos</b> en el ranking mensual y otros <b>{ptsLiqR} puntos</b> cuando tu cuenta ya opera en real (solo para miembros VIP).</p>
             {liq?.estado === "aprobado"
-              ? <p className="okmsg">Tu cuenta <b>{liq.cuenta}</b> fue aprobada. ¡Gracias!</p>
+              ? <p className="okmsg">Tu cuenta <b>{liq.cuenta}</b> fue aprobada. ¡Gracias!{Number(liq.reward) > 0 ? " Ya operas en cuenta real: puntos extra confirmados." : " Cuando operes en cuenta real sumarás puntos extra."}</p>
               : (
                 <form action={enviarLiquid} className="fm">
                   {liq?.estado === "rechazado" && <p className="alerta">No pudimos confirmar ese número de cuenta{liq.nota ? ": " + liq.nota : ""}. Puedes corregirlo y enviarlo de nuevo.</p>}
                   {liq?.estado === "pendiente" && <p className="mu">Enviaste la cuenta <b>{liq.cuenta}</b>; está en revisión. Si te equivocaste, puedes enviarlo otra vez.</p>}
-                  <label>Número de tu cuenta de trading de Liquid<input name="cuenta" defaultValue={liq?.estado === "rechazado" ? liq.cuenta : ""} maxLength={20} required placeholder="Ej.: 12345678" /></label>
+                  <label>Número de tu cuenta de trading de Liquid<input name="cuenta" defaultValue={liq?.estado === "rechazado" ? liq.cuenta : ""} maxLength={30} required placeholder="Ej.: ECN_2617822_1" /></label>
                   <button className="btn s">{liq ? "Enviar de nuevo" : "Enviar mi cuenta"}</button>
                 </form>
               )}
