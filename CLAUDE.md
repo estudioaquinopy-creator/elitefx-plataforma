@@ -6,6 +6,7 @@ Plataforma propia de la academia ELITE FX (+900 alumnos, migrando desde Skool). 
 - Next.js 14 (App Router, server components y server actions) + Supabase (Postgres con RLS, Auth, Storage) + Vercel.
 - Cada push a `main` se despliega solo en Vercel. No hay entorno de pruebas: **cuida lo que subes a `main`**.
 - No se puede compilar en el entorno de Claude (npm bloqueado) y `ignoreBuildErrors` está activo: los errores solo se ven en Vercel. Revisa dos veces el código (sobre todo el alcance de variables y los imports).
+- Acciones de servidor dentro de la caja de una publicación (responder, borrar respuesta, marcar útil): no terminar con `redirect()` a la misma página con `#ancla` (el botón se quedaba en "Enviando…"); usar `revalidatePath()` y devolver el resultado (ver `comentar` y `components/FormRespuesta.tsx`).
 - Dominio de producción: `academia.elitefx.com.py` (también existe `elitefx-plataforma.vercel.app`).
 
 ## Variables de entorno (en Vercel, nunca en el repositorio ni en el chat)

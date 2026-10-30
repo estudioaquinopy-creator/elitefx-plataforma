@@ -5,6 +5,7 @@ import CajaTexto from "@/components/CajaTexto";
 import Compositor from "@/components/Compositor";
 import BotonEnvio from "@/components/BotonEnvio";
 import PostModal from "@/components/PostModal";
+import FormRespuesta from "@/components/FormRespuesta";
 import { borrarPublicacion, publicar, alternarLike, comentar, borrarComentario, marcarUtil } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -120,11 +121,7 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
                   </div>
                 ))}
                 {perm.comunidad && (
-                  <form action={comentar} className="fm resf">
-                    <input type="hidden" name="id" value={p.id} /><input type="hidden" name="volver" value={volver} />
-                    <CajaTexto name="cuerpo" rows={1} placeholder="Escribe una respuesta…" required maxLength={1000} />
-                    <BotonEnvio className="btn g s" enviando="Enviando…">Responder</BotonEnvio>
-                  </form>
+                  <FormRespuesta action={comentar} id={p.id} />
                 )}
               </>
             }

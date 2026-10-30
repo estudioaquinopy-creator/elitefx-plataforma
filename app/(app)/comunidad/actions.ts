@@ -59,7 +59,8 @@ export async function alternarLike(postId: string): Promise<{ ok: boolean; mio: 
   return { ok: true, mio: true, n: await cuenta() };
 }
 
-export async function comentar(f: FormData) {
+// Responde a una publicación. No redirige: devuelve el resultado y la página se actualiza sola (revalidatePath).
+export async function comentar(f: FormData): Promise<{ ok: boolean; error?: string }> {
   const perfil = await perfilActual();
   const cuerpo = String(f.get("cuerpo") ?? "").trim();
   // Permisos y comprobación de respuesta repetida a la vez (una consulta menos en fila).
@@ -67,35 +68,32 @@ export async function comentar(f: FormData) {
     permisos(perfil),
     createClient().from("comentarios").select("id").eq("user_id", perfil.id).eq("post_id", String(f.get("id") ?? "")).eq("cuerpo", cuerpo).gte("created_at", new Date(Date.now() - 120000).toISOString()).limit(1),
   ]);
-  if (!perm.comunidad) fallo("/comunidad", "Tu plan solo permite leer la comunidad.");
-  if (!cuerpo) fallo("/comunidad", "Escribe tu respuesta.");
-  if (cuerpo.length > 2000) fallo("/comunidad", "La respuesta es demasiado larga (máximo 2.000 caracteres).");
-  if (rep && rep.length) redirect(rutaSegura(f.get("volver")) + "#p" + String(f.get("id") ?? ""));
+  if (!perm.comunidad) return { ok: false, error: "Tu plan solo permite leer la comunidad." };
+  if (!cuerpo) return { ok: false, error: "Escribe tu respuesta." };
+  if (cuerpo.length > 2000) return { ok: false, error: "La respuesta es demasiado larga (máximo 2.000 caracteres)." };
+  if (rep && rep.length) return { ok: true }; // ya se había publicado la misma respuesta hace un momento
   const { error } = await createClient().from("comentarios").insert({
     post_id: String(f.get("id") ?? ""), user_id: perfil.id,
     autor: perfil.nombre || perfil.email.split("@")[0], cuerpo,
   });
-  if (error) fallo("/comunidad", "No se pudo responder: " + error.message);
+  if (error) return { ok: false, error: "No se pudo responder: " + error.message };
   revalidatePath("/comunidad");
-  redirect(rutaSegura(f.get("volver")) + "#p" + String(f.get("id") ?? ""));
+  return { ok: true };
 }
 
 export async function borrarComentario(f: FormData) {
   await perfilActual();
   await createClient().from("comentarios").delete().eq("id", String(f.get("id") ?? ""));
-  revalidatePath("/comunidad");
-  redirect(rutaSegura(f.get("volver")) + "#p" + String(f.get("post") ?? ""));
+  revalidatePath("/comunidad"); // sin redirigir: la página se actualiza sola y la publicación sigue abierta
 }
 
 // Respuesta útil: la marca quien hizo la pregunta (o el administrador) y suma puntos al ranking de quien respondió.
 export async function marcarUtil(f: FormData) {
   await perfilActual();
-  const volver = rutaSegura(f.get("volver"));
   const util = f.get("util") === "1";
   const { error } = await createClient().rpc("marcar_comentario_util", { p_id: String(f.get("id") ?? ""), p_valor: util });
   if (error) fallo("/comunidad", error.message.includes("marcar_comentario_util") ? "Falta correr la migración 0022 en Supabase." : error.message);
-  revalidatePath("/comunidad");
-  redirect(volver + "#p" + String(f.get("post") ?? ""));
+  revalidatePath("/comunidad"); // sin redirigir: la página se actualiza sola y la publicación sigue abierta
 }
 
 // Solo administrador: suma o resta puntos a una persona en el ranking de un mes (con motivo).
