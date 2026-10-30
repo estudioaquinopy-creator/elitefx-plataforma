@@ -7,7 +7,7 @@ import SubirCsvLiquid from "@/components/SubirCsvLiquid";
 
 export const dynamic = "force-dynamic";
 
-type Fila = { user_id: string; cuenta: string; estado: string; enviado_at: string; revisado_at: string | null; nota: string; reward?: number };
+type Fila = { id: string; mes?: string; user_id: string; cuenta: string; estado: string; enviado_at: string; revisado_at: string | null; nota: string; reward?: number };
 
 // El administrador comprueba en el panel de Liquid que el ID es cliente nuestro y lo aprueba o rechaza.
 export default async function Liquid({ searchParams }: { searchParams: { ok?: string; error?: string } }) {
@@ -28,13 +28,13 @@ export default async function Liquid({ searchParams }: { searchParams: { ok?: st
       <div className="ses" style={{ flexWrap: "wrap", gap: 10 }}>
         <div style={{ flex: 1, minWidth: 220 }}>
           <b>{p?.nombre || p?.email || "—"}</b>{p && p.plan === "gratis" && <span className="pill" style={{ marginLeft: 8 }}>Gratis</span>}
-          <small className="mu" style={{ display: "block" }}>{p?.email} · enviado {fecha(f.enviado_at)}</small>
+          <small className="mu" style={{ display: "block" }}>{p?.email} · enviado {fecha(f.enviado_at)}{f.mes ? " (mes " + f.mes + ")" : ""}</small>
           <small style={{ display: "block" }}>Cuenta de Liquid: <b>{f.cuenta}</b></small>
           {f.estado === "aprobado" && <small className="mu" style={{ display: "block" }}>{Number(f.reward) > 0 ? "Opera en real (reward " + f.reward + ")" : "Sin operar en real todavía"}</small>}
           {f.estado !== "pendiente" && <small className="mu" style={{ display: "block" }}>{f.estado === "aprobado" ? "Aprobado" : "Rechazado"}{f.revisado_at ? " el " + fecha(f.revisado_at) : ""}{f.nota ? " · " + f.nota : ""}</small>}
         </div>
         <form action={revisarLiquid} style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-          <input type="hidden" name="id" value={f.user_id} />
+          <input type="hidden" name="id" value={f.id} />
           <input name="nota" placeholder="Nota (opcional)" maxLength={200} style={{ width: 160 }} />
           {f.estado !== "aprobado" && <button className="btn s" name="decision" value="aprobar">Aprobar</button>}
           {f.estado !== "rechazado" && <button className="btn g s" name="decision" value="rechazar">Rechazar</button>}
@@ -58,12 +58,12 @@ export default async function Liquid({ searchParams }: { searchParams: { ok?: st
       <section className="box">
         <h2>Pendientes ({pendientes.length})</h2>
         {pendientes.length === 0 && <p className="mu">No hay cuentas por revisar.</p>}
-        {pendientes.map((f) => <Tarjeta key={f.user_id} f={f} />)}
+        {pendientes.map((f) => <Tarjeta key={f.id} f={f} />)}
       </section>
       {resto.length > 0 && (
         <section className="box">
           <h2>Ya revisados</h2>
-          {resto.map((f) => <Tarjeta key={f.user_id} f={f} />)}
+          {resto.map((f) => <Tarjeta key={f.id} f={f} />)}
         </section>
       )}
     </>

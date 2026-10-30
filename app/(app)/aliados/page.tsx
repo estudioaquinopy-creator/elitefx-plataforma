@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { perfilActual } from "@/lib/sesion";
+import { perfilActual, hoyPY } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { leerAjustes } from "@/lib/ajustes";
 import { youtubeId } from "@/lib/youtube";
@@ -39,7 +39,7 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
   const aj = await leerAjustes();
   const { data } = await createClient().from("aliados").select("*").order("orden").order("created_at");
   const aliados = (data ?? []) as Aliado[];
-  const { data: miLiq } = admin ? { data: null } : await createClient().from("liquid_cuentas").select("cuenta, estado, nota, reward").eq("user_id", perfil.id).maybeSingle();
+  const { data: miLiq } = admin ? { data: null } : await createClient().from("liquid_cuentas").select("cuenta, estado, nota, reward").eq("user_id", perfil.id).eq("mes", hoyPY().slice(0, 7)).maybeSingle();
   const liq = miLiq as { cuenta: string; estado: string; nota: string; reward: number } | null;
   const ptsLiq = puntosLiquid(aj.ranking_pts_liquid);
   const ptsLiqR = puntosLiquidReal(aj.ranking_pts_liquid_real);
@@ -133,18 +133,28 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
         </section>
         {!admin && (
           <section className="box">
-            <div className="hd"><h2>Registra tu cuenta de Liquid</h2>{liq && <span className={"pill " + (liq.estado === "aprobado" ? "ok" : "")}>{liq.estado === "aprobado" ? "✓ Aprobado" : liq.estado === "rechazado" ? "Rechazado" : "En revisión"}</span>}</div>
-            <p className="mu">Si abriste tu cuenta con nuestro enlace, escribe aquí el número de tu cuenta de trading de Liquid (el que ves en tu cuenta, no tu correo). Lo revisamos a mano y, si eres cliente nuestro, sumas <b>{ptsLiq} puntos</b> en el ranking mensual y otros <b>{ptsLiqR} puntos</b> cuando tu cuenta ya opera en real (solo para miembros VIP).</p>
-            {liq?.estado === "aprobado"
-              ? <p className="okmsg">Tu cuenta <b>{liq.cuenta}</b> fue aprobada. ¡Gracias!{Number(liq.reward) > 0 ? " Ya operas en cuenta real: puntos extra confirmados." : " Cuando operes en cuenta real sumarás puntos extra."}</p>
-              : (
-                <form action={enviarLiquid} className="fm">
-                  {liq?.estado === "rechazado" && <p className="alerta">No pudimos confirmar ese número de cuenta{liq.nota ? ": " + liq.nota : ""}. Puedes corregirlo y enviarlo de nuevo.</p>}
-                  {liq?.estado === "pendiente" && <p className="mu">Enviaste la cuenta <b>{liq.cuenta}</b>; está en revisión. Si te equivocaste, puedes enviarlo otra vez.</p>}
-                  <label>Número de tu cuenta de trading de Liquid<input name="cuenta" defaultValue={liq?.estado === "rechazado" ? liq.cuenta : ""} maxLength={30} required placeholder="Ej.: ECN_2617822_1" /></label>
-                  <button className="btn s">{liq ? "Enviar de nuevo" : "Enviar mi cuenta"}</button>
-                </form>
-              )}
+            <div className="hd"><h2>Registra tu cuenta de Liquid</h2>{liq && <span className={"pill " + (liq.estado === "aprobado" ? "ok" : "")}>{liq.estado === "aprobado" ? "✓ Confirmada" : liq.estado === "rechazado" ? "Rechazada" : "⏳ Pendiente"}</span>}</div>
+            <p className="mu">Si abriste tu cuenta con nuestro enlace, escribe aquí el número de tu cuenta de trading de Liquid (el que ves en tu cuenta, no tu correo; por ejemplo ECN_2617822_1). Si eres cliente nuestro, sumas <b>{ptsLiq} puntos</b> en el ranking mensual y otros <b>{ptsLiqR} puntos extra</b> si se detecta que operas en cuenta real (solo para miembros VIP).</p>
+            <p className="mu"><b>Solo puedes registrar una cuenta de trading por mes.</b></p>
+            {liq?.estado === "aprobado" ? (
+              <>
+                <p className="okmsg">Tu cuenta <b>{liq.cuenta}</b> fue confirmada. ¡Gracias!{Number(liq.reward) > 0 ? " Detectamos que operas en cuenta real: tus puntos extra ya están confirmados." : ""}</p>
+                {Number(liq.reward) <= 0 && <p className="mu">Si operas en cuenta real con esta cuenta, lo detectamos automáticamente y sumas los <b>{ptsLiqR} puntos extra</b> (se actualiza cada día).</p>}
+              </>
+            ) : (
+              <form action={enviarLiquid} className="fm">
+                {liq?.estado === "rechazado" && <p className="alerta">No pudimos confirmar ese número de cuenta{liq.nota ? ": " + liq.nota : ""}. Puedes corregirlo y enviarlo de nuevo.</p>}
+                {liq?.estado === "pendiente" && (
+                  <div className="alerta" style={{ borderColor: "var(--ac)" }}>
+                    <b>⏳ Pendiente de confirmación</b> · cuenta <b>{liq.cuenta}</b>
+                    <div className="mu" style={{ marginTop: 4 }}>Comparamos tu cuenta con la lista de clientes de Liquid, que se actualiza cada día: puede tardar en promedio <b>24 horas</b> en confirmarse. Si tu cuenta opera en real, también sumarás <b>{ptsLiqR} puntos extra</b>.</div>
+                    <div className="mu" style={{ marginTop: 4 }}>Si te equivocaste, puedes enviarla otra vez (sigue contando como tu cuenta de este mes).</div>
+                  </div>
+                )}
+                <label>Número de tu cuenta de trading de Liquid<input name="cuenta" defaultValue={liq?.estado === "rechazado" ? liq.cuenta : ""} maxLength={30} required placeholder="Ej.: ECN_2617822_1" /></label>
+                <button className="btn s">{liq ? "Enviar de nuevo" : "Enviar mi cuenta"}</button>
+              </form>
+            )}
           </section>
         )}
         {admin && (

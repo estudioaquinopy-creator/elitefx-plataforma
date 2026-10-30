@@ -233,14 +233,14 @@ export async function revisarLiquid(formData: FormData) {
   const nota = String(formData.get("nota") ?? "").trim().slice(0, 200);
   if (!/^[0-9a-f-]{36}$/i.test(uid) || !["aprobar", "rechazar"].includes(decision)) redirect("/accesos/liquid");
   const sb = createClient();
-  const { data: ant } = await sb.from("liquid_cuentas").select("estado, cuenta").eq("user_id", uid).maybeSingle();
-  const a = ant as { estado: string; cuenta: string } | null;
+  const { data: ant } = await sb.from("liquid_cuentas").select("estado, cuenta, user_id").eq("id", uid).maybeSingle();
+  const a = ant as { estado: string; cuenta: string; user_id: string } | null;
   if (!a) redirect("/accesos/liquid");
   if (decision === "aprobar" && a.estado === "aprobado") redirect("/accesos/liquid");
   const estado = decision === "aprobar" ? "aprobado" : "rechazado";
-  const { error } = await sb.from("liquid_cuentas").update({ estado, revisado_at: new Date().toISOString(), revisado_por: yo.id, nota }).eq("user_id", uid);
+  const { error } = await sb.from("liquid_cuentas").update({ estado, revisado_at: new Date().toISOString(), revisado_por: yo.id, nota }).eq("id", uid);
   if (error) fallo("/accesos/liquid", "No se pudo guardar: " + error.message);
-  await registrar("liquid", uid, (estado === "aprobado" ? "Aprobó" : "Rechazó") + " la cuenta de Liquid " + a.cuenta + (nota ? " (" + nota + ")" : ""));
+  await registrar("liquid", a.user_id, (estado === "aprobado" ? "Aprobó" : "Rechazó") + " la cuenta de Liquid " + a.cuenta + (nota ? " (" + nota + ")" : ""));
   revalidatePath("/accesos/liquid");
   aviso("/accesos/liquid", estado === "aprobado" ? "Cuenta aprobada: ya suma sus puntos." : "Cuenta rechazada.");
 }
@@ -275,8 +275,8 @@ export async function aprobarPorCsv(formData: FormData) {
   }
   const buscar = (c: string): number | undefined => csv.get(norm(c)) ?? (/^\d{6,}$/.test(norm(c)) ? numerico.get(norm(c)) : undefined);
   const sb = createClient();
-  const { data } = await sb.from("liquid_cuentas").select("user_id, cuenta, estado, reward, reward_at").in("estado", ["pendiente", "aprobado"]);
-  const filas = (data ?? []) as { user_id: string; cuenta: string; estado: string; reward: number; reward_at: string | null }[];
+  const { data } = await sb.from("liquid_cuentas").select("id, user_id, cuenta, estado, reward, reward_at").in("estado", ["pendiente", "aprobado"]);
+  const filas = (data ?? []) as { id: string; user_id: string; cuenta: string; estado: string; reward: number; reward_at: string | null }[];
   const ahora = new Date().toISOString();
   let aprobadas = 0, reales = 0;
   for (const p of filas) {
@@ -287,7 +287,7 @@ export async function aprobarPorCsv(formData: FormData) {
     if (Number(p.reward) !== rw) cambios.reward = rw;
     if (rw > 0 && !p.reward_at) cambios.reward_at = ahora;
     if (Object.keys(cambios).length === 0) continue;
-    const { error } = await sb.from("liquid_cuentas").update(cambios).eq("user_id", p.user_id).eq("estado", p.estado);
+    const { error } = await sb.from("liquid_cuentas").update(cambios).eq("id", p.id).eq("estado", p.estado);
     if (error) continue;
     if (p.estado === "pendiente") aprobadas++;
     if (cambios.reward_at) reales++;

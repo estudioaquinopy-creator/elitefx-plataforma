@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { perfilActual } from "@/lib/sesion";
+import { perfilActual, hoyPY } from "@/lib/sesion";
 import { fallo } from "@/lib/subida";
 
 async function soloAdmin() {
@@ -54,12 +54,13 @@ export async function enviarLiquid(f: FormData) {
   const id = String(f.get("cuenta") ?? "").replace(/\s+/g, "");
   if (!/^[A-Za-z0-9_-]{4,30}$/.test(id)) fallo("/aliados", "Escribe el número de tu cuenta de trading de Liquid (por ejemplo ECN_2617822_1: de 4 a 30 caracteres, solo letras, números, guiones o guion bajo).");
   const sb = createClient();
-  const { data: ya } = await sb.from("liquid_cuentas").select("estado").eq("user_id", yo.id).maybeSingle();
+  const mes = hoyPY().slice(0, 7);
+  const { data: ya } = await sb.from("liquid_cuentas").select("estado").eq("user_id", yo.id).eq("mes", mes).maybeSingle();
   const actual = ya as { estado: string } | null;
-  if (actual?.estado === "aprobado") fallo("/aliados", "Tu cuenta de Liquid ya fue aprobada.");
-  const datos = { cuenta: id, estado: "pendiente", enviado_at: new Date().toISOString(), revisado_at: null, revisado_por: null, nota: "" };
+  if (actual?.estado === "aprobado") fallo("/aliados", "Solo puedes registrar una cuenta de Liquid por mes, y la de este mes ya fue aprobada.");
+  const datos = { cuenta: id, mes, estado: "pendiente", enviado_at: new Date().toISOString(), revisado_at: null, revisado_por: null, nota: "" };
   const { error } = actual
-    ? await sb.from("liquid_cuentas").update(datos).eq("user_id", yo.id)
+    ? await sb.from("liquid_cuentas").update(datos).eq("user_id", yo.id).eq("mes", mes)
     : await sb.from("liquid_cuentas").insert({ user_id: yo.id, ...datos });
   if (error) fallo("/aliados", /liquid_cuentas_cuenta_uq|duplicate/i.test(error.message) ? "Ese número de cuenta ya fue registrado por otra persona." : "No se pudo guardar: " + error.message);
   revalidatePath("/aliados");
