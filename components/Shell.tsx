@@ -22,8 +22,10 @@ export default function Shell({ items, nombre, email, iniciales, avatar, notifs,
             <span className="ni"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d={it.icon} />
             </svg></span>
-            <span className="nl">{it.label}</span>
-            <span className="pill">Desde {it.soon}</span>
+            <span className="nl" style={{ display: "flex", flexDirection: "column", lineHeight: 1.2 }}>
+              {it.label}
+              <small style={{ fontSize: 11, opacity: 0.8 }}>Desde el {it.soon}</small>
+            </span>
           </div>
         ) : (
           <Link
