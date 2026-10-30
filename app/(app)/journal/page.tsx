@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 type Op = { id: string; fecha: string; par: string; direccion: string; resultado: number; notas: string; origen?: string; sesion?: string | null; setup?: string | null; emocion?: string | null; respeto_plan?: boolean | null; volumen?: number | null; cierre?: string | null; created_at?: string };
 const PARES = ["XAUUSD", "EURUSD", "GBPUSD", "USDCAD"];
-const money = (n: number) => (n < 0 ? "-$" : "$") + Math.abs(n).toLocaleString("es-PY", { maximumFractionDigits: 2 });
+const dineroBase = (n: number) => (n < 0 ? "-$" : "$") + Math.abs(n).toLocaleString("es-PY", { maximumFractionDigits: 2 });
 
 function Tabla({ titulo, g, mp }: { titulo: string; g: Grupo[]; mp: (n: number) => string }) {
   if (!g.length) return null;
@@ -67,8 +67,11 @@ export default async function Journal({ searchParams }: { searchParams: { alumno
   const capital = Number((cfg as { capital_inicial: number } | null)?.capital_inicial ?? 0) || 0;
   // Porcentaje de un monto sobre el capital inicial (vacío si todavía no se definió el capital).
   const pc = (x: number) => (capital > 0 ? (x > 0 ? "+" : "") + ((x / capital) * 100).toLocaleString("es-PY", { maximumFractionDigits: 2 }) + "%" : "");
-  const mp = (x: number) => money(x) + (capital > 0 ? " (" + pc(x) + ")" : "");
-  const sub = (x: number) => (capital > 0 ? <small className="mu" style={{ display: "block" }}>{pc(x)} del capital inicial</small> : null);
+  // Vista del administrador: nunca montos en dinero, solo porcentajes sobre el capital inicial del alumno.
+  const money = ver ? (x: number) => pc(x) || "—" : dineroBase;
+  const capTxt = ver ? "el capital inicial del alumno" : "tu capital inicial de " + dineroBase(capital);
+  const mp = ver ? (x: number) => pc(x) || "—" : (x: number) => money(x) + (capital > 0 ? " (" + pc(x) + ")" : "");
+  const sub = (x: number) => (capital > 0 && !ver ? <small className="mu" style={{ display: "block" }}>{pc(x)} del capital inicial</small> : null);
   const hoy = hoyPY();
   const sumaDias = (f: string, d: number) => { const x = new Date(f + "T00:00:00Z"); x.setUTCDate(x.getUTCDate() + d); return x.toISOString().slice(0, 10); };
   const per = searchParams.p ?? "todo";
@@ -121,7 +124,7 @@ export default async function Journal({ searchParams }: { searchParams: { alumno
   const puntos = m.curva.map((v, i) => px(i).toFixed(1) + "," + py(v).toFixed(1)).join(" ");
   const idxX = Array.from(new Set(Array.from({ length: 6 }, (_, k) => Math.round((k * (m.curva.length - 1)) / 5))));
   const fechaCorta = (f: string) => (f ? f.slice(8, 10) + "/" + f.slice(5, 7) + "/" + f.slice(2, 4) : "");
-  const yTxt = (v: number) => (v < 0 ? "-$" : "$") + Math.abs(v).toLocaleString("es-PY", { maximumFractionDigits: 0 });
+  const yTxt = (v: number) => ver ? (pc(v) || "—") : (v < 0 ? "-$" : "$") + Math.abs(v).toLocaleString("es-PY", { maximumFractionDigits: 0 });
   const maxDia = Math.max(1, ...m.porDia.map((d) => Math.abs(d.neto)));
 
   // Calendario de resultados (PNL por día) del mes elegido, con todas las operaciones.
@@ -149,7 +152,7 @@ export default async function Journal({ searchParams }: { searchParams: { alumno
   const desplazar = (d: number) => { const t = cy * 12 + (cm - 1) + d; return Math.floor(t / 12) + "-" + String((t % 12) + 1).padStart(2, "0"); };
   const qsMes = (mes: string) => { const q = new URLSearchParams(); if (searchParams.p) q.set("p", searchParams.p); if (searchParams.d) q.set("d", searchParams.d); if (searchParams.h) q.set("h", searchParams.h); q.set("m", mes); if (ver) q.set("alumno", alumnoId); return "/journal?" + q.toString(); };
   const NOMBRES_MES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
-  const corto = (x: number) => (x < 0 ? "-" : "") + "$" + Math.abs(x).toLocaleString("es-PY", { maximumFractionDigits: Math.abs(x) >= 100 ? 0 : 2 });
+  const corto = (x: number) => ver ? (pc(x) || "—") : (x < 0 ? "-" : "") + "$" + Math.abs(x).toLocaleString("es-PY", { maximumFractionDigits: Math.abs(x) >= 100 ? 0 : 2 });
   const colorDia = (x: number) => (x > 0 ? "rgba(34,197,94," : "rgba(239,68,68,") + (0.12 + 0.4 * (Math.abs(x) / maxAbs)).toFixed(2) + ")";
 
   return (
@@ -157,15 +160,16 @@ export default async function Journal({ searchParams }: { searchParams: { alumno
       {ver && <Link href={"/accesos/" + alumnoId} className="back">← Volver a {duenio}</Link>}
       <h1>{ver ? "Journal de " + duenio : "Journal"}</h1>
       {ver
-        ? <p className="alerta">Vista de administrador, solo lectura: aquí no se puede cargar, importar ni borrar nada. Cada consulta queda registrada.</p>
+        ? <p className="alerta">Vista de administrador, solo lectura: los resultados se muestran solo en porcentaje sobre el capital inicial del alumno (sin montos en dinero) y no se puede cargar, importar ni borrar nada. Cada consulta queda registrada.</p>
         : <p className="sub">Tu diario de trading: registra cada operación y mira tus estadísticas. Es personal; solo tú y el equipo de ELITE FX (para el seguimiento de tu mentoría) pueden verlo.</p>}
+      {ver && capital === 0 && <p className="alerta">Este alumno aún no definió su capital inicial, por eso no se pueden mostrar porcentajes.</p>}
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
 
       <div className="kp">
         <div className="box"><span className="mu">Operaciones</span><b>{n}</b></div>
         <div className="box"><span className="mu">% de aciertos</span><b>{n ? Math.round(m.tasa * 100) + "%" : "—"}</b>{n > 0 && <small className="mu" style={{ display: "block" }}>{m.ganadas} ganadoras de {n} operaciones</small>}</div>
         <div className="box"><span className="mu">Resultado neto</span><b className={m.neto < 0 ? "neg" : m.neto > 0 ? "pos" : ""}>{money(m.neto)}</b>{sub(m.neto)}</div>
-        <div className="box"><span className="mu">Mejor / peor operación</span><b>{n ? money(m.mejor) + " / " + money(m.peor) : "—"}</b>{n > 0 && capital > 0 && <small className="mu" style={{ display: "block" }}>{pc(m.mejor)} / {pc(m.peor)} del capital inicial</small>}</div>
+        <div className="box"><span className="mu">Mejor / peor operación</span><b>{n ? money(m.mejor) + " / " + money(m.peor) : "—"}</b>{n > 0 && capital > 0 && !ver && <small className="mu" style={{ display: "block" }}>{pc(m.mejor)} / {pc(m.peor)} del capital inicial</small>}</div>
       </div>
 
       {!ver && <section className="box no-print">
@@ -177,7 +181,7 @@ export default async function Journal({ searchParams }: { searchParams: { alumno
         </form>
         {capital === 0 && <p className="mu" style={{ marginTop: 0 }}>Define tu capital inicial para ver cada monto también en porcentaje.</p>}
       </section>}
-      {capital > 0 && <p className="mu">Referencias: los porcentajes de resultado son <b>sobre tu capital inicial de {money(capital)}</b>; el % de aciertos es sobre el total de operaciones; el drawdown es sobre el pico de capital.</p>}
+      {capital > 0 && <p className="mu">Referencias: los porcentajes de resultado son <b>sobre {capTxt}</b>; el % de aciertos es sobre el total de operaciones; el drawdown es sobre el pico de capital.</p>}
 
       {!ver && <section className="box no-print">
         <h2>Importar reporte de MetaTrader 5</h2>
@@ -209,7 +213,7 @@ export default async function Journal({ searchParams }: { searchParams: { alumno
               <Link className="btn g s" href={qsMes(desplazar(1))}>Siguiente →</Link>
             </div>
           </div>
-          <p className="mu">Resultado del mes: <b className={totMes < 0 ? "neg" : totMes > 0 ? "pos" : ""}>{mp(totMes)}</b> · {opsMes} operaciones · {diasGan} días en positivo · {diasPer} en negativo{capital > 0 ? " · porcentajes sobre tu capital inicial de " + money(capital) : ""}</p>
+          <p className="mu">Resultado del mes: <b className={totMes < 0 ? "neg" : totMes > 0 ? "pos" : ""}>{mp(totMes)}</b> · {opsMes} operaciones · {diasGan} días en positivo · {diasPer} en negativo{capital > 0 ? " · porcentajes sobre " + capTxt : ""}</p>
           <div className="calp">
             {["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"].map((d) => <div key={d} className="dn">{d}</div>)}
             <div className="dn">Semana</div>
@@ -225,12 +229,12 @@ export default async function Journal({ searchParams }: { searchParams: { alumno
                       <div key={i} className="dc" style={v ? { background: colorDia(v.neto) } : undefined} title={v ? v.n + " operaciones" : "Sin operaciones"}>
                         <span className="dd">{d}</span>
                         {v && <b className={v.neto < 0 ? "neg" : v.neto > 0 ? "pos" : ""}>{corto(v.neto)}</b>}
-                        {v && <small className="mu">{capital > 0 ? pc(v.neto) : v.n + " op."}</small>}
+                        {v && <small className="mu">{capital > 0 && !ver ? pc(v.neto) : v.n + " op."}</small>}
                       </div>
                     );
                   })}
                   <div className="dc sem">
-                    {nSem > 0 ? <><b className={totSem < 0 ? "neg" : "pos"}>{corto(totSem)}</b><small className="mu">{capital > 0 ? pc(totSem) : nSem + " op."}</small></> : <span className="mu">—</span>}
+                    {nSem > 0 ? <><b className={totSem < 0 ? "neg" : "pos"}>{corto(totSem)}</b><small className="mu">{capital > 0 && !ver ? pc(totSem) : nSem + " op."}</small></> : <span className="mu">—</span>}
                   </div>
                 </div>
               );
@@ -261,9 +265,9 @@ export default async function Journal({ searchParams }: { searchParams: { alumno
           <div className="kp">
             <div className="box"><span className="mu">Profit factor</span><b>{dec(m.pf)}</b><small className="mu" style={{ display: "block" }}>ganancias brutas ÷ pérdidas brutas</small></div>
             <div className="box"><span className="mu">Esperanza por operación</span><b className={m.esperanza < 0 ? "neg" : "pos"}>{money(m.esperanza)}</b>{sub(m.esperanza)}</div>
-            <div className="box"><span className="mu">Ganancia / pérdida promedio</span><b>{money(m.promGanada)} / {money(m.promPerdida)}</b>{capital > 0 && <small className="mu" style={{ display: "block" }}>{pc(m.promGanada)} / {pc(m.promPerdida)} del capital inicial</small>}</div>
+            <div className="box"><span className="mu">Ganancia / pérdida promedio</span><b>{money(m.promGanada)} / {money(m.promPerdida)}</b>{capital > 0 && !ver && <small className="mu" style={{ display: "block" }}>{pc(m.promGanada)} / {pc(m.promPerdida)} del capital inicial</small>}</div>
             <div className="box"><span className="mu">Ratio ganancia/pérdida</span><b>{dec(m.payoff)}</b><small className="mu" style={{ display: "block" }}>ganancia promedio ÷ pérdida promedio</small></div>
-            <div className="box"><span className="mu">Drawdown máximo</span><b className="neg">{money(-m.ddMax)}</b>{capital > 0 && <small className="mu" style={{ display: "block" }}>-{((m.ddMax / (capital + m.ddPico)) * 100).toLocaleString("es-PY", { maximumFractionDigits: 2 })}% del pico de capital</small>}</div>
+            <div className="box"><span className="mu">Drawdown máximo</span><b className="neg">{money(-m.ddMax)}</b>{capital > 0 && !ver && <small className="mu" style={{ display: "block" }}>-{((m.ddMax / (capital + m.ddPico)) * 100).toLocaleString("es-PY", { maximumFractionDigits: 2 })}% del pico de capital</small>}</div>
             <div className="box"><span className="mu">Racha máx. ganadoras / perdedoras</span><b>{m.rachaG} / {m.rachaP}</b></div>
           </div>
 
@@ -275,7 +279,7 @@ export default async function Journal({ searchParams }: { searchParams: { alumno
                   <g key={v}>
                     <line x1={ML} x2={W - MR} y1={py(v)} y2={py(v)} stroke="currentColor" strokeOpacity={v === 0 ? 0.45 : 0.12} strokeDasharray={v === 0 ? "5 4" : undefined} />
                     <text x={ML - 8} y={py(v) + 3.5} textAnchor="end" fontSize="10.5" fill="currentColor" fillOpacity=".75">{yTxt(v)}</text>
-                    {capital > 0 && <text x={W - MR + 8} y={py(v) + 3.5} fontSize="10.5" fill="currentColor" fillOpacity=".75">{v === 0 ? "0%" : (v > 0 ? "+" : "") + ((v / capital) * 100).toLocaleString("es-PY", { maximumFractionDigits: 1 }) + "%"}</text>}
+                    {capital > 0 && !ver && <text x={W - MR + 8} y={py(v) + 3.5} fontSize="10.5" fill="currentColor" fillOpacity=".75">{v === 0 ? "0%" : (v > 0 ? "+" : "") + ((v / capital) * 100).toLocaleString("es-PY", { maximumFractionDigits: 1 }) + "%"}</text>}
                   </g>
                 ))}
                 {idxX.map((i) => (
@@ -286,7 +290,7 @@ export default async function Journal({ searchParams }: { searchParams: { alumno
                 ))}
                 <polyline points={puntos} fill="none" stroke="var(--ac)" strokeWidth="2" strokeLinejoin="round" />
               </svg>
-              <small className="mu">Resultado acumulado en dólares (eje izquierdo){capital > 0 ? " y en % sobre tu capital inicial de " + money(capital) + " (eje derecho)" : ""}, operación por operación, del {fechaCorta(m.curvaFechas[0])} al {fechaCorta(m.curvaFechas[m.curvaFechas.length - 1])}.</small>
+              <small className="mu">{ver ? "Resultado acumulado en % del capital inicial del alumno" : "Resultado acumulado en dólares (eje izquierdo)"}{capital > 0 && !ver ? " y en % sobre " + capTxt + " (eje derecho)" : ""}, operación por operación, del {fechaCorta(m.curvaFechas[0])} al {fechaCorta(m.curvaFechas[m.curvaFechas.length - 1])}.</small>
             </section>
             <section className="box">
               <h2>Por día de la semana</h2>
