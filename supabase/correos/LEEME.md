@@ -48,7 +48,7 @@ Supabase → **Authentication → Emails → Templates**. En cada una de las tre
 2. Borrar el contenido actual y pegar el archivo `.html` completo.
 3. Guardar.
 
-Las plantillas de invitación y recuperar usan un enlace propio (`{{ .SiteURL }}/auth/confirmar?token_hash={{ .TokenHash }}&type=…`) que la plataforma canjea en `app/auth/confirmar/route.ts` y lleva a `/nueva-clave`; así no depende de las Redirect URLs ni del tipo de enlace de Supabase. Usan además y `{{ .Data.nombre }}` (el nombre cargado al registrarse o al invitar; si no hay nombre, saluda con "Hola:"). El logo se carga desde `https://academia.elitefx.com.py/logo-elitefx.png`.
+Las plantillas de invitación y recuperar usan un enlace propio (`{{ .SiteURL }}/auth/confirmar?token_hash={{ .TokenHash }}&type=…`) que abre `app/auth/continuar` (página con botón "Continuar"); el código se canjea solo al pulsarlo (POST en `app/auth/confirmar/route.ts`) y lleva a `/nueva-clave`, así los escáneres de correo no lo gastan; así no depende de las Redirect URLs ni del tipo de enlace de Supabase. Usan además y `{{ .Data.nombre }}` (el nombre cargado al registrarse o al invitar; si no hay nombre, saluda con "Hola:"). El logo se carga desde `https://academia.elitefx.com.py/logo-elitefx.png`.
 
 ## 6. Probar
 1. En `/recuperar`, pedir un enlace con un correo propio.
