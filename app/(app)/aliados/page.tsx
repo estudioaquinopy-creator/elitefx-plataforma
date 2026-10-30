@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { leerAjustes } from "@/lib/ajustes";
 import { youtubeId } from "@/lib/youtube";
 import { guardarTextos } from "../ajustes-actions";
-import { crearAliado, guardarAliado, eliminarAliado } from "./actions";
+import { crearAliado, guardarAliado, eliminarAliado, enviarLiquid } from "./actions";
+import { puntosLiquid } from "@/lib/ranking";
 
 export const dynamic = "force-dynamic";
 
@@ -32,12 +33,15 @@ function Campos({ a }: { a?: Aliado }) {
   );
 }
 
-export default async function Aliados({ searchParams }: { searchParams: { error?: string } }) {
+export default async function Aliados({ searchParams }: { searchParams: { error?: string; ok?: string } }) {
   const perfil = await perfilActual();
   const admin = perfil.rol === "admin";
   const aj = await leerAjustes();
   const { data } = await createClient().from("aliados").select("*").order("orden").order("created_at");
   const aliados = (data ?? []) as Aliado[];
+  const { data: miLiq } = admin ? { data: null } : await createClient().from("liquid_ids").select("liquid_id, estado, nota").eq("user_id", perfil.id).maybeSingle();
+  const liq = miLiq as { liquid_id: string; estado: string; nota: string } | null;
+  const ptsLiq = puntosLiquid(aj.ranking_pts_liquid);
 
   // Tutoriales del broker: se buscan en Tutoriales por el título (crear/abrir cuenta, depositar, retirar), mejor si están en la categoría "Broker".
   const { data: tuts } = await createClient().from("tutoriales").select("id, titulo, categoria").order("created_at", { ascending: false });
@@ -55,6 +59,7 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
       <h1>Broker recomendado</h1>
       <p className="sub">Abre tu cuenta con Liquid, nuestro broker recomendado, y empieza a operar con la fórmula.</p>
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
+      {searchParams.ok && <p className="okmsg">{searchParams.ok}</p>}
 
       {admin && (
         <>
@@ -125,6 +130,29 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
             <div key={i} className="ses" style={{ flexWrap: "nowrap", alignItems: "center" }}><div className="dt" style={{ flexShrink: 0 }}>{i + 1}</div><div style={{ flex: 1, minWidth: 0 }}><b>{t}</b></div></div>
           ))}
         </section>
+        {!admin && (
+          <section className="box">
+            <div className="hd"><h2>Registra tu ID de Liquid</h2>{liq && <span className={"pill " + (liq.estado === "aprobado" ? "ok" : "")}>{liq.estado === "aprobado" ? "✓ Aprobado" : liq.estado === "rechazado" ? "Rechazado" : "En revisión"}</span>}</div>
+            <p className="mu">Si abriste tu cuenta con nuestro enlace, escribe aquí tu ID de Liquid. Lo revisamos a mano y, si eres cliente nuestro, sumas <b>{ptsLiq} puntos</b> en el ranking mensual (solo para miembros VIP).</p>
+            {liq?.estado === "aprobado"
+              ? <p className="okmsg">Tu ID <b>{liq.liquid_id}</b> fue aprobado. ¡Gracias!</p>
+              : (
+                <form action={enviarLiquid} className="fm">
+                  {liq?.estado === "rechazado" && <p className="alerta">No pudimos confirmar ese ID{liq.nota ? ": " + liq.nota : ""}. Puedes corregirlo y enviarlo de nuevo.</p>}
+                  {liq?.estado === "pendiente" && <p className="mu">Enviaste el ID <b>{liq.liquid_id}</b>; está en revisión. Si te equivocaste, puedes enviarlo otra vez.</p>}
+                  <label>Tu ID de Liquid<input name="liquid_id" defaultValue={liq?.estado === "rechazado" ? liq.liquid_id : ""} maxLength={40} required placeholder="Ej.: 12345678" /></label>
+                  <button className="btn s">{liq ? "Enviar de nuevo" : "Enviar mi ID"}</button>
+                </form>
+              )}
+          </section>
+        )}
+        {admin && (
+          <section className="box">
+            <div className="hd"><h2>IDs de Liquid</h2></div>
+            <p className="mu">Revisa los IDs que envían los alumnos y apruébalos si son clientes nuestros.</p>
+            <Link className="btn g s" href="/accesos/liquid">Revisar IDs de Liquid</Link>
+          </section>
+        )}
       </div>
     </>
   );

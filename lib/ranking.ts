@@ -39,6 +39,10 @@ export function premiosRanking(texto: string | undefined | null): number[] {
 }
 
 // Puntos que suma cada certificado (por defecto 10; se cambia con el ajuste "ranking_pts_certificado").
+export function puntosLiquid(texto: string | undefined | null): number {
+  return /^\s*\d{1,3}\s*$/.test(texto ?? "") ? Number((texto as string).trim()) : 5;
+}
+
 export function puntosFoto(texto: string | undefined | null): number {
   return /^\s*\d{1,3}\s*$/.test(texto ?? "") ? Number((texto as string).trim()) : 5;
 }
