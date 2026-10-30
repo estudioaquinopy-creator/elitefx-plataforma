@@ -258,42 +258,21 @@ function numero(t: string): number {
 export async function aprobarPorCsv(formData: FormData) {
   await soloAdmin();
   const yo = await perfilActual();
+  void yo;
   let lista: unknown;
   try { lista = JSON.parse(String(formData.get("cuentas") ?? "[]")); } catch { lista = null; }
   if (!Array.isArray(lista) || lista.length === 0) fallo("/accesos/liquid", "No se pudo leer el CSV.");
-  const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, "");
-  // Cada cuenta del CSV (p. ej. ECN_2617822_1) se busca completa; si la persona escribió solo el número del medio (2617822), también coincide.
-  const csv = new Map<string, number>();
-  const numerico = new Map<string, number>();
-  for (const f of lista as unknown[]) {
-    if (!Array.isArray(f)) continue;
-    const cta = norm(String(f[0] ?? ""));
-    if (!cta) continue;
-    const rw = numero(String(f[1] ?? ""));
-    csv.set(cta, Math.max(csv.get(cta) ?? 0, rw));
-    for (const t of cta.split(/[_-]/)) if (/^\d{6,}$/.test(t)) numerico.set(t, Math.max(numerico.get(t) ?? 0, rw));
-  }
-  const buscar = (c: string): number | undefined => csv.get(norm(c)) ?? (/^\d{6,}$/.test(norm(c)) ? numerico.get(norm(c)) : undefined);
+  const datos = (lista as unknown[])
+    .map((f) => (Array.isArray(f) ? { c: String(f[0] ?? "").trim(), r: numero(String(f[1] ?? "")) } : null))
+    .filter((x): x is { c: string; r: number } => !!x && x.c !== "" && x.c.length <= 60);
+  if (datos.length === 0) fallo("/accesos/liquid", "El CSV no tiene cuentas en la columna elegida.");
   const sb = createClient();
-  const { data } = await sb.from("liquid_cuentas").select("id, user_id, cuenta, estado, reward, reward_at").in("estado", ["pendiente", "aprobado"]);
-  const filas = (data ?? []) as { id: string; user_id: string; cuenta: string; estado: string; reward: number; reward_at: string | null }[];
-  const ahora = new Date().toISOString();
-  let aprobadas = 0, reales = 0;
-  for (const p of filas) {
-    const rw = buscar(p.cuenta);
-    if (rw === undefined) continue;
-    const cambios: Record<string, unknown> = {};
-    if (p.estado === "pendiente") Object.assign(cambios, { estado: "aprobado", revisado_at: ahora, revisado_por: yo.id, nota: "Aprobada automáticamente con el CSV" });
-    if (Number(p.reward) !== rw) cambios.reward = rw;
-    if (rw > 0 && !p.reward_at) cambios.reward_at = ahora;
-    if (Object.keys(cambios).length === 0) continue;
-    const { error } = await sb.from("liquid_cuentas").update(cambios).eq("id", p.id).eq("estado", p.estado);
-    if (error) continue;
-    if (p.estado === "pendiente") aprobadas++;
-    if (cambios.reward_at) reales++;
-  }
-  const pendientes = filas.filter((p) => p.estado === "pendiente").length;
-  await registrar("liquid", null, "CSV de Liquid: " + aprobadas + " cuentas aprobadas de " + pendientes + " pendientes; " + reales + " con puntos por operar en real");
+  // Guarda las cuentas del CSV (se suman a las de CSV anteriores) y compara TODAS las pendientes y aprobadas.
+  const { data, error } = await sb.rpc("liquid_cargar_csv", { p_datos: datos });
+  if (error) fallo("/accesos/liquid", "No se pudo procesar el CSV (¿corriste la migración 0034?): " + error.message);
+  const r = ((data ?? [])[0] ?? { aprobadas: 0, reales: 0, total: 0 }) as { aprobadas: number; reales: number; total: number };
+  const { count: pend } = await sb.from("liquid_cuentas").select("id", { count: "exact", head: true }).eq("estado", "pendiente");
+  await registrar("liquid", null, "CSV de Liquid (" + datos.length + " filas): " + r.aprobadas + " cuentas aprobadas, " + r.reales + " con puntos por operar en real; base guardada: " + r.total + " cuentas");
   revalidatePath("/accesos/liquid");
-  aviso("/accesos/liquid", aprobadas + " cuenta(s) aprobada(s) y " + reales + " con puntos extra por operar en real; " + (pendientes - aprobadas) + " siguen pendientes.");
+  aviso("/accesos/liquid", r.aprobadas + " cuenta(s) aprobada(s) y " + r.reales + " con puntos extra por operar en real; " + (pend ?? 0) + " siguen pendientes. Base guardada: " + r.total + " cuentas.");
 }

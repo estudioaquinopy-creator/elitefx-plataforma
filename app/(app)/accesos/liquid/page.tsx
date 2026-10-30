@@ -16,6 +16,8 @@ export default async function Liquid({ searchParams }: { searchParams: { ok?: st
   const sb = createClient();
   const { data } = await sb.from("liquid_cuentas").select("*").order("enviado_at", { ascending: false }).limit(300);
   const filas = (data ?? []) as Fila[];
+  const { count: guardadas } = await sb.from("liquid_csv").select("cuenta", { count: "exact", head: true });
+  const { data: ult } = await sb.from("liquid_csv").select("visto_at").order("visto_at", { ascending: false }).limit(1).maybeSingle();
   const { data: ps } = await sb.from("perfiles").select("id, nombre, email, plan").in("id", filas.map((f) => f.user_id).concat(["00000000-0000-0000-0000-000000000000"]));
   const quien = new Map(((ps ?? []) as { id: string; nombre: string; email: string; plan: string }[]).map((p) => [p.id, p]));
   const fecha = (d: string) => new Date(d).toLocaleDateString("es-PY", { timeZone: "America/Asuncion" });
@@ -53,6 +55,7 @@ export default async function Liquid({ searchParams }: { searchParams: { ok?: st
       <section className="box">
         <h2>Aprobar con el CSV de Liquid</h2>
         <p className="mu">Sube cada día el CSV actualizado de tus clientes: las cuentas pendientes cuyo número aparezca en la columna "account" se aprueban solas y suman sus puntos; y las cuentas aprobadas cuya columna "reward" sea mayor a 0 (operan en real) suman los puntos extra. Las que no aparezcan quedan pendientes para revisarlas a mano.</p>
+        <p className="mu">Los datos de cada CSV <b>quedan guardados</b> y se suman a los anteriores: {guardadas ?? 0} cuentas en la base{ult ? " (última actualización " + new Date((ult as { visto_at: string }).visto_at).toLocaleDateString("es-PY", { timeZone: "America/Asuncion" }) + ")" : ""}. Así se compara también con las cuentas que la gente registró antes o después, y quien registra una cuenta que ya está guardada se confirma al instante. Si una cuenta alguna vez tuvo reward mayor a 0, se recuerda.</p>
         <SubirCsvLiquid />
       </section>
       <section className="box">

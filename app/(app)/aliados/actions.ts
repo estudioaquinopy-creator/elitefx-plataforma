@@ -64,5 +64,8 @@ export async function enviarLiquid(f: FormData) {
     : await sb.from("liquid_cuentas").insert({ user_id: yo.id, ...datos });
   if (error) fallo("/aliados", /liquid_cuentas_cuenta_uq|duplicate/i.test(error.message) ? "Ese número de cuenta ya fue registrado por otra persona." : "No se pudo guardar: " + error.message);
   revalidatePath("/aliados");
-  redirect("/aliados?ok=" + encodeURIComponent("Recibimos tu número de cuenta. Lo revisaremos y, si todo está bien, sumarás tus puntos."));
+  // Si la cuenta ya estaba en un CSV guardado, se confirma al instante.
+  const { data: ahora } = await sb.from("liquid_cuentas").select("estado").eq("user_id", yo.id).eq("mes", mes).maybeSingle();
+  const confirmada = (ahora as { estado: string } | null)?.estado === "aprobado";
+  redirect("/aliados?ok=" + encodeURIComponent(confirmada ? "¡Tu cuenta ya fue confirmada!" : "Recibimos tu número de cuenta. Queda pendiente: se confirma cuando la comparemos con la lista de clientes de Liquid (en promedio, 24 horas)."));
 }
