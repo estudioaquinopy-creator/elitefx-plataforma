@@ -45,6 +45,10 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
   const anteriores = todasLiq.filter((x) => x.mes !== hoyPY().slice(0, 7) && x.estado === "aprobado");
   const ptsLiq = puntosLiquid(aj.ranking_pts_liquid);
   const ptsLiqR = puntosLiquidReal(aj.ranking_pts_liquid_real);
+  // Miembros gratuitos: en vez de puntos del ranking reciben días de calendario VIP (7 por cuenta confirmada y 7 más si opera en real).
+  const esGratis = perfil.plan === "gratis";
+  const extraTxt = esGratis ? "7 días más de calendario VIP" : ptsLiqR + " puntos extra";
+  const bonoHasta = esGratis && perfil.calendario_bono_hasta && perfil.calendario_bono_hasta >= hoyPY() ? new Date(perfil.calendario_bono_hasta + "T00:00:00").toLocaleDateString("es-PY") : "";
 
   // Tutoriales del broker: se buscan en Tutoriales por el título (crear/abrir cuenta, depositar, retirar), mejor si están en la categoría "Broker".
   const { data: tuts } = await createClient().from("tutoriales").select("id, titulo, categoria").order("created_at", { ascending: false });
@@ -137,12 +141,15 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
         {!admin && (
           <section className="box">
             <div className="hd"><h2>Registra tu cuenta de Liquid</h2>{liq && <span className={"pill " + (liq.estado === "aprobado" ? "ok" : "")}>{liq.estado === "aprobado" ? "✓ Confirmada" : liq.estado === "rechazado" ? "Rechazada" : "⏳ Pendiente"}</span>}</div>
-            <p className="mu">Si abriste tu cuenta con nuestro enlace, escribe aquí el número de tu cuenta de trading de Liquid (el que ves en tu cuenta, no tu correo; por ejemplo ECN_2617822_1). Si eres cliente nuestro, sumas <b>{ptsLiq} puntos</b> en el ranking mensual y otros <b>{ptsLiqR} puntos extra</b> si se detecta que operas en cuenta real (solo para miembros VIP).</p>
+            <p className="mu">Si abriste tu cuenta con nuestro enlace, escribe aquí el número de tu cuenta de trading de Liquid (el que ves en tu cuenta, no tu correo; por ejemplo ECN_2617822_1). {esGratis
+                ? <>Si eres cliente nuestro, ganas <b>7 días de calendario VIP</b> y otros <b>7 días</b> si se detecta que operas en cuenta real.</>
+                : <>Si eres cliente nuestro, sumas <b>{ptsLiq} puntos</b> en el ranking mensual y otros <b>{ptsLiqR} puntos extra</b> si se detecta que operas en cuenta real (solo para miembros VIP).</>}</p>
+            {bonoHasta && <p className="okmsg">Tu calendario VIP está activo hasta el <b>{bonoHasta}</b>.</p>}
             <p className="mu"><b>Solo puedes registrar una cuenta de trading por mes.</b></p>
             {liq?.estado === "aprobado" ? (
               <>
-                <p className="okmsg">Tu cuenta <b>{liq.cuenta}</b> fue confirmada. ¡Gracias!{Number(liq.reward) > 0 ? " Detectamos que operas en cuenta real: tus puntos extra ya están confirmados." : ""}</p>
-                {Number(liq.reward) <= 0 && <p className="mu">Si operas en cuenta real con esta cuenta, lo detectamos automáticamente y sumas los <b>{ptsLiqR} puntos extra</b> (se actualiza cada día).</p>}
+                <p className="okmsg">Tu cuenta <b>{liq.cuenta}</b> fue confirmada. ¡Gracias!{Number(liq.reward) > 0 ? " Detectamos que operas en cuenta real: " + (esGratis ? "ya tienes tus 7 días extra de calendario VIP." : "tus puntos extra ya están confirmados.") + "" : ""}</p>
+                {Number(liq.reward) <= 0 && <p className="mu">Si operas en cuenta real con esta cuenta, lo detectamos automáticamente y ganas <b>{extraTxt}</b> (se actualiza cada día).</p>}
               </>
             ) : (
               <form action={enviarLiquid} className="fm">
@@ -150,7 +157,7 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
                 {liq?.estado === "pendiente" && (
                   <div className="alerta" style={{ borderColor: "var(--ac)" }}>
                     <b>⏳ Pendiente de confirmación</b> · cuenta <b>{liq.cuenta}</b>
-                    <div className="mu" style={{ marginTop: 4 }}>Comparamos tu cuenta con la lista de clientes de Liquid, que se actualiza cada día: puede tardar en promedio <b>24 horas</b> en confirmarse. Si tu cuenta opera en real, también sumarás <b>{ptsLiqR} puntos extra</b>.</div>
+                    <div className="mu" style={{ marginTop: 4 }}>Comparamos tu cuenta con la lista de clientes de Liquid, que se actualiza cada día: puede tardar en promedio <b>24 horas</b> en confirmarse. Si tu cuenta opera en real, también ganarás <b>{extraTxt}</b>.</div>
                     <div className="mu" style={{ marginTop: 4 }}>Si te equivocaste, puedes enviarla otra vez (sigue contando como tu cuenta de este mes).</div>
                   </div>
                 )}

@@ -12,6 +12,7 @@ export type Perfil = {
   vence: string | null;
   telefono: string | null;
   avatar_url?: string | null;
+  calendario_bono_hasta?: string | null; // calendario gratis por tener cuenta de Liquid (miembros gratuitos)
   notif_leidas_at: string | null;
   vista?: "gratis" | "miembro"; // el administrador está viendo la plataforma como alumno
 };
@@ -69,11 +70,12 @@ export const permisos = cache(async (p: Perfil): Promise<Permisos> => {
   const admin = p.rol === "admin";
   const miembro = admin || p.plan !== "gratis";
   const vigente = !!p.vence && p.vence >= hoyPY();
+  const bono = p.plan === "gratis" && !!p.calendario_bono_hasta && p.calendario_bono_hasta >= hoyPY();
   return {
     admin,
     miembro,
     cursos: miembro || ov.has("cursos"),
-    calendario: admin || (p.plan !== "gratis" && vigente) || ov.has("calendario"),
+    calendario: admin || (p.plan !== "gratis" && vigente) || bono || ov.has("calendario"),
     tutoriales: true, // libre también para el plan gratuito
     comunidad: miembro || ov.has("comunidad"),
     journal: miembro || ov.has("journal"),

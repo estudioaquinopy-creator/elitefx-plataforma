@@ -44,6 +44,7 @@ export default async function Gestionar({ params, searchParams }: { params: { id
       <h1>{nombre}</h1>
       <p className="sub">{p.email}{p.telefono ? " · " + p.telefono : ""}</p>
       <p style={{ margin: "0 0 12px" }}><Link className="btn g s" href={"/journal?alumno=" + p.id}>📓 Ver journal</Link> <AnclarJournal alumnoId={p.id} anclado={!!anc} volver={"/accesos/" + p.id} /></p>
+      {p.plan === "gratis" && p.calendario_bono_hasta && <p className="okmsg">🎁 Calendario VIP gratis por su cuenta de Liquid hasta el {fmt(p.calendario_bono_hasta)}{p.bono_real_at ? " (incluye el bono por operar en real)" : ""}.</p>}
       {searchParams.ok && <p className="okmsg">{searchParams.ok}</p>}
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
 
