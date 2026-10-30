@@ -7,6 +7,7 @@ import BotonImprimir from "@/components/BotonImprimir";
 import { agrupar, calcular, type Grupo } from "@/lib/metricas";
 import { EMOCIONES, SESIONES } from "@/lib/journal";
 import { generarConsejos } from "@/lib/consejos";
+import { registrar } from "@/lib/auditoria";
 import { borrarImportadas, borrarOperacion, guardarCapital, guardarOperacion } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -30,10 +31,22 @@ function Tabla({ titulo, g, mp }: { titulo: string; g: Grupo[]; mp: (n: number) 
   );
 }
 
-export default async function Journal({ searchParams }: { searchParams: { error?: string; p?: string; d?: string; h?: string; m?: string } }) {
+export default async function Journal({ searchParams }: { searchParams: { alumno?: string; error?: string; p?: string; d?: string; h?: string; m?: string } }) {
   const perfil = await perfilActual();
   const perm = await permisos(perfil);
-  if (!perm.journal) {
+  // El administrador puede VER (solo lectura) el journal de un alumno: /journal?alumno=<id> (desde Accesos → Ver journal).
+  const alumnoId = /^[0-9a-f-]{36}$/i.test(searchParams.alumno ?? "") ? searchParams.alumno! : "";
+  const ver = perfil.rol === "admin" && !!alumnoId && alumnoId !== perfil.id;
+  const uid = ver ? alumnoId : perfil.id;
+  let duenio = "";
+  if (ver) {
+    const { data: dp } = await createClient().from("perfiles").select("nombre, email").eq("id", alumnoId).maybeSingle();
+    if (!dp) return <><Link href="/accesos" className="back">← Accesos</Link><h1>Journal</h1><p className="alerta">No se encontró a esa persona.</p></>;
+    duenio = (dp as { nombre: string | null; email: string }).nombre || (dp as { email: string }).email;
+    // Se deja constancia al abrirlo (no al cambiar filtros del mismo journal).
+    if (!searchParams.p && !searchParams.m && !searchParams.d && !searchParams.h) await registrar("ver_journal", duenio);
+  }
+  if (!ver && !perm.journal) {
     return (
       <>
         <h1>Journal</h1>
@@ -45,12 +58,12 @@ export default async function Journal({ searchParams }: { searchParams: { error?
   const sb = createClient();
   const todas: Op[] = [];
   for (let pg = 0; pg < 20; pg++) {
-    const { data } = await sb.from("operaciones").select("*").eq("user_id", perfil.id).order("fecha", { ascending: false }).order("created_at", { ascending: false }).range(pg * 1000, pg * 1000 + 999);
+    const { data } = await sb.from("operaciones").select("*").eq("user_id", uid).order("fecha", { ascending: false }).order("created_at", { ascending: false }).range(pg * 1000, pg * 1000 + 999);
     const lote = (data ?? []) as Op[];
     todas.push(...lote);
     if (lote.length < 1000) break;
   }
-  const { data: cfg } = await sb.from("journal_config").select("capital_inicial").eq("user_id", perfil.id).maybeSingle();
+  const { data: cfg } = await sb.from("journal_config").select("capital_inicial").eq("user_id", uid).maybeSingle();
   const capital = Number((cfg as { capital_inicial: number } | null)?.capital_inicial ?? 0) || 0;
   // Porcentaje de un monto sobre el capital inicial (vacío si todavía no se definió el capital).
   const pc = (x: number) => (capital > 0 ? (x > 0 ? "+" : "") + ((x / capital) * 100).toLocaleString("es-PY", { maximumFractionDigits: 2 }) + "%" : "");
@@ -134,15 +147,18 @@ export default async function Journal({ searchParams }: { searchParams: { error?
   const diasPer = Array.from(porDiaMes.values()).filter((v) => v.neto < 0).length;
   const maxAbs = Math.max(1, ...Array.from(porDiaMes.values()).map((v) => Math.abs(v.neto)));
   const desplazar = (d: number) => { const t = cy * 12 + (cm - 1) + d; return Math.floor(t / 12) + "-" + String((t % 12) + 1).padStart(2, "0"); };
-  const qsMes = (mes: string) => { const q = new URLSearchParams(); if (searchParams.p) q.set("p", searchParams.p); if (searchParams.d) q.set("d", searchParams.d); if (searchParams.h) q.set("h", searchParams.h); q.set("m", mes); return "/journal?" + q.toString(); };
+  const qsMes = (mes: string) => { const q = new URLSearchParams(); if (searchParams.p) q.set("p", searchParams.p); if (searchParams.d) q.set("d", searchParams.d); if (searchParams.h) q.set("h", searchParams.h); q.set("m", mes); if (ver) q.set("alumno", alumnoId); return "/journal?" + q.toString(); };
   const NOMBRES_MES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
   const corto = (x: number) => (x < 0 ? "-" : "") + "$" + Math.abs(x).toLocaleString("es-PY", { maximumFractionDigits: Math.abs(x) >= 100 ? 0 : 2 });
   const colorDia = (x: number) => (x > 0 ? "rgba(34,197,94," : "rgba(239,68,68,") + (0.12 + 0.4 * (Math.abs(x) / maxAbs)).toFixed(2) + ")";
 
   return (
     <>
-      <h1>Journal</h1>
-      <p className="sub">Tu diario de trading: registra cada operación y mira tus estadísticas. Es personal; nadie más lo ve.</p>
+      {ver && <Link href={"/accesos/" + alumnoId} className="back">← Volver a {duenio}</Link>}
+      <h1>{ver ? "Journal de " + duenio : "Journal"}</h1>
+      {ver
+        ? <p className="alerta">Vista de administrador, solo lectura: aquí no se puede cargar, importar ni borrar nada. Cada consulta queda registrada.</p>
+        : <p className="sub">Tu diario de trading: registra cada operación y mira tus estadísticas. Es personal; solo tú y el equipo de ELITE FX (para el seguimiento de tu mentoría) pueden verlo.</p>}
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
 
       <div className="kp">
@@ -152,7 +168,7 @@ export default async function Journal({ searchParams }: { searchParams: { error?
         <div className="box"><span className="mu">Mejor / peor operación</span><b>{n ? money(m.mejor) + " / " + money(m.peor) : "—"}</b>{n > 0 && capital > 0 && <small className="mu" style={{ display: "block" }}>{pc(m.mejor)} / {pc(m.peor)} del capital inicial</small>}</div>
       </div>
 
-      <section className="box no-print">
+      {!ver && <section className="box no-print">
         <form action={guardarCapital} className="fm" style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, alignItems: "flex-end" }}>
           <label style={{ flex: 1, minWidth: 220 }}>Capital inicial de tu cuenta ($): es la base de todos los porcentajes
             <input name="capital" inputMode="decimal" defaultValue={capital > 0 ? String(capital) : ""} placeholder="Ej.: 10000" required />
@@ -160,10 +176,10 @@ export default async function Journal({ searchParams }: { searchParams: { error?
           <button className="btn s" style={{ marginBottom: 14 }}>Guardar capital</button>
         </form>
         {capital === 0 && <p className="mu" style={{ marginTop: 0 }}>Define tu capital inicial para ver cada monto también en porcentaje.</p>}
-      </section>
+      </section>}
       {capital > 0 && <p className="mu">Referencias: los porcentajes de resultado son <b>sobre tu capital inicial de {money(capital)}</b>; el % de aciertos es sobre el total de operaciones; el drawdown es sobre el pico de capital.</p>}
 
-      <section className="box no-print">
+      {!ver && <section className="box no-print">
         <h2>Importar reporte de MetaTrader 5</h2>
         <p className="mu">Sube el reporte de tu historial y se cargan todas tus operaciones y métricas de una vez. Si vuelves a subir el mismo reporte, no se duplican.</p>
         {videoMT && <p style={{ margin: "0 0 10px" }}><Link className="btn sd s" style={{ fontSize: 12, padding: "6px 12px", minHeight: 0 }} href={"/tutoriales?v=" + videoMT.id}>▶ ¿Cómo descargo el reporte? Ver video</Link></p>}
@@ -181,7 +197,7 @@ export default async function Journal({ searchParams }: { searchParams: { error?
             <ConfirmarEnvio mensaje={"¿Borrar las " + importadas + " operaciones importadas de MT5? Tus operaciones anotadas a mano no se tocan."} className="btn g s">Borrar las {importadas} operaciones importadas</ConfirmarEnvio>
           </form>
         )}
-      </section>
+      </section>}
 
       {total > 0 && (
         <section className="box">
@@ -225,6 +241,7 @@ export default async function Journal({ searchParams }: { searchParams: { error?
 
       {total > 0 && (
         <form method="get" className="box fm no-print" style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, alignItems: "flex-end" }}>
+          {ver && <input type="hidden" name="alumno" value={alumnoId} />}
           <label>Período del reporte
             <select name="p" defaultValue={per}>
               <option value="todo">Todo el historial</option><option value="mes">Este mes</option><option value="30">Últimos 30 días</option>
@@ -331,8 +348,8 @@ export default async function Journal({ searchParams }: { searchParams: { error?
         </>
       )}
 
-      <div className="cols no-print">
-        <section className="box">
+      <div className={ver ? "no-print" : "cols no-print"}>
+        {!ver && <section className="box">
           <h2>Nueva operación</h2>
           <form action={guardarOperacion} className="fm">
             <div className="f2">
@@ -369,11 +386,11 @@ export default async function Journal({ searchParams }: { searchParams: { error?
             <label>Notas<textarea name="notas" rows={3} placeholder="¿Por qué entraste? ¿Qué aprendiste?" /></label>
             <button className="btn s">Guardar operación</button>
           </form>
-        </section>
+        </section>}
 
         <section className="box">
           <details>
-            <summary style={{ cursor: "pointer", fontSize: 18, fontWeight: 700 }}>Tus operaciones ({n}) — clic para desplegar</summary>
+            <summary style={{ cursor: "pointer", fontSize: 18, fontWeight: 700 }}>{ver ? "Operaciones" : "Tus operaciones"} ({n}) — clic para desplegar</summary>
           {n === 0 && <p className="mu">Aún no registraste operaciones.</p>}
           {n > 100 && <p className="mu">Mostrando las últimas 100 de {n}.</p>}
           {visibles.map((o) => (
@@ -383,10 +400,10 @@ export default async function Journal({ searchParams }: { searchParams: { error?
                 <small className="mu" style={{ display: "block" }}>{new Date(o.fecha + "T00:00:00").toLocaleDateString("es-PY")}{o.volumen ? " · " + o.volumen + " lotes" : ""}{o.origen === "mt5" ? " · MT5" : ""}{o.sesion ? " · " + o.sesion : ""}{o.setup ? " · " + o.setup : ""}{o.respeto_plan === false ? " · fuera del plan" : ""}{o.notas ? " · " + o.notas : ""}</small>
               </div>
               <span className={o.resultado < 0 ? "neg" : "pos"}>{mp(o.resultado)}</span>
-              <form action={borrarOperacion}>
+              {!ver && <form action={borrarOperacion}>
                 <input type="hidden" name="id" value={o.id} />
                 <button className="btn g s">Eliminar</button>
-              </form>
+              </form>}
             </div>
           ))}
           </details>

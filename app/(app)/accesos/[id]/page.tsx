@@ -41,6 +41,7 @@ export default async function Gestionar({ params, searchParams }: { params: { id
       <Link href="/accesos" className="back">← Accesos</Link>
       <h1>{nombre}</h1>
       <p className="sub">{p.email}{p.telefono ? " · " + p.telefono : ""}</p>
+      <p style={{ margin: "0 0 12px" }}><Link className="btn g s" href={"/journal?alumno=" + p.id}>📓 Ver journal</Link></p>
       {searchParams.ok && <p className="okmsg">{searchParams.ok}</p>}
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
 
