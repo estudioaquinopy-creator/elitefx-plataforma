@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { estadoMembresia, perfilActual } from "@/lib/sesion";
 import { clienteAdmin } from "@/lib/supabase/admin";
+import AnclarJournal from "@/components/AnclarJournal";
 import { cambiarPlan, cambiarRol, eliminarPersona, enviarInvitacion, nuevaClave, fijarFecha, quitarCalendario, sumarCalendario } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +26,7 @@ export default async function Gestionar({ params, searchParams }: { params: { id
     else if (us?.invited_at) cuenta = { clave: "pendiente", texto: "Invitación enviada el " + fechaHora(us.invited_at) + " · todavía no activó su cuenta" };
     else if (us) cuenta = { clave: "sin", texto: "Cuenta creada · todavía no ingresó" };
   }
+  const { data: anc } = await supabase.from("journals_anclados").select("alumno_id").eq("admin_id", yo.id).eq("alumno_id", params.id).maybeSingle();
   const st = estadoMembresia(p);
   const fmt = (d: string) => new Date(d + "T00:00:00").toLocaleDateString("es-PY");
   const nombre = p.nombre || p.email;
@@ -41,7 +43,7 @@ export default async function Gestionar({ params, searchParams }: { params: { id
       <Link href="/accesos" className="back">← Accesos</Link>
       <h1>{nombre}</h1>
       <p className="sub">{p.email}{p.telefono ? " · " + p.telefono : ""}</p>
-      <p style={{ margin: "0 0 12px" }}><Link className="btn g s" href={"/journal?alumno=" + p.id}>📓 Ver journal</Link></p>
+      <p style={{ margin: "0 0 12px" }}><Link className="btn g s" href={"/journal?alumno=" + p.id}>📓 Ver journal</Link> <AnclarJournal alumnoId={p.id} anclado={!!anc} volver={"/accesos/" + p.id} /></p>
       {searchParams.ok && <p className="okmsg">{searchParams.ok}</p>}
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
 

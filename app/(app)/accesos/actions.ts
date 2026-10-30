@@ -1,5 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { rutaSegura } from "@/lib/seguridad";
 import { createClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
 import { clienteAdmin } from "@/lib/supabase/admin";
@@ -205,4 +207,19 @@ export async function eliminarPersona(f: FormData) {
   await registrar("eliminar cuenta", id, String(act!.email ?? ""));
   revalidatePath("/accesos");
   aviso("/accesos", "Cuenta eliminada.");
+}
+
+// Ancla o desancla el journal de un alumno (cada administrador tiene sus propios anclados).
+export async function alternarAnclaje(formData: FormData) {
+  await soloAdmin();
+  const yo = await perfilActual();
+  const alumno = String(formData.get("id") ?? "");
+  const volver = rutaSegura(formData.get("volver"), "/accesos");
+  if (!/^[0-9a-f-]{36}$/i.test(alumno)) redirect(volver);
+  const sb = createClient();
+  const { data: ya } = await sb.from("journals_anclados").select("alumno_id").eq("admin_id", yo.id).eq("alumno_id", alumno).maybeSingle();
+  if (ya) await sb.from("journals_anclados").delete().eq("admin_id", yo.id).eq("alumno_id", alumno);
+  else await sb.from("journals_anclados").insert({ admin_id: yo.id, alumno_id: alumno });
+  revalidatePath("/accesos");
+  redirect(volver);
 }

@@ -8,6 +8,7 @@ import { agrupar, calcular, type Grupo } from "@/lib/metricas";
 import { EMOCIONES, SESIONES } from "@/lib/journal";
 import { generarConsejos } from "@/lib/consejos";
 import { registrar } from "@/lib/auditoria";
+import AnclarJournal from "@/components/AnclarJournal";
 import { borrarImportadas, borrarOperacion, guardarCapital, guardarOperacion } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -39,10 +40,13 @@ export default async function Journal({ searchParams }: { searchParams: { alumno
   const ver = perfil.rol === "admin" && !!alumnoId && alumnoId !== perfil.id;
   const uid = ver ? alumnoId : perfil.id;
   let duenio = "";
+  let anclado = false;
   if (ver) {
     const { data: dp } = await createClient().from("perfiles").select("nombre, email").eq("id", alumnoId).maybeSingle();
     if (!dp) return <><Link href="/accesos" className="back">← Accesos</Link><h1>Journal</h1><p className="alerta">No se encontró a esa persona.</p></>;
     duenio = (dp as { nombre: string | null; email: string }).nombre || (dp as { email: string }).email;
+    const { data: an } = await createClient().from("journals_anclados").select("alumno_id").eq("admin_id", perfil.id).eq("alumno_id", alumnoId).maybeSingle();
+    anclado = !!an;
     // Se deja constancia al abrirlo (no al cambiar filtros del mismo journal).
     if (!searchParams.p && !searchParams.m && !searchParams.d && !searchParams.h) await registrar("ver_journal", duenio);
   }
@@ -159,6 +163,7 @@ export default async function Journal({ searchParams }: { searchParams: { alumno
     <>
       {ver && <Link href={"/accesos/" + alumnoId} className="back">← Volver a {duenio}</Link>}
       <h1>{ver ? "Journal de " + duenio : "Journal"}</h1>
+      {ver && <p style={{ margin: "0 0 12px" }}><AnclarJournal alumnoId={alumnoId} anclado={anclado} volver={"/journal?alumno=" + alumnoId} /></p>}
       {ver
         ? <p className="alerta">Vista de administrador, solo lectura: los resultados se muestran solo en porcentaje sobre el capital inicial del alumno (sin montos en dinero) y no se puede cargar, importar ni borrar nada. Cada consulta queda registrada.</p>
         : <p className="sub">Tu diario de trading: registra cada operación y mira tus estadísticas. Es personal; solo tú y el equipo de ELITE FX (para el seguimiento de tu mentoría) pueden verlo.</p>}

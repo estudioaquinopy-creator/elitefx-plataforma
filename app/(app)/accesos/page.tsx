@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { estadoMembresia, perfilActual } from "@/lib/sesion";
 import { clienteAdmin } from "@/lib/supabase/admin";
 import { crearPersona } from "./actions";
+import AnclarJournal from "@/components/AnclarJournal";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,9 @@ export default async function Accesos({ searchParams }: { searchParams: { q?: st
       if (us.length < 1000) break;
     }
   }
+  // Journals anclados por este administrador (acceso rápido).
+  const { data: ancData } = await createClient().from("journals_anclados").select("alumno_id, created_at").eq("admin_id", perfil.id).order("created_at", { ascending: false });
+  const anclados = ((ancData ?? []) as { alumno_id: string }[]).map((a) => todos.find((f) => f.id === a.alumno_id)).filter(Boolean) as Fila[];
   const cta = (f: Fila) => estadoCuenta[f.id] ?? "";
   const norm = (s: string) => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
   const q = norm(searchParams.q ?? "");
@@ -59,6 +63,19 @@ export default async function Accesos({ searchParams }: { searchParams: { q?: st
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
 
       <p style={{ margin: "0 0 12px" }}><Link className="btn g s" href="/accesos/importar">Importar alumnos desde CSV</Link> <Link className="btn g s" href="/accesos/registro">Registro de acciones</Link></p>
+
+      {anclados.length > 0 && (
+        <section className="box">
+          <h2>📌 Journals anclados</h2>
+          {anclados.map((f) => (
+            <div key={f.id} className="ses">
+              <div style={{ flex: 1 }}><b>{f.nombre || f.email}</b><small className="mu" style={{ display: "block" }}>{f.email}</small></div>
+              <Link className="btn s" href={"/journal?alumno=" + f.id}>📓 Ver journal</Link>
+              <AnclarJournal alumnoId={f.id} anclado volver="/accesos" />
+            </div>
+          ))}
+        </section>
+      )}
 
       <details className="box adm">
         <summary>+ Agregar persona</summary>
