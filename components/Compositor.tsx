@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import CajaTexto from "./CajaTexto";
 import BotonEnvio from "./BotonEnvio";
 
@@ -21,7 +21,7 @@ async function achicar(file: File): Promise<File> {
 type Op = { value: string; label: string };
 
 // Compositor de publicaciones al estilo Skool: barra simple que se despliega al tocarla.
-export default function Compositor({ action, opciones, iniciales }: { action: (f: FormData) => void | Promise<void>; opciones: Op[]; iniciales: string }) {
+export default function Compositor({ action, opciones, iniciales }: { action: (f: FormData) => void | Promise<void>; opciones: Op[]; iniciales: ReactNode }) {
   const [abierto, setAbierto] = useState(false);
   const [archivo, setArchivo] = useState("");
   if (!abierto) {

@@ -40,6 +40,14 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
   ]);
   const likes = (lk ?? []) as { post_id: string; user_id: string }[];
   const coms = (cm ?? []) as Com[];
+  // Fotos de perfil de quienes publican o responden (si la migración 0036 aún no se corrió, se muestran las iniciales).
+  const quienes = Array.from(new Set([...pubs.map((p) => p.user_id), ...coms.map((c) => c.user_id)]));
+  const fotos = new Map<string, string>();
+  if (quienes.length) {
+    const { data: av } = await sb.rpc("avatares_comunidad", { p_ids: quienes });
+    for (const a of (av ?? []) as { id: string; avatar_url: string }[]) fotos.set(a.id, a.avatar_url);
+  }
+  const avatar = (uid: string, nombre: string) => (fotos.get(uid) ? <img src={fotos.get(uid)} alt="" loading="lazy" /> : ini(nombre));
   const opciones = perm.admin ? ["anuncios", "preguntas", "resultados"] : ["preguntas", "resultados"];
   const volver = "/comunidad" + (filtro ? "?canal=" + filtro : "");
 
@@ -51,7 +59,7 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
 
       {perm.comunidad ? (
-        <Compositor action={publicar} iniciales={ini(perfil.nombre || perfil.email)} opciones={opciones.map((c) => ({ value: c, label: CANALES[c] }))} />
+        <Compositor action={publicar} iniciales={perfil.avatar_url ? <img src={perfil.avatar_url} alt="" /> : ini(perfil.nombre || perfil.email)} opciones={opciones.map((c) => ({ value: c, label: CANALES[c] }))} />
       ) : (
         <section className="box">
           <div className="tag">Modo lectura</div>
@@ -72,7 +80,7 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
         const rs = coms.filter((c) => c.post_id === p.id);
         const cabecera = (
           <div className="post-h">
-            <span className="av2">{ini(p.autor)}</span>
+            <span className="av2">{avatar(p.user_id, p.autor)}</span>
             <div><b>{p.autor}</b><small className="mu" style={{ display: "block" }}>{cuando(p.created_at)}</small></div>
             <span className={"pill c-" + p.canal} style={{ marginLeft: "auto" }}>{CANALES[p.canal]}</span>
           </div>
@@ -107,7 +115,7 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
               <>
                 {rs.map((c) => (
                   <div key={c.id} className="resp">
-                    <span className="av2 s">{ini(c.autor)}</span>
+                    <span className="av2 s">{avatar(c.user_id, c.autor)}</span>
                     <div style={{ flex: 1 }}>
                       <b>{c.autor}</b> <small className="mu">{cuando(c.created_at)}</small>{c.util && <span className="pill pos" style={{ marginLeft: 8 }}>✓ Respuesta útil</span>}
                       <p style={{ whiteSpace: "pre-wrap", margin: "2px 0 0" }}>{c.cuerpo}</p>
