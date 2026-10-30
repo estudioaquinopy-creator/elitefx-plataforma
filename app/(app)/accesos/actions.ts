@@ -244,3 +244,27 @@ export async function revisarLiquid(formData: FormData) {
   revalidatePath("/accesos/liquid");
   aviso("/accesos/liquid", estado === "aprobado" ? "Cuenta aprobada: ya suma sus puntos." : "Cuenta rechazada.");
 }
+
+// Aprueba automáticamente las cuentas pendientes cuyo número aparece en la columna elegida del CSV de clientes de Liquid.
+export async function aprobarPorCsv(formData: FormData) {
+  await soloAdmin();
+  const yo = await perfilActual();
+  let lista: unknown;
+  try { lista = JSON.parse(String(formData.get("cuentas") ?? "[]")); } catch { lista = null; }
+  if (!Array.isArray(lista) || lista.length === 0) fallo("/accesos/liquid", "No se pudo leer el CSV.");
+  const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, "").replace(/^0+(?=.)/, "");
+  const enCsv = new Set((lista as unknown[]).map((x) => norm(String(x))).filter(Boolean));
+  const sb = createClient();
+  const { data } = await sb.from("liquid_cuentas").select("user_id, cuenta").eq("estado", "pendiente");
+  const pendientes = (data ?? []) as { user_id: string; cuenta: string }[];
+  const coinciden = pendientes.filter((p) => enCsv.has(norm(p.cuenta)));
+  const ahora = new Date().toISOString();
+  let ok = 0;
+  for (const p of coinciden) {
+    const { error } = await sb.from("liquid_cuentas").update({ estado: "aprobado", revisado_at: ahora, revisado_por: yo.id, nota: "Aprobada automáticamente con el CSV" }).eq("user_id", p.user_id).eq("estado", "pendiente");
+    if (!error) ok++;
+  }
+  await registrar("liquid", null, "CSV de Liquid: " + ok + " cuentas aprobadas de " + pendientes.length + " pendientes");
+  revalidatePath("/accesos/liquid");
+  aviso("/accesos/liquid", ok + " cuenta(s) aprobada(s) automáticamente con el CSV; " + (pendientes.length - ok) + " siguen pendientes.");
+}

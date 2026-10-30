@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual } from "@/lib/sesion";
 import { revisarLiquid } from "../actions";
+import SubirCsvLiquid from "@/components/SubirCsvLiquid";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +49,11 @@ export default async function Liquid({ searchParams }: { searchParams: { ok?: st
       <p className="sub">Compara el número de cuenta con el reporte de clientes de Liquid (CSV) para confirmar que es cliente nuestro (creó su cuenta con nuestro enlace) y apruébalo para que sume sus puntos en el ranking.</p>
       {searchParams.ok && <p className="okmsg">{searchParams.ok}</p>}
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
+      <section className="box">
+        <h2>Aprobar con el CSV de Liquid</h2>
+        <p className="mu">Sube cada día el CSV actualizado de tus clientes: las cuentas pendientes cuyo número aparezca en la columna que elijas se aprueban solas y suman sus puntos. Las que no aparezcan quedan pendientes para revisarlas a mano.</p>
+        <SubirCsvLiquid />
+      </section>
       <section className="box">
         <h2>Pendientes ({pendientes.length})</h2>
         {pendientes.length === 0 && <p className="mu">No hay cuentas por revisar.</p>}
