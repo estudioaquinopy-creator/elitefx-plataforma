@@ -681,3 +681,8 @@ button.chip{cursor:pointer;font-family:inherit;line-height:1.2}
 /* Foto de perfil dentro del círculo de la comunidad */
 .av2{overflow:hidden}
 .av2 img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}
+
+/* Respuestas: el texto usa todo el ancho; los botones van debajo */
+.resp-acc{display:flex;gap:16px;flex-wrap:wrap;margin-top:6px}
+.resp-acc form{margin:0}
+.resp p{overflow-wrap:anywhere}

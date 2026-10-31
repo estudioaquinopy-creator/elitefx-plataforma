@@ -116,16 +116,18 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
                 {rs.map((c) => (
                   <div key={c.id} className="resp">
                     <span className="av2 s">{avatar(c.user_id, c.autor)}</span>
-                    <div style={{ flex: 1 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <b>{c.autor}</b> <small className="mu">{cuando(c.created_at)}</small>{c.util && <span className="pill pos" style={{ marginLeft: 8 }}>✓ Respuesta útil</span>}
                       <p style={{ whiteSpace: "pre-wrap", margin: "2px 0 0" }}>{c.cuerpo}</p>
+                      <div className="resp-acc">
+                      {(perm.admin || p.user_id === perfil.id) && c.user_id !== p.user_id && (
+                        <form action={marcarUtil}><input type="hidden" name="id" value={c.id} /><input type="hidden" name="post" value={p.id} /><input type="hidden" name="volver" value={volver} /><input type="hidden" name="util" value={c.util ? "0" : "1"} /><button className="lk">{c.util ? "Quitar útil" : "Marcar útil"}</button></form>
+                      )}
+                      {(perm.admin || c.user_id === perfil.id) && (
+                        <form action={borrarComentario}><input type="hidden" name="id" value={c.id} /><input type="hidden" name="post" value={p.id} /><input type="hidden" name="volver" value={volver} /><button className="lk">Eliminar</button></form>
+                      )}
+                      </div>
                     </div>
-                    {(perm.admin || p.user_id === perfil.id) && c.user_id !== p.user_id && (
-                      <form action={marcarUtil}><input type="hidden" name="id" value={c.id} /><input type="hidden" name="post" value={p.id} /><input type="hidden" name="volver" value={volver} /><input type="hidden" name="util" value={c.util ? "0" : "1"} /><button className="lk">{c.util ? "Quitar útil" : "Marcar útil"}</button></form>
-                    )}
-                    {(perm.admin || c.user_id === perfil.id) && (
-                      <form action={borrarComentario}><input type="hidden" name="id" value={c.id} /><input type="hidden" name="post" value={p.id} /><input type="hidden" name="volver" value={volver} /><button className="lk">Eliminar</button></form>
-                    )}
                   </div>
                 ))}
                 {perm.comunidad && (
