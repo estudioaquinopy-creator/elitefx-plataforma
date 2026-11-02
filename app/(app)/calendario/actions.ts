@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual } from "@/lib/sesion";
 import { fallo } from "@/lib/subida";
+import { registrar } from "@/lib/auditoria";
 
 async function soloAdmin() {
   const p = await perfilActual();
@@ -69,4 +70,33 @@ export async function eliminarFijo(f: FormData) {
   await createClient().from("horario_fijo").delete().eq("id", String(f.get("id") ?? ""));
   revalidatePath("/calendario"); revalidatePath("/inicio");
   redirect("/calendario");
+}
+
+// Marca UNA sesión como terminada (o la reabre). Solo afecta a esa sesión (id de la clase o "f-<fijo>-<fecha>").
+function idSesion(f: FormData) {
+  const id = String(f.get("id") ?? "").trim();
+  return /^[A-Za-z0-9-]{1,80}$/.test(id) && id !== "sim" ? id : "";
+}
+
+export async function terminarSesion(f: FormData) {
+  await soloAdmin();
+  const id = idSesion(f);
+  if (!id) return;
+  const yo = await perfilActual();
+  const { error } = await createClient().from("sesiones_terminadas").upsert({ sesion_id: id, por: yo.id });
+  if (error) fallo("/calendario", "No se pudo terminar la sesión: " + error.message + " (¿corriste la migración 0042?)");
+  await registrar("terminar sesión", null, id);
+  revalidatePath("/calendario");
+  revalidatePath("/inicio");
+}
+
+export async function reabrirSesion(f: FormData) {
+  await soloAdmin();
+  const id = idSesion(f);
+  if (!id) return;
+  const { error } = await createClient().from("sesiones_terminadas").delete().eq("sesion_id", id);
+  if (error) fallo("/calendario", "No se pudo reabrir la sesión: " + error.message);
+  await registrar("reabrir sesión", null, id);
+  revalidatePath("/calendario");
+  revalidatePath("/inicio");
 }

@@ -15,7 +15,7 @@ Plataforma propia de la academia ELITE FX (+900 alumnos, migrando desde Skool). 
 - Cambiar una variable exige un redeploy.
 
 ## Base de datos
-- Migraciones en `supabase/migrations/` (0001…0041). **Se ejecutan a mano** en Supabase → SQL Editor, en orden. Si agregas una, créala idempotente (`if not exists`, `drop policy if exists`) y avisa al dueño que la corra antes de usar la función nueva.
+- Migraciones en `supabase/migrations/` (0001…0042). **Se ejecutan a mano** en Supabase → SQL Editor, en orden. Si agregas una, créala idempotente (`if not exists`, `drop policy if exists`) y avisa al dueño que la corra antes de usar la función nueva.
 - Seguridad por RLS: helpers `es_admin()`, `es_miembro()`, `tiene_acceso(sec)`. Los alumnos solo pueden editar `nombre`, `telefono`, `avatar_url`, `notif_leidas_at` de su perfil.
 - Examen: las respuestas correctas nunca salen de la base (`examen_preguntas` y `calificar_examen` son funciones `security definer`).
 
@@ -43,6 +43,7 @@ Plataforma propia de la academia ELITE FX (+900 alumnos, migrando desde Skool). 
 - Noticias: solo alto impacto (fijo); cada persona elige sus monedas (cookie `noticias_monedas`; por defecto USD, EUR, GBP, CAD) y cada noticia muestra una cuenta regresiva cuando falta 1 hora o menos, y Inicio avisa con un contador (`components/AvisoNoticias.tsx`, `lib/noticias.ts`) cuando falta 1 hora para una noticia de sus monedas.
 - Zona horaria: Paraguay (`America/Asuncion`, UTC-3). Las sesiones fijas (Londres 6:00, Nueva York 10:00, Asia 21:00) se calculan en `lib/horario.ts`.
 - Las sesiones en vivo son por Google Meet; cada sesión tiene su propio enlace (no existe enlace general).
+- Terminar sesión (migración 0042, tabla `sesiones_terminadas`, acciones `terminarSesion`/`reabrirSesion` en `calendario/actions.ts`): la plataforma no sabe cuándo se cierra el Meet (solo usa inicio + duración), así que el admin puede marcar UNA sesión concreta como terminada (id de la clase o `f-<fijo>-<fecha>`; no afecta a las de otros días) desde el botón "Terminar sesión" de la tarjeta "En vivo ahora" en Inicio o desde la sesión en Calendario, donde también "Reabrir". Una sesión terminada no muestra "Unirme" ni "en vivo" y en Inicio deja de listarse; se registra en auditoría.
 - Videos: Vimeo (privado, restringido a dominios, sin descarga) y YouTube; `lib/video.ts` acepta el enlace o el código de "Incrustar".
 - Bienvenida: quien aún no marcó como visto el video "Bienvenido…" de Primeros pasos es llevado a él al entrar a `/inicio` (`lib/bienvenida.ts`); se busca por nombre del curso y título de la lección.
 - Modo alumno: el admin ve la plataforma como alumno miembro/gratis (cookie `ver_como`, ver `lib/sesion.ts`).

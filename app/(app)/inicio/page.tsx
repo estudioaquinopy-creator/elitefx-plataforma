@@ -68,6 +68,12 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
     vivo = [...((cl ?? []) as { id: string; titulo: string; inicio: string; zoom_url: string; duracion_min?: number }[]), ...ocurrencias(fijos, ayer, 10)]
       .filter((o) => { const t = new Date(o.inicio).getTime(); return t >= t0 && t <= t1; })
       .map((o) => ({ id: o.id, titulo: o.titulo, inicio: o.inicio, zoom: o.zoom_url || "", duracion: o.duracion_min ?? 90 }));
+    // Sesiones que el administrador marcó como terminadas dejan de mostrarse como "en vivo".
+    try {
+      const { data: tm } = await supabase.from("sesiones_terminadas").select("sesion_id");
+      const fin = new Set(((tm ?? []) as { sesion_id: string }[]).map((x) => x.sesion_id));
+      if (fin.size) vivo = vivo.filter((s) => !fin.has(s.id));
+    } catch { /* migración 0042 pendiente */ }
   }
 
   // Simulación de prueba (solo administrador / modo alumno): /inicio?sim=25 → una sesión que empieza en 25 minutos.
@@ -169,7 +175,7 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
           {perm.calendario && (
             <section className="box">
               <h2>Próximas sesiones</h2>
-              <EnVivo sesiones={vivo} ahoraServidor={Date.now()} />
+              <EnVivo sesiones={vivo} ahoraServidor={Date.now()} admin={perm.admin} />
               <Link className="btn bl s" href="/calendario" style={{ marginTop: 10 }}>Ver calendario</Link>
             </section>
           )}

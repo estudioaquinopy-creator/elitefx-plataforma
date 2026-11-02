@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { perfilActual, permisos, hoyPY, ZONA } from "@/lib/sesion";
 import { leerAjustes } from "@/lib/ajustes";
 import Portada from "@/components/Portada";
-import { crearClase, eliminarClase, crearFijo, guardarFijo, eliminarFijo } from "./actions";
+import { crearClase, eliminarClase, terminarSesion, reabrirSesion, crearFijo, guardarFijo, eliminarFijo } from "./actions";
 import { ocurrencias, type Fijo, type Ocurrencia } from "@/lib/horario";
 import SesionCard from "@/components/SesionCard";
 import { COLORES, tipoSesion } from "@/lib/sesiones";
@@ -53,6 +53,12 @@ export default async function Calendario({ searchParams }: { searchParams: { s?:
   const fijos = ((fx ?? []) as Fijo[]).map((f) => ({ ...f, hora: String(f.hora) }));
   const sueltas = ((data ?? []) as Omit<Clase, "fijo">[]).map((c) => ({ ...c, fijo: false }));
   const clases = [...sueltas, ...ocurrencias(fijos, lunes, 7)].sort((a, b) => a.inicio.localeCompare(b.inicio));
+  // Sesiones que el administrador marcó como terminadas (si la migración 0042 aún no se corrió, no hay ninguna).
+  let terminadas = new Set<string>();
+  try {
+    const { data: tm } = await sb.from("sesiones_terminadas").select("sesion_id");
+    terminadas = new Set(((tm ?? []) as { sesion_id: string }[]).map((x) => x.sesion_id));
+  } catch { /* sin migración */ }
   const porDia = new Map<string, Clase[]>();
   for (const c of clases) porDia.set(diaPY(c.inicio), [...(porDia.get(diaPY(c.inicio)) ?? []), c]);
   const NOMBRES = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
@@ -141,11 +147,20 @@ export default async function Calendario({ searchParams }: { searchParams: { s?:
                       zoom={c.zoom_url}
                       color={t.color}
                       tipo={t.nombre}
-                      extra={perm.admin && !c.fijo ? (
-                        <form action={eliminarClase}>
-                          <input type="hidden" name="id" value={c.id} />
-                          <button className="btn g s">Eliminar esta sesión</button>
-                        </form>
+                      terminada={terminadas.has(c.id)}
+                      extra={perm.admin ? (
+                        <div className="acts" style={{ marginTop: 12 }}>
+                          <form action={terminadas.has(c.id) ? reabrirSesion : terminarSesion}>
+                            <input type="hidden" name="id" value={c.id} />
+                            <button className="btn g s">{terminadas.has(c.id) ? "Reabrir esta sesión" : "Terminar esta sesión"}</button>
+                          </form>
+                          {!c.fijo && (
+                            <form action={eliminarClase}>
+                              <input type="hidden" name="id" value={c.id} />
+                              <button className="btn g s">Eliminar esta sesión</button>
+                            </form>
+                          )}
+                        </div>
                       ) : null}
                     />
                   );

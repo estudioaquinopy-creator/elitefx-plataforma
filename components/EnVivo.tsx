@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { terminarSesion } from "@/app/(app)/calendario/actions";
 
 export type SesionVivo = { id: string; titulo: string; inicio: string; zoom: string; duracion?: number };
 
@@ -11,7 +12,7 @@ const ZONA = "America/Asuncion";
 
 // Lista "Próximas sesiones": la sesión que está por empezar (≤ 60 min) deja de mostrarse con su título
 // y pasa a mostrar la cuenta regresiva; al llegar a cero aparece el botón para unirse.
-export default function EnVivo({ sesiones, ahoraServidor }: { sesiones: SesionVivo[]; ahoraServidor: number }) {
+export default function EnVivo({ sesiones, ahoraServidor, admin = false }: { sesiones: SesionVivo[]; ahoraServidor: number; admin?: boolean }) {
   const [ahora, setAhora] = useState(ahoraServidor);
   useEffect(() => {
     setAhora(Date.now());
@@ -31,6 +32,12 @@ export default function EnVivo({ sesiones, ahoraServidor }: { sesiones: SesionVi
         <div className="live on" role="status">
           <div><span className="dotv" /> <b>En vivo ahora</b></div>
           {enCurso.zoom ? <a className="btn sd" href={enCurso.zoom} target="_blank" rel="noopener noreferrer">Unirme a la sesión en vivo</a> : <span className="mu">Enlace pendiente</span>}
+          {admin && enCurso.id !== "sim" && (
+            <form action={terminarSesion}>
+              <input type="hidden" name="id" value={enCurso.id} />
+              <button className="btn g s">Terminar sesión</button>
+            </form>
+          )}
         </div>
       )}
       {!enCurso && proxima && (
