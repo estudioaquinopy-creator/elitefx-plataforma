@@ -3,11 +3,11 @@ import { useEffect, useState } from "react";
 
 const dos = (n: number) => String(n).padStart(2, "0");
 
-type Precio = { nombre: string; antes: string; ahora: string; gs: string };
+type Precio = { nombre: string; antes: string; ahora: string; gs: string; mensaje: string };
 type Anuncio = { titulo: string; motivo: string; precios: Precio[]; nota: string; visibleDias: number };
 
 // Cabecera de Inicio: cuenta regresiva hasta una fecha. Al llegar la hora muestra el anuncio (precios nuevos) durante `visibleDias` días y luego desaparece.
-export default function AvisoSorpresa({ texto, hasta, etiqueta, anuncio, linkVip }: { texto: string; hasta: string; etiqueta: string; anuncio: Anuncio; linkVip?: string }) {
+export default function AvisoSorpresa({ texto, hasta, etiqueta, anuncio, whatsapp }: { texto: string; hasta: string; etiqueta: string; anuncio: Anuncio; whatsapp?: string }) {
   const [ahora, setAhora] = useState<number | null>(null);
   useEffect(() => {
     setAhora(Date.now());
@@ -28,16 +28,20 @@ export default function AvisoSorpresa({ texto, hasta, etiqueta, anuncio, linkVip
           {anuncio.precios.map((p) => (
             <div key={p.nombre} style={{ background: "var(--sf2)", border: "1px solid var(--bd)", borderRadius: 14, padding: "14px 16px" }}>
               <b>{p.nombre}</b>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap", marginTop: 6 }}>
-                <span className="mu" style={{ textDecoration: "line-through" }}>{p.antes}</span>
-                <span style={{ fontSize: 28, fontWeight: 800, color: "var(--go)", lineHeight: 1.1 }}>{p.ahora}</span>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginTop: 6 }}>
+                <div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+                    <span className="mu" style={{ textDecoration: "line-through" }}>{p.antes}</span>
+                    <span style={{ fontSize: 28, fontWeight: 800, color: "var(--go)", lineHeight: 1.1 }}>{p.ahora}</span>
+                  </div>
+                  <small className="mu">{p.gs}</small>
+                </div>
+                {whatsapp && <a className="btn sd s" href={"https://wa.me/" + whatsapp + "?text=" + encodeURIComponent(p.mensaje)} target="_blank" rel="noopener noreferrer">Adquirir membresía</a>}
               </div>
-              <small className="mu">{p.gs}</small>
             </div>
           ))}
         </div>
         {anuncio.nota && <small className="mu" style={{ display: "block", marginTop: 6 }}>{anuncio.nota}</small>}
-        {linkVip && <a className="btn sd s" href={linkVip} target="_blank" rel="noopener noreferrer" style={{ marginTop: 14 }}>Adquirir membresía</a>}
       </section>
     );
   }

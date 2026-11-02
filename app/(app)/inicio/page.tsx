@@ -15,7 +15,7 @@ import { rankingLateral, type RankingLateral as DatosRanking } from "@/lib/ranki
 import TarjetaRanking from "@/components/TarjetaRanking";
 import AvisoSorpresa from "@/components/AvisoSorpresa";
 import CintaCotizaciones from "@/components/CintaCotizaciones";
-import { SORPRESA } from "@/lib/sorpresa";
+import { SORPRESA, WHATSAPP_VENTAS } from "@/lib/sorpresa";
 
 export const dynamic = "force-dynamic";
 
@@ -103,7 +103,7 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
 
   return (
     <>
-      <AvisoSorpresa texto={SORPRESA.texto} hasta={SORPRESA.hasta} etiqueta={SORPRESA.etiqueta} anuncio={SORPRESA.anuncio} linkVip={"https://wa.me/595987174242?text=" + encodeURIComponent("Hola, quiero adquirir la membresía de ELITE FX")} />
+      <AvisoSorpresa texto={SORPRESA.texto} hasta={SORPRESA.hasta} etiqueta={SORPRESA.etiqueta} anuncio={SORPRESA.anuncio} whatsapp={WHATSAPP_VENTAS} />
       <h1>Hola, {primerNombre(perfil)}</h1>
       <p className="sub">Este es tu siguiente paso en la academia.</p>
       {!perfil.nombre && (
