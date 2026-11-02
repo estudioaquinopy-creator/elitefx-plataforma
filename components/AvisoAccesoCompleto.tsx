@@ -15,6 +15,7 @@ export default function AvisoAccesoCompleto() {
         <small className="mu">{ACCESO_COMPLETO.despues}</small>
       </div>
       <div className="acceso-precio">
+        <span className="acceso-antes">{ACCESO_COMPLETO.antes}</span>
         <b>{ACCESO_COMPLETO.precio}</b>
         <small>{ACCESO_COMPLETO.gs} · pago único</small>
         <a className="btn sd" href={href} target="_blank" rel="noopener noreferrer">Obtener acceso completo</a>

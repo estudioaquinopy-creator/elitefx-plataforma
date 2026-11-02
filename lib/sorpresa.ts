@@ -4,6 +4,7 @@ export const WHATSAPP_VENTAS = "595987174242"; // número al que escriben quiene
 
 // Aviso fijo para quien tiene acceso gratuito (pago único por el acceso completo).
 export const ACCESO_COMPLETO = {
+  antes: "US$ 1.100", // precio anterior (se muestra tachado: es una promoción)
   precio: "US$ 429",
   gs: "Gs. 2.499.000",
   deporVida: "Curso intermedio, Curso avanzado, Data de nivel 2 y todos los cursos.",
