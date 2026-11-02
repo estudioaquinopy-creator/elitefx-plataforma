@@ -10,7 +10,7 @@ export const SORPRESA = {
     motivo: "Con nuestra nueva plataforma tenemos menos costos operativos para mantenerla, y ese beneficio lo trasladamos a ti.",
     vigencia: "Los nuevos precios se aplican desde noviembre, con las nuevas membresías.",
     precios: [
-      { nombre: "Membresía VIP (mentoría)", antes: "US$ 19", ahora: "US$ 14,99", gs: "Gs. 88.000" },
+      { nombre: "Membresía VIP", antes: "US$ 19", ahora: "US$ 14,99", gs: "Gs. 88.000" },
       { nombre: "Scanner Elite + Membresía VIP", antes: "US$ 69", ahora: "US$ 49,99", gs: "Gs. 293.000" },
     ],
     nota: "", // texto pequeño opcional debajo de las tarjetas (vacío = no se muestra)
