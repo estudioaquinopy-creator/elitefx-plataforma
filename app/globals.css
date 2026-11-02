@@ -721,3 +721,6 @@ button.chip{cursor:pointer;font-family:inherit;line-height:1.2}
 .acceso-planes{display:flex;gap:12px;flex-wrap:wrap}
 .acceso-op .acceso-precio{margin-bottom:10px}
 .acceso-nota{max-width:none}
+
+/* Aviso de acceso completo: una sola opción visible (sin desplegable) */
+.acceso-fijo .acceso-tit{padding:14px 16px 10px;font:700 16px 'Sora',sans-serif}

@@ -3,7 +3,7 @@ import { ACCESO_COMPLETO, WHATSAPP_VENTAS } from "@/lib/sorpresa";
 const wa = (mensaje: string) => "https://wa.me/" + WHATSAPP_VENTAS + "?text=" + encodeURIComponent(mensaje);
 
 // Único aviso de Inicio para miembros gratuitos (y para quien está en prueba VIP): no se puede cerrar.
-// Dos desplegables: "Ya soy alumno" (solo paga la membresía) y "Soy nuevo" (acceso completo, pago único).
+// Cada persona ve solo su opción: gratuito alumno → membresías (14,99 / 49,99); gratuito nuevo (o prueba VIP) → acceso completo (429, pago único).
 export default function AvisoAccesoCompleto({ prueba, alumno }: { prueba?: string; alumno?: boolean }) {
   const dias = prueba ? Math.max(1, Math.ceil((new Date(prueba).getTime() - Date.now()) / 86400000)) : 0;
   return (
@@ -11,8 +11,9 @@ export default function AvisoAccesoCompleto({ prueba, alumno }: { prueba?: strin
       <div className="tag" style={{ marginTop: 0 }}>{prueba ? "⏳ Tu prueba VIP termina en " + dias + (dias === 1 ? " día" : " días") : "🔒 Hoy tienes acceso gratuito"}</div>
       <h2 style={{ margin: "4px 0 12px" }}>Obtén el acceso completo</h2>
       <div className="acceso-ops">
-        <details className="acceso-op" name="acceso" open={!!alumno}>
-          <summary>🎓 Ya soy alumno</summary>
+        {alumno ? (
+        <div className="acceso-op acceso-fijo">
+          <div className="acceso-tit">🎓 Ya fuiste alumno: reactiva tu membresía</div>
           <div className="acceso-cuerpo">
             <p style={{ margin: "0 0 10px" }}>{ACCESO_COMPLETO.alumnos.titulo}</p>
             <div className="acceso-planes">
@@ -26,9 +27,10 @@ export default function AvisoAccesoCompleto({ prueba, alumno }: { prueba?: strin
               ))}
             </div>
           </div>
-        </details>
-        <details className="acceso-op" name="acceso">
-          <summary>✨ Soy nuevo</summary>
+        </div>
+        ) : (
+        <div className="acceso-op acceso-fijo">
+          <div className="acceso-tit">✨ Acceso completo</div>
           <div className="acceso-cuerpo">
             <div className="acceso-precio">
               <span className="acceso-antes">{ACCESO_COMPLETO.antes}</span>
@@ -43,7 +45,8 @@ export default function AvisoAccesoCompleto({ prueba, alumno }: { prueba?: strin
             <small className="mu" style={{ display: "block", marginBottom: 12 }}>{ACCESO_COMPLETO.despues}</small>
             <a className="btn sd" href={wa(ACCESO_COMPLETO.mensaje)} target="_blank" rel="noopener noreferrer">Obtener acceso completo</a>
           </div>
-        </details>
+        </div>
+        )}
       </div>
     </section>
   );
