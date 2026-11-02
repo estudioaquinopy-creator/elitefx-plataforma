@@ -8,7 +8,11 @@ export default function AvisoAccesoCompleto() {
       <div style={{ flex: 1, minWidth: 220 }}>
         <div className="tag" style={{ marginTop: 0 }}>🔒 Hoy tienes acceso gratuito</div>
         <h2 style={{ margin: "4px 0 6px" }}>Obtén el acceso completo</h2>
-        <p style={{ margin: 0 }}>{ACCESO_COMPLETO.incluye}</p>
+        <ul className="acceso-lista">
+          <li><b>✅ De por vida:</b> {ACCESO_COMPLETO.deporVida}</li>
+          <li><b>⏳ Por 3 meses:</b> {ACCESO_COMPLETO.tresMeses}</li>
+        </ul>
+        <small className="mu">{ACCESO_COMPLETO.despues}</small>
       </div>
       <div className="acceso-precio">
         <b>{ACCESO_COMPLETO.precio}</b>

@@ -6,7 +6,9 @@ export const WHATSAPP_VENTAS = "595987174242"; // número al que escriben quiene
 export const ACCESO_COMPLETO = {
   precio: "US$ 429",
   gs: "Gs. 2.499.000",
-  incluye: "Cursos intermedio y avanzado, Data de nivel 2, sesiones en vivo, comunidad, journal y noticias.",
+  deporVida: "Curso intermedio, Curso avanzado, Data de nivel 2 y todos los cursos.",
+  tresMeses: "Scanner Elite, sesiones de trading en vivo (calendario), comunidad, journal y noticias.",
+  despues: "Después puedes mantener esos beneficios desde US$ 14,99 (Membresía VIP) o US$ 49,99 (Scanner Elite + Membresía VIP).",
   mensaje: "Hola, quiero obtener el acceso completo a ELITE FX (US$ 429 / Gs. 2.499.000).",
 };
 
