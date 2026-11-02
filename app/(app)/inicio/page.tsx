@@ -13,6 +13,7 @@ import { leerAjustes } from "@/lib/ajustes";
 import { mesDeRanking } from "@/lib/ranking";
 import { rankingLateral, type RankingLateral as DatosRanking } from "@/lib/rankingLateral";
 import TarjetaRanking from "@/components/TarjetaRanking";
+import AvisoAccesoCompleto from "@/components/AvisoAccesoCompleto";
 import AvisoSorpresa from "@/components/AvisoSorpresa";
 import CintaCotizaciones from "@/components/CintaCotizaciones";
 import { SORPRESA, WHATSAPP_VENTAS } from "@/lib/sorpresa";
@@ -103,7 +104,7 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
 
   return (
     <>
-      <AvisoSorpresa texto={SORPRESA.texto} hasta={SORPRESA.hasta} etiqueta={SORPRESA.etiqueta} anuncio={SORPRESA.anuncio} whatsapp={WHATSAPP_VENTAS} />
+      {perfil.plan === "gratis" && !perm.admin ? <AvisoAccesoCompleto /> : <AvisoSorpresa texto={SORPRESA.texto} hasta={SORPRESA.hasta} etiqueta={SORPRESA.etiqueta} anuncio={SORPRESA.anuncio} whatsapp={WHATSAPP_VENTAS} />}
       <h1>Hola, {primerNombre(perfil)}</h1>
       <p className="sub">Este es tu siguiente paso en la academia.</p>
       {!perfil.nombre && (

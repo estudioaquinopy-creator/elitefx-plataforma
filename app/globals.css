@@ -686,3 +686,11 @@ button.chip{cursor:pointer;font-family:inherit;line-height:1.2}
 .resp-acc{display:flex;gap:16px;flex-wrap:wrap;margin-top:6px}
 .resp-acc form{margin:0}
 .resp p{overflow-wrap:anywhere}
+
+/* Aviso fijo de acceso completo (miembros gratuitos) */
+.acceso-full{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:18px;padding:20px 22px;border-radius:18px;border:2px solid #ffc107;background:linear-gradient(135deg,rgba(255,193,7,.16),rgba(0,212,122,.08));box-shadow:0 0 0 4px rgba(255,193,7,.10),0 10px 30px rgba(255,193,7,.12)}
+.acceso-full h2{font-size:24px}
+.acceso-precio{display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.acceso-precio b{font:800 32px/1.1 'Sora',sans-serif;color:#ffc107}
+.acceso-precio small{color:var(--mu);margin-bottom:6px}
+@media (max-width:640px){.acceso-precio{width:100%}.acceso-precio .btn{width:100%}}
