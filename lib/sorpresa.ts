@@ -8,7 +8,6 @@ export const SORPRESA = {
   anuncio: {
     titulo: "¡Bajamos los precios!",
     motivo: "Con nuestra nueva plataforma tenemos menos costos operativos para mantenerla, y ese beneficio lo trasladamos a ti.",
-    vigencia: "Los nuevos precios se aplican desde noviembre, con las nuevas membresías.",
     precios: [
       { nombre: "Membresía VIP", antes: "US$ 19", ahora: "US$ 14,99", gs: "Gs. 88.000" },
       { nombre: "Scanner Elite + Membresía VIP", antes: "US$ 69", ahora: "US$ 49,99", gs: "Gs. 293.000" },

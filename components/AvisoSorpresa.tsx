@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 const dos = (n: number) => String(n).padStart(2, "0");
 
 type Precio = { nombre: string; antes: string; ahora: string; gs: string };
-type Anuncio = { titulo: string; motivo: string; vigencia: string; precios: Precio[]; nota: string; visibleDias: number };
+type Anuncio = { titulo: string; motivo: string; precios: Precio[]; nota: string; visibleDias: number };
 
 // Cabecera de Inicio: cuenta regresiva hasta una fecha. Al llegar la hora muestra el anuncio (precios nuevos) durante `visibleDias` días y luego desaparece.
 export default function AvisoSorpresa({ texto, hasta, etiqueta, anuncio, linkVip }: { texto: string; hasta: string; etiqueta: string; anuncio: Anuncio; linkVip?: string }) {
@@ -36,9 +36,8 @@ export default function AvisoSorpresa({ texto, hasta, etiqueta, anuncio, linkVip
             </div>
           ))}
         </div>
-        <p style={{ margin: "12px 0 0" }}><b>📅 {anuncio.vigencia}</b></p>
         {anuncio.nota && <small className="mu" style={{ display: "block", marginTop: 6 }}>{anuncio.nota}</small>}
-        {linkVip && <a className="btn sd s" href={linkVip} target="_blank" rel="noopener noreferrer" style={{ marginTop: 10 }}>Quiero aprovecharlo</a>}
+        {linkVip && <a className="btn sd s" href={linkVip} target="_blank" rel="noopener noreferrer" style={{ marginTop: 14 }}>Adquirir membresía</a>}
       </section>
     );
   }
