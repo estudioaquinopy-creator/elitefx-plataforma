@@ -141,7 +141,7 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
         {!admin && (
           <section className="box">
             <div className="hd"><h2>Registra tu cuenta de Liquid</h2>{liq && <span className={"pill " + (liq.estado === "aprobado" ? "ok" : "")}>{liq.estado === "aprobado" ? "✓ Confirmada" : liq.estado === "rechazado" ? "Rechazada" : "⏳ Pendiente"}</span>}</div>
-            <p className="mu">Si abriste tu cuenta con nuestro enlace, escribe aquí el número de tu cuenta de trading de Liquid (el que ves en tu cuenta, no tu correo; por ejemplo ECN_2617822_1). {esGratis
+            <p className="mu">Si abriste tu cuenta con nuestro enlace, escribe aquí el número de tu cuenta de trading de Liquid (el que ves en tu cuenta, no tu correo; por ejemplo 108451). {esGratis
                 ? <>Así confirmamos que eres cliente nuestro.</>
                 : <>Si eres cliente nuestro, sumas <b>{ptsLiq} puntos</b> en el ranking mensual (solo para miembros VIP) cuando confirmemos que hiciste un <b>depósito</b> o que ya <b>operas en cuenta real</b>.</>}</p>
             {bonoHasta && <p className="okmsg">Tu calendario VIP está activo hasta el <b>{bonoHasta}</b>.</p>}
@@ -160,7 +160,7 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
                     <div className="mu" style={{ marginTop: 4 }}>Si te equivocaste, puedes enviarla otra vez (sigue contando como tu cuenta de este mes).</div>
                   </div>
                 )}
-                <label>Número de tu cuenta de trading de Liquid<input name="cuenta" defaultValue={liq?.estado === "rechazado" ? liq.cuenta : ""} maxLength={30} required placeholder="Ej.: ECN_2617822_1" /></label>
+                <label>Número de tu cuenta de trading de Liquid<input name="cuenta" defaultValue={liq?.estado === "rechazado" ? liq.cuenta : ""} maxLength={30} required placeholder="Ej.: 108451" /></label>
                 <button className="btn s">{liq ? "Enviar de nuevo" : "Enviar mi cuenta"}</button>
               </form>
             )}

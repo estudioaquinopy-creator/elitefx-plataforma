@@ -52,7 +52,7 @@ export async function eliminarAliado(f: FormData) {
 export async function enviarLiquid(f: FormData) {
   const yo = await perfilActual();
   const id = String(f.get("cuenta") ?? "").replace(/\s+/g, "");
-  if (!/^[A-Za-z0-9_-]{4,30}$/.test(id)) fallo("/aliados", "Escribe el número de tu cuenta de trading de Liquid (por ejemplo ECN_2617822_1: de 4 a 30 caracteres, solo letras, números, guiones o guion bajo).");
+  if (!/^[A-Za-z0-9_-]{4,30}$/.test(id)) fallo("/aliados", "Escribe el número de tu cuenta de trading de Liquid (por ejemplo 108451: de 4 a 30 caracteres, solo letras, números, guiones o guion bajo).");
   const sb = createClient();
   const mes = hoyPY().slice(0, 7);
   const { data: ya } = await sb.from("liquid_cuentas").select("estado").eq("user_id", yo.id).eq("mes", mes).maybeSingle();
