@@ -19,7 +19,18 @@ export default function AvisoAccesoCompleto({ prueba }: { prueba?: string }) {
         <span className="acceso-antes">{ACCESO_COMPLETO.antes}</span>
         <b>{ACCESO_COMPLETO.precio}</b>
         <small>{ACCESO_COMPLETO.gs} · pago único</small>
+        <small className="acceso-nota">{ACCESO_COMPLETO.soloNuevos}</small>
         <a className="btn sd" href={href} target="_blank" rel="noopener noreferrer">Obtener acceso completo</a>
+      </div>
+      <div className="acceso-alumno">
+        <b>{ACCESO_COMPLETO.alumnos.titulo}</b>
+        <div className="acceso-planes">
+          {ACCESO_COMPLETO.alumnos.planes.map((p) => (
+            <a key={p.nombre} className="btn g" href={"https://wa.me/" + WHATSAPP_VENTAS + "?text=" + encodeURIComponent(p.mensaje)} target="_blank" rel="noopener noreferrer">
+              {p.nombre} · {p.ahora} <small style={{ marginLeft: 6, opacity: 0.8 }}>({p.gs})</small>
+            </a>
+          ))}
+        </div>
       </div>
     </section>
   );
