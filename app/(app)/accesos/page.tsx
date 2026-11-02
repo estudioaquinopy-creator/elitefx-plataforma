@@ -19,7 +19,9 @@ export default async function Accesos({ searchParams }: { searchParams: { q?: st
   const perfil = await perfilActual();
   if (perfil.rol !== "admin") notFound();
   try { await createClient().rpc("cerrar_pruebas_vencidas"); } catch { /* migración 0039 pendiente */ }
-  const { data } = await createClient().from("perfiles").select("id, nombre, email, plan, vence, rol, es_alumno").order("nombre");
+  let { data } = await createClient().from("perfiles").select("id, nombre, email, plan, vence, rol, es_alumno").order("nombre");
+  // Si aún no se corrió la migración 0041 (columna es_alumno), la lista igual se muestra.
+  if (!data) ({ data } = await createClient().from("perfiles").select("id, nombre, email, plan, vence, rol").order("nombre"));
   const todos = (data ?? []) as Fila[];
   // Estado de la cuenta (¿activó o solo tiene la invitación?) desde el sistema de acceso.
   const estadoCuenta: Record<string, string> = {};
