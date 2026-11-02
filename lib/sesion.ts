@@ -47,6 +47,16 @@ export const perfilActual = cache(async (): Promise<Perfil> => {
   return real;
 });
 
+// VIP vigente: administrador o plan VIP cuya fecha de vencimiento no pasó (sin fecha = no vencido). Con el VIP vencido solo quedan cursos y tutoriales.
+export function vipVigente(p: Perfil): boolean {
+  return p.rol === "admin" || (p.plan !== "gratis" && (!p.vence || p.vence >= hoyPY()));
+}
+
+// Plan que cuenta para el ranking: quien está en prueba o tiene el VIP vencido se trata como gratuito.
+export function planRanking(p: Perfil): "gratis" | "live_trading" | "scanner" {
+  return p.prueba_hasta || !vipVigente(p) ? "gratis" : p.plan;
+}
+
 export function esMiembro(p: Perfil): boolean {
   return p.rol === "admin" || p.plan !== "gratis";
 }
@@ -74,18 +84,19 @@ export const permisos = cache(async (p: Perfil): Promise<Permisos> => {
   const { data } = await createClient().from("accesos").select("seccion, concedido").eq("user_id", p.id);
   const ov = new Set(((data ?? []) as { seccion: string; concedido: boolean }[]).filter((a) => a.concedido).map((a) => a.seccion));
   const admin = p.rol === "admin";
-  const miembro = admin || p.plan !== "gratis";
+  const miembro = admin || p.plan !== "gratis"; // cualquier VIP (aunque haya vencido): cursos y tutoriales
+  const vip = vipVigente(p); // VIP vigente: calendario, comunidad, journal y noticias
   const vigente = !!p.vence && p.vence >= hoyPY();
   const bono = p.plan === "gratis" && !!p.calendario_bono_hasta && p.calendario_bono_hasta >= hoyPY();
   return {
     admin,
-    miembro,
+    miembro: vip,
     cursos: miembro || ov.has("cursos"),
     calendario: admin || (p.plan !== "gratis" && vigente) || bono || ov.has("calendario"),
     tutoriales: true, // libre también para el plan gratuito
-    comunidad: miembro || ov.has("comunidad"),
-    journal: miembro || ov.has("journal"),
-    noticias: miembro || ov.has("noticias"),
+    comunidad: vip || ov.has("comunidad"),
+    journal: vip || ov.has("journal"),
+    noticias: vip || ov.has("noticias"),
   };
 });
 

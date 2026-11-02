@@ -6,7 +6,7 @@ import { bienvenidaPendiente } from "@/lib/bienvenida";
 import { noticiasCercanas } from "@/lib/noticias";
 import AvisoNoticias from "@/components/AvisoNoticias";
 import { createClient } from "@/lib/supabase/server";
-import { perfilActual, permisos, primerNombre, ZONA, hoyPY } from "@/lib/sesion";
+import { perfilActual, permisos, primerNombre, ZONA, hoyPY, planRanking, vipVigente } from "@/lib/sesion";
 import { youtubeId } from "@/lib/youtube";
 import { bloqueosExamen } from "@/lib/examen";
 import { leerAjustes } from "@/lib/ajustes";
@@ -85,7 +85,7 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
   // Ranking del mes (si la migración del ranking aún no está corrida, la tarjeta no aparece).
   let ranking: DatosRanking | null = null;
   try {
-    ranking = await rankingLateral(perfil, perm, perfil.prueba_hasta ? "gratis" : perfil.plan, await leerAjustes(), async () => {
+    ranking = await rankingLateral(perfil, perm, planRanking(perfil), await leerAjustes(), async () => {
       const { data, error } = await supabase.rpc("ranking_mes", { p_mes: mesDeRanking(hoyPY()) });
       return error ? null : ((data ?? []) as { user_id: string; nombre: string; puntos: number }[]);
     }, hoyPY());
@@ -102,7 +102,7 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
 
   return (
     <>
-      {!perm.admin && (perfil.plan === "gratis" || !!perfil.prueba_hasta) && <AvisoAccesoCompleto prueba={perfil.prueba_hasta ?? undefined} />}
+      {!perm.admin && (perfil.plan === "gratis" || !!perfil.prueba_hasta || !vipVigente(perfil)) && <AvisoAccesoCompleto prueba={perfil.prueba_hasta ?? undefined} vencio={perfil.plan !== "gratis" && !perfil.prueba_hasta && !vipVigente(perfil) ? perfil.vence ?? undefined : undefined} />}
       <h1>Hola, {primerNombre(perfil)}</h1>
       <p className="sub">Este es tu siguiente paso en la academia.</p>
       {!perfil.nombre && (

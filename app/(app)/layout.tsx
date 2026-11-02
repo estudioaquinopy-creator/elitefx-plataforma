@@ -4,7 +4,7 @@ import ProgresoNav from "@/components/ProgresoNav";
 import Shell from "@/components/Shell";
 import InactividadAuto from "@/components/InactividadAuto";
 import { createClient } from "@/lib/supabase/server";
-import { perfilActual, permisos } from "@/lib/sesion";
+import { perfilActual, permisos, vipVigente } from "@/lib/sesion";
 import { modoAlumno } from "./actions";
 import { ocurrencias, type Fijo } from "@/lib/horario";
 import { hoyPY } from "@/lib/sesion";
@@ -104,13 +104,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
   // Referidos: solo VIP (y el admin), desde la fecha de activación (antes, solo el admin lo ve como vista previa).
   // Antes de la fecha, el miembro VIP lo ve en el menú pero sin enlace (con la fecha en pequeño).
-  if (perfil.rol === "admin" || (perfil.plan !== "gratis" && !perfil.prueba_hasta)) {
+  if (perfil.rol === "admin" || (vipVigente(perfil) && !perfil.prueba_hasta)) {
     const pos = items.findIndex((i) => i.href === "/noticias") + 1;
     const ya = referidosActivos(hoyPY(), aj, perfil.rol === "admin");
     items.splice(pos, 0, { href: "/referidos", label: "Referidos", lock: false, soon: ya ? undefined : fechaReferidos(aj).corto, icon: "M16 11a3 3 0 1 0 0-6a3 3 0 0 0 0 6zM8 12a3 3 0 1 0 0-6a3 3 0 0 0 0 6zM2 20a6 6 0 0 1 12 0M14 14.5A6 6 0 0 1 22 20" });
   }
   // Agendar visita: solo VIP y administrador (después de Noticias; Referidos queda debajo).
-  if ((perfil.rol === "admin" && perfil.vista !== "gratis") || (perfil.plan !== "gratis" && !perfil.prueba_hasta)) {
+  if ((perfil.rol === "admin" && perfil.vista !== "gratis") || (vipVigente(perfil) && !perfil.prueba_hasta)) {
     const pos = items.findIndex((i) => i.href === "/noticias") + 1; // justo después de Noticias, por encima de Referidos
     items.splice(pos, 0, { href: "/visitas", label: perfil.rol === "admin" ? "Visitas" : "Agendar visita", lock: false, icon: "M3 21V8l9-5l9 5v13M9 21v-6h6v6M7 11h2M15 11h2" });
   }

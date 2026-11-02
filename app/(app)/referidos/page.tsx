@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { perfilActual, hoyPY } from "@/lib/sesion";
+import { perfilActual, hoyPY, vipVigente } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { leerAjustes } from "@/lib/ajustes";
 import { referidosActivos, puntosReferidos, enlaceReferido } from "@/lib/referidos";
@@ -15,7 +15,7 @@ export default async function Referidos() {
   const aj = await leerAjustes();
   const adminReal = perfil.rol === "admin"; // en modo alumno se comporta como un alumno real (sin atajo)
   const activo = referidosActivos(hoyPY(), aj, adminReal);
-  const vip = perfil.plan !== "gratis" || adminReal;
+  const vip = (vipVigente(perfil) && !perfil.prueba_hasta) || adminReal;
   const pts = puntosReferidos(aj);
 
   if (!activo) {
@@ -26,7 +26,7 @@ export default async function Referidos() {
       <>
         <Link href="/comunidad/ranking" className="back">← Ranking</Link>
         <h1>Referidos</h1>
-        <section className="box"><div className="tag">Solo miembros VIP</div><p className="mu">Los miembros VIP pueden invitar amigos con su enlace personal y ganar puntos en el ranking mensual.</p></section>
+        <section className="box"><div className="tag">{perfil.plan !== "gratis" && !perfil.prueba_hasta ? "Tu membresía VIP venció" : "Solo miembros VIP"}</div><p className="mu">Los miembros VIP pueden invitar amigos con su enlace personal y ganar puntos en el ranking mensual.</p></section>
       </>
     );
   }

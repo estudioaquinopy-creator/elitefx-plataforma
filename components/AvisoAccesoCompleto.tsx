@@ -4,14 +4,14 @@ const wa = (mensaje: string) => "https://wa.me/" + WHATSAPP_VENTAS + "?text=" + 
 
 // Único aviso de Inicio para miembros gratuitos (y para quien está en prueba VIP): no se puede cerrar.
 // Dos desplegables: "Ya soy alumno" (solo paga la membresía) y "Soy nuevo" (acceso completo, pago único).
-export default function AvisoAccesoCompleto({ prueba }: { prueba?: string }) {
+export default function AvisoAccesoCompleto({ prueba, vencio }: { prueba?: string; vencio?: string }) {
   const dias = prueba ? Math.max(1, Math.ceil((new Date(prueba).getTime() - Date.now()) / 86400000)) : 0;
   return (
     <section className="acceso-full" role="status">
-      <div className="tag" style={{ marginTop: 0 }}>{prueba ? "⏳ Tu prueba VIP termina en " + dias + (dias === 1 ? " día" : " días") : "🔒 Hoy tienes acceso gratuito"}</div>
+      <div className="tag" style={{ marginTop: 0 }}>{prueba ? "⏳ Tu prueba VIP termina en " + dias + (dias === 1 ? " día" : " días") : vencio ? "⏳ Tu membresía VIP venció el " + vencio.slice(8, 10) + "/" + vencio.slice(5, 7) + " · solo tienes cursos y tutoriales" : "🔒 Hoy tienes acceso gratuito"}</div>
       <h2 style={{ margin: "4px 0 12px" }}>Obtén el acceso completo</h2>
       <div className="acceso-ops">
-        <details className="acceso-op" name="acceso">
+        <details className="acceso-op" name="acceso" open={!!vencio}>
           <summary>🎓 Ya soy alumno</summary>
           <div className="acceso-cuerpo">
             <p style={{ margin: "0 0 10px" }}>{ACCESO_COMPLETO.alumnos.titulo}</p>
