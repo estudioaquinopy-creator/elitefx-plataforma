@@ -18,6 +18,7 @@ const ESTADOS = [["", "Todos"], ["activo", "Activo"], ["porvencer", "Por vencer"
 export default async function Accesos({ searchParams }: { searchParams: { q?: string; e?: string; c?: string; p?: string; ok?: string; error?: string } }) {
   const perfil = await perfilActual();
   if (perfil.rol !== "admin") notFound();
+  try { await createClient().rpc("cerrar_pruebas_vencidas"); } catch { /* migración 0039 pendiente */ }
   const { data } = await createClient().from("perfiles").select("id, nombre, email, plan, vence, rol").order("nombre");
   const todos = (data ?? []) as Fila[];
   // Estado de la cuenta (¿activó o solo tiene la invitación?) desde el sistema de acceso.
@@ -62,7 +63,7 @@ export default async function Accesos({ searchParams }: { searchParams: { q?: st
       {searchParams.ok && <p className="okmsg">{searchParams.ok}</p>}
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
 
-      <p style={{ margin: "0 0 12px" }}><Link className="btn g s" href="/accesos/importar">Importar alumnos desde CSV</Link> <Link className="btn g s" href="/accesos/liquid">Cuentas de Liquid</Link> <Link className="btn g s" href="/accesos/registro">Registro de acciones</Link></p>
+      <p style={{ margin: "0 0 12px" }}><Link className="btn g s" href="/accesos/importar">Importar alumnos desde CSV</Link> <Link className="btn g s" href="/accesos/liquid">Cuentas de Liquid</Link> <Link className="btn g s" href="/accesos/invitaciones">Invitaciones de prueba</Link> <Link className="btn g s" href="/accesos/registro">Registro de acciones</Link></p>
 
       {anclados.length > 0 && (
         <section className="box">

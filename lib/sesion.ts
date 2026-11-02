@@ -12,6 +12,7 @@ export type Perfil = {
   vence: string | null;
   telefono: string | null;
   avatar_url?: string | null;
+  prueba_hasta?: string | null; // prueba VIP por enlace de invitación (vuelve a gratuito al vencer)
   calendario_bono_hasta?: string | null; // calendario gratis por tener cuenta de Liquid (miembros gratuitos)
   notif_leidas_at: string | null;
   vista?: "gratis" | "miembro"; // el administrador está viendo la plataforma como alumno
@@ -32,6 +33,11 @@ export const perfilActual = cache(async (): Promise<Perfil> => {
   const { data } = await supabase.from("perfiles").select("*").eq("id", user.id).single();
   if (!data) redirect("/login");
   const real = data as Perfil;
+  // Prueba VIP vencida: vuelve a gratuito (se devuelve ya como gratuito y se actualiza la base).
+  if (real.prueba_hasta && real.rol !== "admin" && new Date(real.prueba_hasta).getTime() <= Date.now()) {
+    try { await supabase.rpc("cerrar_pruebas_vencidas"); } catch { /* se reintenta en la próxima visita */ }
+    return { ...real, plan: "gratis", vence: null, prueba_hasta: null };
+  }
   // Modo alumno: el administrador ve la plataforma tal como la ve un alumno (miembro o gratis).
   const vista = cookies().get("ver_como")?.value;
   if (real.rol === "admin" && (vista === "miembro" || vista === "gratis")) {

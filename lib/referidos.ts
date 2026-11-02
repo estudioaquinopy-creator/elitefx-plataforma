@@ -27,4 +27,5 @@ export function puntosReferidos(ajustes: Record<string, string>) {
   return { registro: num(ajustes.ranking_pts_ref, 5), vip: num(ajustes.ranking_pts_ref_vip, 10), tope: num(ajustes.ranking_ref_tope, 10) };
 }
 
+export const enlacePrueba = (codigo: string) => DOMINIO + "/registro?prueba=" + encodeURIComponent(codigo);
 export const enlaceReferido = (codigo: string) => DOMINIO + "/registro?ref=" + encodeURIComponent(codigo);

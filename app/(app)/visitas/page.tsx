@@ -16,7 +16,7 @@ export default async function Visitas({ searchParams }: { searchParams: { ok?: s
   const sb = createClient();
   const hoy = hoyPY();
   const admin = perfil.rol === "admin"; // en modo alumno se comporta como alumno (perfilActual cambia el rol)
-  const vip = admin || perfil.plan !== "gratis";
+  const vip = admin || (perfil.plan !== "gratis" && !perfil.prueba_hasta);
   const msgs = (
     <>
       {searchParams.ok && <p className="okmsg">{searchParams.ok}</p>}
@@ -28,7 +28,7 @@ export default async function Visitas({ searchParams }: { searchParams: { ok?: s
     return (
       <>
         <h1>Agendar visita</h1>
-        <section className="box"><div className="tag">Solo miembros VIP</div><p className="mu">Los miembros VIP pueden visitar nuestras oficinas para resolver dudas, cargar brokers, configurar MetaTrader o revisar la estrategia.</p></section>
+        <section className="box"><div className="tag">{perfil.prueba_hasta ? "No incluido en la prueba" : "Solo miembros VIP"}</div><p className="mu">{perfil.prueba_hasta ? "Las visitas a la oficina no están incluidas en la prueba gratuita. " : ""}Los miembros VIP pueden visitar nuestras oficinas para resolver dudas, cargar brokers, configurar MetaTrader o revisar la estrategia.</p></section>
       </>
     );
   }

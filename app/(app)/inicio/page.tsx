@@ -87,7 +87,7 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
   // Ranking del mes (si la migración del ranking aún no está corrida, la tarjeta no aparece).
   let ranking: DatosRanking | null = null;
   try {
-    ranking = await rankingLateral(perfil, perm, perfil.plan, await leerAjustes(), async () => {
+    ranking = await rankingLateral(perfil, perm, perfil.prueba_hasta ? "gratis" : perfil.plan, await leerAjustes(), async () => {
       const { data, error } = await supabase.rpc("ranking_mes", { p_mes: mesDeRanking(hoyPY()) });
       return error ? null : ((data ?? []) as { user_id: string; nombre: string; puntos: number }[]);
     }, hoyPY());
@@ -104,7 +104,7 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
 
   return (
     <>
-      {perfil.plan === "gratis" && !perm.admin ? <AvisoAccesoCompleto /> : <AvisoSorpresa texto={SORPRESA.texto} hasta={SORPRESA.hasta} etiqueta={SORPRESA.etiqueta} anuncio={SORPRESA.anuncio} whatsapp={WHATSAPP_VENTAS} />}
+      {perfil.prueba_hasta && !perm.admin ? <AvisoAccesoCompleto prueba={perfil.prueba_hasta} /> : perfil.plan === "gratis" && !perm.admin ? <AvisoAccesoCompleto /> : <AvisoSorpresa texto={SORPRESA.texto} hasta={SORPRESA.hasta} etiqueta={SORPRESA.etiqueta} anuncio={SORPRESA.anuncio} whatsapp={WHATSAPP_VENTAS} />}
       <h1>Hola, {primerNombre(perfil)}</h1>
       <p className="sub">Este es tu siguiente paso en la academia.</p>
       {!perfil.nombre && (

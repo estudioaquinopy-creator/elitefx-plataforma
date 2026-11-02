@@ -20,7 +20,7 @@ const PUESTOS = ["Primer puesto", "Segundo puesto", "Tercer puesto"];
 export default async function Ranking({ searchParams }: { searchParams: { m?: string; error?: string } }) {
   const perfil = await perfilActual();
   const perm = await permisos(perfil);
-  const gratis = !perm.admin && perfil.plan === "gratis"; // los miembros gratuitos pueden ver el ranking, pero no participan
+  const gratis = !perm.admin && (perfil.plan === "gratis" || !!perfil.prueba_hasta); // los miembros gratuitos pueden ver el ranking, pero no participan
   const sb = createClient();
   const aj = await leerAjustes();
   // El ranking en curso es el del mes cuyo último viernes todavía no pasó (desde el sábado ya corre el del mes siguiente).

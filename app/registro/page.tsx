@@ -20,6 +20,20 @@ export default function Registro() {
     setVerCodigo(new Date() >= new Date(REFERIDOS_DESDE + "T00:00:00-03:00"));
     try { const r = new URLSearchParams(window.location.search).get("ref"); if (r) setCodigo(r.trim().toUpperCase().slice(0, 20)); } catch { /* sin enlace de referido */ }
   }, []);
+  // Enlace de prueba VIP (/registro?prueba=CÓDIGO): se comprueba si sigue vigente y cuántos días da.
+  const [prueba, setPrueba] = useState("");
+  const [infoPrueba, setInfoPrueba] = useState<{ valida: boolean; dias: number } | null>(null);
+  useEffect(() => {
+    try {
+      const p = (new URLSearchParams(window.location.search).get("prueba") ?? "").trim().toUpperCase().slice(0, 20);
+      if (!p) return;
+      setPrueba(p);
+      createClient().rpc("prueba_info", { p_codigo: p }).then(({ data }) => {
+        const f = (data as { valida: boolean; dias: number }[] | null)?.[0];
+        setInfoPrueba(f ? { valida: true, dias: f.dias } : { valida: false, dias: 0 });
+      }, () => setInfoPrueba({ valida: false, dias: 0 }));
+    } catch { /* sin enlace de prueba */ }
+  }, []);
   const [err, setErr] = useState("");
   const [listo, setListo] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -37,7 +51,7 @@ export default function Registro() {
     if (verCodigo && cod && !/^EFX-[A-Z0-9]{6}$/.test(cod)) return setErr("El código de referido no es válido (ejemplo: EFX-1A2B3C). Déjalo vacío si no tienes uno.");
     setBusy(true);
     const sb = createClient();
-    const { data, error } = await sb.auth.signUp({ email: email.trim(), password: pw, options: { data: { nombre: n, telefono: t, ...(cod ? { codigo_ref: cod } : {}) } } });
+    const { data, error } = await sb.auth.signUp({ email: email.trim(), password: pw, options: { data: { nombre: n, telefono: t, ...(cod ? { codigo_ref: cod } : {}), ...(prueba ? { codigo_prueba: prueba } : {}) } } });
     if (error) {
       setBusy(false);
       const m = error.message.toLowerCase();
@@ -69,6 +83,8 @@ export default function Registro() {
         ) : (
           <>
             <p className="sub">Accede al Curso básico y a nuestro broker recomendado.</p>
+            {infoPrueba?.valida && <p className="okmsg">🎁 ¡Tienes una invitación! Al crear tu cuenta recibes <b>{infoPrueba.dias} días de acceso VIP</b> gratis.</p>}
+            {infoPrueba && !infoPrueba.valida && <p className="err">Esta invitación ya venció o se completó el cupo. Puedes crear tu cuenta gratuita igualmente.</p>}
             <label>Nombre completo<input autoComplete="name" required value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre y apellido" /></label>
             <label>Teléfono / WhatsApp<input type="tel" autoComplete="tel" required value={tel} onChange={(e) => setTel(e.target.value)} placeholder="+595 981 123456" /></label>
             <label>Correo electrónico<input type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></label>
