@@ -8,7 +8,7 @@ import AnclarJournal from "@/components/AnclarJournal";
 
 export const dynamic = "force-dynamic";
 
-type Fila = { id: string; nombre: string; email: string; plan: string; vence: string | null; rol: string };
+type Fila = { id: string; nombre: string; email: string; plan: string; vence: string | null; rol: string; es_alumno?: boolean };
 const POR_PAGINA = 40;
 const PLAN_TXT: Record<string, string> = { gratis: "Gratuito", live_trading: "VIP", scanner: "VIP" };
 const CUENTAS = [["", "Todas"], ["pendiente", "Invitación pendiente"], ["sin", "Sin ingresar"], ["activa", "Activadas"]];
@@ -19,7 +19,7 @@ export default async function Accesos({ searchParams }: { searchParams: { q?: st
   const perfil = await perfilActual();
   if (perfil.rol !== "admin") notFound();
   try { await createClient().rpc("cerrar_pruebas_vencidas"); } catch { /* migración 0039 pendiente */ }
-  const { data } = await createClient().from("perfiles").select("id, nombre, email, plan, vence, rol").order("nombre");
+  const { data } = await createClient().from("perfiles").select("id, nombre, email, plan, vence, rol, es_alumno").order("nombre");
   const todos = (data ?? []) as Fila[];
   // Estado de la cuenta (¿activó o solo tiene la invitación?) desde el sistema de acceso.
   const estadoCuenta: Record<string, string> = {};

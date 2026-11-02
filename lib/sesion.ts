@@ -13,6 +13,7 @@ export type Perfil = {
   telefono: string | null;
   avatar_url?: string | null;
   prueba_hasta?: string | null; // prueba VIP por enlace de invitación (vuelve a gratuito al vencer)
+  es_alumno?: boolean; // fue VIP alguna vez: si hoy es gratuito, es "gratuito alumno" (todos los cursos)
   calendario_bono_hasta?: string | null; // calendario gratis por tener cuenta de Liquid (miembros gratuitos)
   notif_leidas_at: string | null;
   vista?: "gratis" | "miembro"; // el administrador está viendo la plataforma como alumno
@@ -38,16 +39,21 @@ export const perfilActual = cache(async (): Promise<Perfil> => {
     try { await supabase.rpc("cerrar_pruebas_vencidas"); } catch { /* se reintenta en la próxima visita */ }
     return { ...real, plan: "gratis", vence: null, prueba_hasta: null };
   }
+  // VIP vencido: pasa a gratuito alumno (se devuelve ya así y se actualiza la base).
+  if (real.rol !== "admin" && real.plan !== "gratis" && !real.prueba_hasta && real.vence && real.vence < hoyPY()) {
+    try { await supabase.rpc("cerrar_pruebas_vencidas"); } catch { /* se reintenta en la próxima visita */ }
+    return { ...real, plan: "gratis", es_alumno: true };
+  }
   // Modo alumno: el administrador ve la plataforma tal como la ve un alumno (miembro o gratis).
   const vista = cookies().get("ver_como")?.value;
   if (real.rol === "admin" && (vista === "miembro" || vista === "gratis")) {
     const lim = new Date(); lim.setDate(lim.getDate() + 30);
-    return { ...real, rol: "alumno", plan: vista === "gratis" ? "gratis" : "live_trading", vence: vista === "gratis" ? null : lim.toISOString().slice(0, 10), vista };
+    return { ...real, rol: "alumno", plan: vista === "gratis" ? "gratis" : "live_trading", vence: vista === "gratis" ? null : lim.toISOString().slice(0, 10), es_alumno: false, vista };
   }
   return real;
 });
 
-// VIP vigente: administrador o plan VIP cuya fecha de vencimiento no pasó (sin fecha = no vencido). Con el VIP vencido solo quedan cursos y tutoriales.
+// VIP vigente: administrador o plan VIP cuya fecha de vencimiento no pasó (sin fecha = no vencido). Al vencer pasa a gratuito alumno (solo cursos y tutoriales).
 export function vipVigente(p: Perfil): boolean {
   return p.rol === "admin" || (p.plan !== "gratis" && (!p.vence || p.vence >= hoyPY()));
 }
@@ -58,7 +64,7 @@ export function planRanking(p: Perfil): "gratis" | "live_trading" | "scanner" {
 }
 
 export function esMiembro(p: Perfil): boolean {
-  return p.rol === "admin" || p.plan !== "gratis";
+  return p.rol === "admin" || p.plan !== "gratis" || !!p.es_alumno;
 }
 
 // Primer nombre para saludar; si no hay nombre, la parte del correo antes de la @.
@@ -84,7 +90,7 @@ export const permisos = cache(async (p: Perfil): Promise<Permisos> => {
   const { data } = await createClient().from("accesos").select("seccion, concedido").eq("user_id", p.id);
   const ov = new Set(((data ?? []) as { seccion: string; concedido: boolean }[]).filter((a) => a.concedido).map((a) => a.seccion));
   const admin = p.rol === "admin";
-  const miembro = admin || p.plan !== "gratis"; // cualquier VIP (aunque haya vencido): cursos y tutoriales
+  const miembro = admin || p.plan !== "gratis" || !!p.es_alumno; // VIP o gratuito alumno: todos los cursos y tutoriales
   const vip = vipVigente(p); // VIP vigente: calendario, comunidad, journal y noticias
   const vigente = !!p.vence && p.vence >= hoyPY();
   const bono = p.plan === "gratis" && !!p.calendario_bono_hasta && p.calendario_bono_hasta >= hoyPY();
@@ -103,8 +109,8 @@ export const permisos = cache(async (p: Perfil): Promise<Permisos> => {
 export type Estado = { clave: "gratis" | "sin" | "activo" | "porvencer" | "vencido"; texto: string };
 
 // Estado de la membresía según la fecha de vencimiento del calendario.
-export function estadoMembresia(p: { plan: string; vence: string | null }): Estado {
-  if (p.plan === "gratis") return { clave: "gratis", texto: "Gratis" };
+export function estadoMembresia(p: { plan: string; vence: string | null; es_alumno?: boolean }): Estado {
+  if (p.plan === "gratis") return { clave: "gratis", texto: p.es_alumno ? "Gratuito alumno" : "Gratuito nuevo" };
   if (!p.vence) return { clave: "sin", texto: "Sin calendario" };
   const hoy = hoyPY();
   if (p.vence < hoy) return { clave: "vencido", texto: "Vencido" };

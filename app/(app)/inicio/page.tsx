@@ -38,7 +38,7 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
   const prog = (pr ?? []) as { leccion_id: string; completada_at: string }[];
   const hechas = new Set(prog.map((x) => x.leccion_id));
   let bloqExamen: Record<string, { id: string; nombre: string }> = {};
-  if (!perm.admin) { try { bloqExamen = await bloqueosExamen(supabase, perfil.id, cursos, perfil.plan === "gratis"); } catch { bloqExamen = {}; } }
+  if (!perm.admin) { try { bloqExamen = await bloqueosExamen(supabase, perfil.id, cursos, perfil.plan === "gratis" && !perfil.es_alumno); } catch { bloqExamen = {}; } }
 
   // "Continúa donde lo dejaste": la lección que sigue a la última completada, o la primera disponible.
   let siguiente: Leccion | undefined;
@@ -102,7 +102,7 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
 
   return (
     <>
-      {!perm.admin && (perfil.plan === "gratis" || !!perfil.prueba_hasta || !vipVigente(perfil)) && <AvisoAccesoCompleto prueba={perfil.prueba_hasta ?? undefined} vencio={perfil.plan !== "gratis" && !perfil.prueba_hasta && !vipVigente(perfil) ? perfil.vence ?? undefined : undefined} />}
+      {!perm.admin && (perfil.plan === "gratis" || !!perfil.prueba_hasta) && <AvisoAccesoCompleto prueba={perfil.prueba_hasta ?? undefined} alumno={!!perfil.es_alumno} />}
       <h1>Hola, {primerNombre(perfil)}</h1>
       <p className="sub">Este es tu siguiente paso en la academia.</p>
       {!perfil.nombre && (

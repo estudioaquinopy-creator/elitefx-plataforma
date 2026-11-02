@@ -40,7 +40,7 @@ export default async function CursoPage({ params, searchParams }: { params: { id
   const aprobE = (apE ?? [])[0] as { aciertos: number; total: number } | undefined;
   const completo = lecs.length > 0 && lecs.every((l) => hechas.has(l.id));
 
-  if (!admin && lecs.length === 0 && !curso.gratis && perfil.plan === "gratis") {
+  if (!admin && lecs.length === 0 && !curso.gratis && perfil.plan === "gratis" && !perfil.es_alumno) {
     return (
       <>
         <h1>{curso.nombre}</h1>

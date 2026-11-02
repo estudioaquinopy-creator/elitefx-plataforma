@@ -45,11 +45,20 @@ export async function cambiarPlan(f: FormData) {
   await soloAdmin();
   const id = String(f.get("id") ?? "");
   const ruta = "/accesos/" + id;
-  const plan = String(f.get("plan") ?? "");
+  let plan = String(f.get("plan") ?? "");
+  // "gratis_alumno" = plan gratuito de quien ya fue VIP (conserva todos los cursos).
+  const alumno = plan === "gratis_alumno";
+  if (alumno) plan = "gratis";
   if (!PLANES.includes(plan)) fallo(ruta, "Plan no válido.");
   const act = await cargar(id);
   if (!act) fallo(ruta, "No se encontró la persona.");
-  await actualizar(id, plan, act.vence, ruta, "Plan actualizado.");
+  if (plan === "gratis") {
+    const adm = clienteAdmin();
+    if (!adm) fallo(ruta, "Falta la clave de servicio (SUPABASE_SERVICE_ROLE_KEY) en Vercel.");
+    const { error } = await adm.from("perfiles").update({ es_alumno: alumno }).eq("id", id);
+    if (error) fallo(ruta, "No se pudo guardar el tipo de acceso: " + error.message + " (¿corriste la migración 0041?)");
+  }
+  await actualizar(id, plan, act.vence, ruta, alumno ? "Plan actualizado: gratuito alumno." : "Plan actualizado.");
 }
 
 // Suma 1, 2 o 3 meses de calendario, contando desde hoy o desde el vencimiento actual si todavía no pasó.
