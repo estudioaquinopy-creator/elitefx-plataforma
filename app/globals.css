@@ -704,3 +704,20 @@ button.chip{cursor:pointer;font-family:inherit;line-height:1.2}
 .acceso-planes{display:flex;gap:10px;flex-wrap:wrap}
 .acceso-planes .btn{width:auto;height:auto;min-height:42px;padding:8px 16px;text-align:center}
 @media (max-width:640px){.acceso-planes .btn{width:100%}}
+
+/* Aviso de acceso completo: dos desplegables (Ya soy alumno / Soy nuevo) */
+.acceso-full{display:block}
+.acceso-ops{display:flex;flex-direction:column;gap:10px}
+.acceso-op{border:1px solid rgba(255,193,7,.35);border-radius:14px;background:rgba(0,0,0,.18)}
+.acceso-op[open]{border-color:#ffc107;background:rgba(0,0,0,.28)}
+.acceso-op summary{cursor:pointer;list-style:none;padding:14px 16px;font:700 16px 'Sora',sans-serif;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.acceso-op summary::-webkit-details-marker{display:none}
+.acceso-op summary::after{content:"▾";color:#ffc107;transition:transform .15s}
+.acceso-op[open] summary::after{transform:rotate(180deg)}
+.acceso-cuerpo{padding:0 16px 16px}
+.acceso-plan{display:flex;flex-direction:column;align-items:flex-start;gap:4px;flex:1;min-width:220px;padding:14px;border-radius:12px;background:var(--sf2);border:1px solid var(--bd)}
+.acceso-pr{font:800 26px/1.1 'Sora',sans-serif;color:#ffc107}
+.acceso-plan .btn{margin-top:6px}
+.acceso-planes{display:flex;gap:12px;flex-wrap:wrap}
+.acceso-op .acceso-precio{margin-bottom:10px}
+.acceso-nota{max-width:none}
