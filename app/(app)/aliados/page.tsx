@@ -45,9 +45,9 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
   const anteriores = todasLiq.filter((x) => x.mes !== hoyPY().slice(0, 7) && x.estado === "aprobado");
   const ptsLiq = puntosLiquid(aj.ranking_pts_liquid);
   const ptsLiqR = puntosLiquidReal(aj.ranking_pts_liquid_real);
-  // Miembros gratuitos: en vez de puntos del ranking reciben días de calendario VIP (7 por cuenta confirmada y 7 más si opera en real).
+  // Los puntos del ranking son solo para miembros VIP (el regalo de calendario para gratuitos está desactivado).
   const esGratis = perfil.plan === "gratis";
-  const extraTxt = esGratis ? "7 días más de calendario VIP" : ptsLiqR + " puntos extra";
+  void ptsLiqR;
   const bonoHasta = esGratis && perfil.calendario_bono_hasta && perfil.calendario_bono_hasta >= hoyPY() ? new Date(perfil.calendario_bono_hasta + "T00:00:00").toLocaleDateString("es-PY") : "";
 
   // Tutoriales del broker: se buscan en Tutoriales por el título (crear/abrir cuenta, depositar, retirar), mejor si están en la categoría "Broker".
@@ -142,22 +142,21 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
           <section className="box">
             <div className="hd"><h2>Registra tu cuenta de Liquid</h2>{liq && <span className={"pill " + (liq.estado === "aprobado" ? "ok" : "")}>{liq.estado === "aprobado" ? "✓ Confirmada" : liq.estado === "rechazado" ? "Rechazada" : "⏳ Pendiente"}</span>}</div>
             <p className="mu">Si abriste tu cuenta con nuestro enlace, escribe aquí el número de tu cuenta de trading de Liquid (el que ves en tu cuenta, no tu correo; por ejemplo ECN_2617822_1). {esGratis
-                ? <>Si eres cliente nuestro, ganas <b>7 días de calendario VIP</b> y otros <b>7 días</b> si se detecta que operas en cuenta real.</>
+                ? <>Así confirmamos que eres cliente nuestro.</>
                 : <>Si eres cliente nuestro, sumas <b>{ptsLiq} puntos</b> en el ranking mensual (solo para miembros VIP).</>}</p>
             {bonoHasta && <p className="okmsg">Tu calendario VIP está activo hasta el <b>{bonoHasta}</b>.</p>}
             <p className="mu"><b>Solo puedes registrar una cuenta de trading por mes.</b></p>
             {liq?.estado === "aprobado" ? (
               <>
-                <p className="okmsg">Tu cuenta <b>{liq.cuenta}</b> fue confirmada. ¡Gracias!{Number(liq.reward) > 0 ? " Detectamos que operas en cuenta real: " + (esGratis ? "ya tienes tus 7 días extra de calendario VIP." : "tus puntos ya están confirmados.") + "" : ""}</p>
-                {esGratis && Number(liq.reward) <= 0 && <p className="mu">Si operas en cuenta real con esta cuenta, lo detectamos automáticamente y ganas <b>{extraTxt}</b> (se actualiza cada día).</p>}
-              </>
+                <p className="okmsg">Tu cuenta <b>{liq.cuenta}</b> fue confirmada. ¡Gracias!{!esGratis ? " Tus puntos ya están confirmados." : ""}</p>
+                              </>
             ) : (
               <form action={enviarLiquid} className="fm">
                 {liq?.estado === "rechazado" && <p className="alerta">No pudimos confirmar ese número de cuenta{liq.nota ? ": " + liq.nota : ""}. Puedes corregirlo y enviarlo de nuevo.</p>}
                 {liq?.estado === "pendiente" && (
                   <div className="alerta" style={{ borderColor: "var(--ac)" }}>
                     <b>⏳ Pendiente de confirmación</b> · cuenta <b>{liq.cuenta}</b>
-                    <div className="mu" style={{ marginTop: 4 }}>Comparamos tu cuenta con la lista de clientes de Liquid, que se actualiza cada día: puede tardar en promedio <b>24 horas</b> en confirmarse.{esGratis && <> Si tu cuenta opera en real, también ganarás <b>{extraTxt}</b>.</>}</div>
+                    <div className="mu" style={{ marginTop: 4 }}>Comparamos tu cuenta con la lista de clientes de Liquid, que se actualiza cada día: puede tardar en promedio <b>24 horas</b> en confirmarse.</div>
                     <div className="mu" style={{ marginTop: 4 }}>Si te equivocaste, puedes enviarla otra vez (sigue contando como tu cuenta de este mes).</div>
                   </div>
                 )}
@@ -171,12 +170,10 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
                 {anteriores.map((x) => (
                   <div key={x.mes} className="ses">
                     <div style={{ flex: 1 }}><b>{x.cuenta}</b><small className="mu" style={{ display: "block" }}>Registrada en {x.mes}</small></div>
-                    {esGratis
-                      ? <span className={"pill " + (Number(x.reward) > 0 ? "ok" : "")}>{Number(x.reward) > 0 ? "✓ Opera en real" : "Aún sin operar en real"}</span>
-                      : <span className="pill ok">✓ Confirmada</span>}
+                    <span className="pill ok">✓ Confirmada</span>
                   </div>
                 ))}
-                {esGratis && <small className="mu" style={{ display: "block", marginTop: 6 }}>Si una de estas cuentas empieza a operar en real, lo detectamos (se actualiza cada día) y ganas los 7 días extra de calendario en el mes en que se detecta.</small>}
+                
               </div>
             )}
           </section>

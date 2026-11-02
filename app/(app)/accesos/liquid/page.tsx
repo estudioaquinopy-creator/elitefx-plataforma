@@ -54,7 +54,7 @@ export default async function Liquid({ searchParams }: { searchParams: { ok?: st
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
       <section className="box">
         <h2>Aprobar con el CSV de Liquid</h2>
-        <p className="mu">Sube cada día el CSV actualizado de tus clientes: las cuentas pendientes cuyo número aparezca en la columna "account" se aprueban solas y suman sus puntos (10 por defecto para los miembros VIP: el CSV solo trae cuentas con depósito u operaciones, así que estar en él ya cuenta como cuenta real). A los miembros gratuitos, en cambio, se les dan 7 días de calendario al confirmarse y 7 más si el "reward" es mayor a 0. Las que no aparezcan quedan pendientes para revisarlas a mano.</p>
+        <p className="mu">Sube cada día el CSV actualizado de tus clientes: las cuentas pendientes cuyo número aparezca en la columna "account" se aprueban solas y suman sus puntos (20 por defecto para los miembros VIP: el CSV solo trae cuentas con depósito u operaciones, así que estar en él ya cuenta como cuenta real). Los miembros gratuitos no reciben puntos ni calendario por ahora. Las que no aparezcan quedan pendientes para revisarlas a mano.</p>
         <p className="mu">Los datos de cada CSV <b>quedan guardados</b> y se suman a los anteriores: {guardadas ?? 0} cuentas en la base{ult ? " (última actualización " + new Date((ult as { visto_at: string }).visto_at).toLocaleDateString("es-PY", { timeZone: "America/Asuncion" }) + ")" : ""}. Así se compara también con las cuentas que la gente registró antes o después, y quien registra una cuenta que ya está guardada se confirma al instante. Si una cuenta alguna vez tuvo reward mayor a 0, se recuerda.</p>
         <SubirCsvLiquid />
       </section>

@@ -44,7 +44,7 @@ export function puntosLiquidReal(texto: string | undefined | null): number {
 }
 
 export function puntosLiquid(texto: string | undefined | null): number {
-  return /^\s*\d{1,3}\s*$/.test(texto ?? "") ? Number((texto as string).trim()) : 10;
+  return /^\s*\d{1,3}\s*$/.test(texto ?? "") ? Number((texto as string).trim()) : 20;
 }
 
 export function puntosFoto(texto: string | undefined | null): number {
