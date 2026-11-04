@@ -12,6 +12,7 @@ Plataforma propia de la academia ELITE FX (+900 alumnos, migrando desde Skool). 
 ## Variables de entorno (en Vercel, nunca en el repositorio ni en el chat)
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY` (solo servidor: crear/invitar personas, cambiar roles; ver `lib/supabase/admin.ts`). Nunca con prefijo `NEXT_PUBLIC_`.
+- `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (opcional): clave PÚBLICA de Cloudflare Turnstile. Si está, el captcha aparece en `/login`, `/registro` y `/recuperar` (`components/Captcha.tsx`, el token va como `captchaToken` a Supabase Auth); si no está, esas pantallas funcionan como antes. La clave SECRETA de Turnstile no va aquí: se pega en Supabase → Authentication → Attack Protection (CAPTCHA, proveedor Turnstile), que es lo que realmente EXIGE la verificación. Orden: primero Vercel + redeploy, después activarlo en Supabase. Con el captcha activo en Supabase, las llamadas del servidor a `resetPasswordForEmail` (`enviarInvitacion` en `accesos/actions.ts` y la importación masiva) podrían rechazarse por no llevar token: probar "Enviar invitación" justo después de activarlo; si falla, pasarlas a la API de invitaciones del admin.
 - Cambiar una variable exige un redeploy.
 
 ## Base de datos

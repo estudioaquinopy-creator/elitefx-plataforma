@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Tema from "@/components/Tema";
 import { createClient } from "@/lib/supabase/client";
+import Captcha, { CAPTCHA_ACTIVO } from "@/components/Captcha";
 
 export default function Login() {
   const router = useRouter();
@@ -12,16 +13,21 @@ export default function Login() {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [expirada, setExpirada] = useState(false);
+  const [token, setToken] = useState("");
+  const [reinicio, setReinicio] = useState(0);
   useEffect(() => { setExpirada(new URLSearchParams(window.location.search).get("expirada") === "1"); }, []);
 
   async function entrar(e: React.FormEvent) {
     e.preventDefault();
+    if (CAPTCHA_ACTIVO && !token) return setErr("Completa la verificación de seguridad.");
     setBusy(true);
     setErr("");
-    const { error } = await createClient().auth.signInWithPassword({ email: email.trim(), password: pw });
+    const { error } = await createClient().auth.signInWithPassword({ email: email.trim(), password: pw, ...(CAPTCHA_ACTIVO ? { options: { captchaToken: token } } : {}) });
     setBusy(false);
     if (error) {
+      setReinicio((r) => r + 1);
       const m = error.message.toLowerCase();
+      if (m.includes("captcha")) return setErr("No pudimos verificar que eres una persona. Inténtalo de nuevo.");
       if (m.includes("not confirmed")) return setErr("Tu correo aún no está confirmado.");
       if (m.includes("invalid login")) return setErr("Correo o contraseña incorrectos.");
       return setErr("No se pudo iniciar sesión: " + error.message);
@@ -45,6 +51,7 @@ export default function Login() {
           <input type="password" autoComplete="current-password" required value={pw} onChange={(e) => setPw(e.target.value)} />
         </label>
         <p style={{ textAlign: "right", margin: "-6px 0 12px" }}><Link href="/recuperar" className="lk">¿Olvidaste tu contraseña?</Link></p>
+        <Captcha onToken={setToken} reinicio={reinicio} />
         {err && <p className="err">{err}</p>}
         <button className="btn" disabled={busy}>{busy ? "Entrando…" : "Entrar"}</button>
         <p className="mu" style={{ textAlign: "center", marginTop: 12 }}>¿No tienes cuenta? <Link href="/registro" className="lk">Crea una gratis</Link></p>

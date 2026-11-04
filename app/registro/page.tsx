@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Tema from "@/components/Tema";
 import { createClient } from "@/lib/supabase/client";
 import { REFERIDOS_DESDE } from "@/lib/referidos";
+import Captcha, { CAPTCHA_ACTIVO } from "@/components/Captcha";
 
 export default function Registro() {
   const router = useRouter();
@@ -37,6 +38,8 @@ export default function Registro() {
   const [err, setErr] = useState("");
   const [listo, setListo] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [token, setToken] = useState("");
+  const [reinicio, setReinicio] = useState(0);
 
   async function crear(e: React.FormEvent) {
     e.preventDefault();
@@ -49,12 +52,15 @@ export default function Registro() {
     if (pw !== pw2) return setErr("Las contraseñas no coinciden.");
     const cod = codigo.trim().toUpperCase();
     if (verCodigo && cod && !/^EFX-[A-Z0-9]{6}$/.test(cod)) return setErr("El código de referido no es válido (ejemplo: EFX-1A2B3C). Déjalo vacío si no tienes uno.");
+    if (CAPTCHA_ACTIVO && !token) return setErr("Completa la verificación de seguridad.");
     setBusy(true);
     const sb = createClient();
-    const { data, error } = await sb.auth.signUp({ email: email.trim(), password: pw, options: { data: { nombre: n, telefono: t, ...(cod ? { codigo_ref: cod } : {}), ...(prueba ? { codigo_prueba: prueba } : {}) } } });
+    const { data, error } = await sb.auth.signUp({ email: email.trim(), password: pw, options: { ...(CAPTCHA_ACTIVO ? { captchaToken: token } : {}), data: { nombre: n, telefono: t, ...(cod ? { codigo_ref: cod } : {}), ...(prueba ? { codigo_prueba: prueba } : {}) } } });
     if (error) {
       setBusy(false);
+      setReinicio((x) => x + 1);
       const m = error.message.toLowerCase();
+      if (m.includes("captcha")) return setErr("No pudimos verificar que eres una persona. Inténtalo de nuevo.");
       if (m.includes("already") || m.includes("registered")) return setErr("Ese correo ya tiene una cuenta. Inicia sesión.");
       if (m.includes("rate") || m.includes("limit")) return setErr("Demasiados intentos. Espera unos minutos e inténtalo otra vez.");
       return setErr("No se pudo crear la cuenta: " + error.message);
@@ -91,6 +97,7 @@ export default function Registro() {
             <label>Contraseña (mínimo 8 caracteres)<input type="password" autoComplete="new-password" minLength={8} required value={pw} onChange={(e) => setPw(e.target.value)} /></label>
             <label>Repite la contraseña<input type="password" autoComplete="new-password" minLength={8} required value={pw2} onChange={(e) => setPw2(e.target.value)} /></label>
             {verCodigo && <label>Código de referido (opcional)<input value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder="EFX-1A2B3C" maxLength={20} autoComplete="off" /></label>}
+            <Captcha onToken={setToken} reinicio={reinicio} />
             {err && <p className="err">{err}</p>}
             <button className="btn" disabled={busy}>{busy ? "Creando tu cuenta…" : "Crear cuenta"}</button>
             <p className="mu" style={{ textAlign: "center", marginTop: 12 }}>¿Ya tienes cuenta? <Link href="/login" className="lk">Inicia sesión</Link></p>
