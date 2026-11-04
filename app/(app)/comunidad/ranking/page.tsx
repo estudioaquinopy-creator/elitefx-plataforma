@@ -7,6 +7,7 @@ import { ajustarPuntos } from "../actions";
 import { referidosActivos, puntosReferidos, fechaReferidos, REFERIDOS_DESDE } from "@/lib/referidos";
 import { mesDeRanking, ultimoViernes, cierreISO, textoFecha, premiosRanking, puntosCertificado, puntosFoto, puntosLiquid, puntosLiquidReal } from "@/lib/ranking";
 import CuentaRanking from "@/components/CuentaRanking";
+import { clienteAdmin } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,34 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
   const yo = miPos >= 0 ? filas[miPos] : null;
   const top = filas.slice(0, 10);
   const esActual = mes === actual;
+
+  // Subida o bajada de puesto frente a la foto de un día anterior (positivo = subió). Se guarda una foto por día (la primera visita del día).
+  const cambios: Record<string, number | "nuevo"> = {};
+  if (esActual && !falta && filas.length > 0) {
+    try {
+      const hoy = hoyPY();
+      const { data: ant } = await sb.from("ranking_posiciones").select("dia").eq("mes", mes).lt("dia", hoy).order("dia", { ascending: false }).limit(1);
+      const diaAnt = ((ant ?? [])[0] as { dia: string } | undefined)?.dia;
+      if (diaAnt) {
+        const { data: pa } = await sb.from("ranking_posiciones").select("user_id, puesto").eq("mes", mes).eq("dia", diaAnt).limit(5000);
+        const mapa = new Map(((pa ?? []) as { user_id: string; puesto: number }[]).map((x) => [x.user_id, x.puesto]));
+        filas.forEach((f, i) => { const antes = mapa.get(f.user_id); cambios[f.user_id] = antes === undefined ? "nuevo" : antes - (i + 1); });
+      }
+      const { count } = await sb.from("ranking_posiciones").select("user_id", { count: "exact", head: true }).eq("mes", mes).eq("dia", hoy);
+      if (!count) {
+        const adm = clienteAdmin();
+        if (adm) await adm.from("ranking_posiciones").upsert(filas.map((f, i) => ({ mes, dia: hoy, user_id: f.user_id, puesto: i + 1 })), { onConflict: "mes,dia,user_id", ignoreDuplicates: true });
+      }
+    } catch { /* migración 0047 pendiente: sin flechitas */ }
+  }
+  const flecha = (id: string) => {
+    const c = cambios[id];
+    if (c === undefined) return null;
+    if (c === "nuevo") return <span className="rkc up" title="Nuevo en el ranking">nuevo</span>;
+    if (c > 0) return <span className="rkc up" title={"Subió " + c + (c === 1 ? " puesto" : " puestos")}>▲{c}</span>;
+    if (c < 0) return <span className="rkc dn" title={"Bajó " + -c + (c === -1 ? " puesto" : " puestos")}>▼{-c}</span>;
+    return <span className="rkc eq" title="Mismo puesto">–</span>;
+  };
   const viernes = ultimoViernes(mes);
 
   let vips: { id: string; nombre: string; email: string }[] = [];
@@ -122,7 +151,7 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
             <div key={f.user_id} className="ses" style={f.user_id === perfil.id ? { background: "var(--sf2)", borderRadius: 12, padding: "12px", borderBottom: 0 } : undefined}>
               <div className="dt" style={{ minWidth: 46 }}>{MEDALLA[i] ?? "#" + (i + 1)}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <b>{f.nombre}{f.user_id === perfil.id ? " (tú)" : ""}</b>
+                <b>{f.nombre}{f.user_id === perfil.id ? " (tú)" : ""}</b>{flecha(f.user_id)}
                 <small className="mu" style={{ display: "block" }}>{f.resultados} resultados · {f.preguntas} preguntas · {f.respuestas} respuestas · {f.utiles} útiles · {f.likes} me gusta{f.certificados ? " · " + f.certificados + (f.certificados === 1 ? " certificado" : " certificados") : ""}{f.referidos ? " · " + f.referidos + (f.referidos === 1 ? " referido" : " referidos") : ""}</small>
               </div>
               <span style={{ textAlign: "right" }}><b style={{ fontSize: 18 }}>{f.puntos} pts</b>{i < 3 && <small className="mu" style={{ display: "block" }}>{premios[i]} USDT</small>}</span>

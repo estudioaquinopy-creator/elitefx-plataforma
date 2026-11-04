@@ -724,3 +724,7 @@ button.chip{cursor:pointer;font-family:inherit;line-height:1.2}
 
 /* Aviso de acceso completo: una sola opción visible (sin desplegable) */
 .acceso-fijo .acceso-tit{padding:14px 16px 10px;font:700 16px 'Sora',sans-serif}
+
+/* Ranking: flechita de subida o bajada de puesto (muy pequeña) */
+.rkc{font-size:10px;font-weight:700;margin-left:6px;vertical-align:middle;letter-spacing:.2px}
+.rkc.up{color:#2ecc8f}.rkc.dn{color:#ff6b6b}.rkc.eq{color:var(--mu);font-weight:400}
