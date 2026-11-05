@@ -23,6 +23,10 @@ export default async function Cursos({ searchParams }: { searchParams: { error?:
   const admin = perfil.rol === "admin";
   const bloqueos = admin ? {} : await bloqueosExamen(supabase, perfil.id, cursos, perfil.plan === "gratis" && !perfil.es_alumno);
 
+  // Tutoriales no lleva progreso ni examen: se muestra cuántos videos hay.
+  const { count: nTuts } = await supabase.from("tutoriales").select("id", { count: "exact", head: true });
+  const totalTuts = nTuts ?? 0;
+
   function tarjeta(c: Curso) {
     const total = lista.filter((l) => l.curso_id === c.id).length;
     const ok = lista.filter((l) => l.curso_id === c.id && hechas.has(l.id)).length;
@@ -37,6 +41,8 @@ export default async function Cursos({ searchParams }: { searchParams: { error?:
         <small className="mu">{c.descripcion}</small>
         {bloqueado ? (
           <span className="pill">{faltaExamen ? "Aprueba el examen de " + faltaExamen.nombre : "Miembros"}</span>
+        ) : esCursoTutoriales(c.nombre) ? (
+          <small className="mu">{totalTuts} {totalTuts === 1 ? "tutorial" : "tutoriales"}</small>
         ) : (
           <>
             <div className="bar"><i style={{ width: pct + "%" }} /></div>
