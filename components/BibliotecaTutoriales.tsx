@@ -9,7 +9,7 @@ import { agregarTutorial, eliminarTutorial } from "@/app/(app)/tutoriales/action
 type Tut = { id: string; titulo: string; categoria: string; youtube_url: string };
 
 // Biblioteca de videos (antes en /tutoriales); se muestra dentro del curso "Tutoriales".
-export default async function BibliotecaTutoriales({ base, nombre, descripcion, admin, c, v, error }: { base: string; nombre: string; descripcion: string; admin: boolean; c?: string; v?: string; error?: string }) {
+export default async function BibliotecaTutoriales({ base, nombre, descripcion, admin, c, v, vista, error }: { base: string; nombre: string; descripcion: string; admin: boolean; c?: string; v?: string; vista?: string; error?: string }) {
   const aj = await leerAjustes();
   const { data } = await createClient().from("tutoriales").select("*").order("created_at", { ascending: false });
   const todos = (data ?? []) as Tut[];
@@ -18,6 +18,17 @@ export default async function BibliotecaTutoriales({ base, nombre, descripcion, 
   const minis = new Map(await Promise.all(lista.map(async (t) => [t.id, await miniatura(t.youtube_url)] as const)));
   const actual = todos.find((t) => t.id === v);
   const vid = actual ? embedUrl(actual.youtube_url, "&autoplay=1") : null;
+  const lis = vista === "lista";
+  // Enlace que conserva categoría y vista (cuadros o lista)
+  const enlace = (o: { c?: string; v?: string; vista?: string }) => {
+    const q = new URLSearchParams();
+    const cc = "c" in o ? o.c : c, vv = "v" in o ? o.v : v, vi = "vista" in o ? o.vista : vista;
+    if (cc) q.set("c", cc);
+    if (vv) q.set("v", vv);
+    if (vi === "lista") q.set("vista", "lista");
+    const t = q.toString();
+    return base + (t ? "?" + t : "");
+  };
 
   return (
     <>
@@ -50,31 +61,59 @@ export default async function BibliotecaTutoriales({ base, nombre, descripcion, 
         </section>
       )}
 
-      <div className="chips">
-        <Link href={base} className={!c ? "chip on" : "chip"}>Todos</Link>
-        {cats.map((x) => <Link key={x} href={base + "?c=" + encodeURIComponent(x)} className={c === x ? "chip on" : "chip"}>{x}</Link>)}
+      <div className="tut-barra">
+        <div className="chips">
+          <Link href={enlace({ c: undefined, v: undefined })} className={!c ? "chip on" : "chip"}>Todos</Link>
+          {cats.map((x) => <Link key={x} href={enlace({ c: x, v: undefined })} className={c === x ? "chip on" : "chip"}>{x}</Link>)}
+        </div>
+        <div className="tut-vista" role="group" aria-label="Vista">
+          <Link href={enlace({ vista: undefined })} className={!lis ? "on" : ""} title="Ver en cuadros">▦ Cuadros</Link>
+          <Link href={enlace({ vista: "lista" })} className={lis ? "on" : ""} title="Ver en lista">☰ Lista</Link>
+        </div>
       </div>
 
       {lista.length === 0 && <section className="box"><p className="mu">Todavía no hay tutoriales.</p></section>}
-      <div className="grid">
-        {lista.map((t) => {
-          const mini = minis.get(t.id);
-          return (
-            <div key={t.id} className="crs">
-              <Link href={base + "?v=" + t.id + (c ? "&c=" + encodeURIComponent(c) : "")} className="tlink">
-                <div className="cov" style={mini ? { backgroundImage: "url(" + mini + ")" } : undefined} />
-                <div className="cb"><b>{t.titulo}</b><small className="mu">{t.categoria}</small></div>
-              </Link>
-              {admin && (
-                <form action={eliminarTutorial} style={{ padding: "0 14px 14px" }}>
-                  <input type="hidden" name="id" value={t.id} />
-                  <button className="btn g s">Eliminar</button>
-                </form>
-              )}
-            </div>
-          );
-        })}
-      </div>
+      {lis ? (
+        <div className="tut-lista">
+          {lista.map((t) => {
+            const mini = minis.get(t.id);
+            return (
+              <div key={t.id} className={"tut-fila" + (actual && actual.id === t.id ? " on" : "")}>
+                <Link href={enlace({ v: t.id })} className="tut-fl">
+                  <span className="tut-mini" style={mini ? { backgroundImage: "url(" + mini + ")" } : undefined}>▶</span>
+                  <span className="tut-tx"><b>{t.titulo}</b><small className="mu">{t.categoria}</small></span>
+                </Link>
+                {admin && (
+                  <form action={eliminarTutorial}>
+                    <input type="hidden" name="id" value={t.id} />
+                    <button className="btn g s">Eliminar</button>
+                  </form>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="grid">
+          {lista.map((t) => {
+            const mini = minis.get(t.id);
+            return (
+              <div key={t.id} className="crs">
+                <Link href={enlace({ v: t.id })} className="tlink">
+                  <div className="cov" style={mini ? { backgroundImage: "url(" + mini + ")" } : undefined} />
+                  <div className="cb"><b>{t.titulo}</b><small className="mu">{t.categoria}</small></div>
+                </Link>
+                {admin && (
+                  <form action={eliminarTutorial} style={{ padding: "0 14px 14px" }}>
+                    <input type="hidden" name="id" value={t.id} />
+                    <button className="btn g s">Eliminar</button>
+                  </form>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </>
   );
 }

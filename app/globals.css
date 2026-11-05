@@ -728,3 +728,18 @@ button.chip{cursor:pointer;font-family:inherit;line-height:1.2}
 /* Ranking: flechita de subida o bajada de puesto (muy pequeña) */
 .rkc{font-size:10px;font-weight:700;margin-left:6px;vertical-align:middle;letter-spacing:.2px}
 .rkc.up{color:#2ecc8f}.rkc.dn{color:#ff6b6b}.rkc.eq{color:var(--mu);font-weight:400}
+
+/* Tutoriales: cuadros / lista */
+.tut-barra{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:0 0 14px}
+.tut-barra .chips{margin:0}
+.tut-vista{display:inline-flex;border:1px solid var(--bd,rgba(255,255,255,.14));border-radius:10px;overflow:hidden}
+.tut-vista a{padding:7px 12px;font-size:13px;color:inherit;text-decoration:none;opacity:.7}
+.tut-vista a.on{opacity:1;background:var(--ac,#2ecc71);color:#04130a;font-weight:600}
+.tut-lista{display:flex;flex-direction:column;gap:8px}
+.tut-fila{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--bd,rgba(255,255,255,.12));border-radius:12px}
+.tut-fila.on{border-color:var(--ac,#2ecc71)}
+.tut-fl{display:flex;align-items:center;gap:12px;flex:1;min-width:0;color:inherit;text-decoration:none}
+.tut-mini{flex:0 0 96px;height:54px;border-radius:8px;background:#0c1a12 center/cover no-repeat;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;text-shadow:0 1px 4px rgba(0,0,0,.7)}
+.tut-tx{display:flex;flex-direction:column;gap:2px;min-width:0}
+.tut-tx b{overflow:hidden;text-overflow:ellipsis}
+@media(max-width:560px){.tut-mini{flex-basis:72px;height:42px}}
