@@ -6,17 +6,22 @@ import { embedUrl } from "@/lib/video";
 import { bloqueosExamen, cursoSinExamen } from "@/lib/examen";
 import { alternarCompletada, completarBienvenida, editarCurso, eliminarCurso, eliminarLeccion, guardarLeccion, reordenarLecciones } from "../actions";
 import ListaLeccionesAdmin from "@/components/ListaLeccionesAdmin";
+import BibliotecaTutoriales from "@/components/BibliotecaTutoriales";
+import { esCursoTutoriales } from "@/lib/tutoriales";
 
 export const dynamic = "force-dynamic";
 
 type Material = { tipo: string; titulo: string; url: string };
 type Leccion = { id: string; curso_id: string; orden: number; titulo: string; descripcion: string; youtube_url: string; materiales: Material[] };
 
-export default async function CursoPage({ params, searchParams }: { params: { id: string }; searchParams: { l?: string; edit?: string; error?: string; bienvenida?: string } }) {
+export default async function CursoPage({ params, searchParams }: { params: { id: string }; searchParams: { l?: string; edit?: string; error?: string; bienvenida?: string; c?: string; v?: string } }) {
   const perfil = await perfilActual();
   const supabase = createClient();
   const { data: curso } = await supabase.from("cursos").select("*").eq("id", params.id).single();
   if (!curso) notFound();
+  if (esCursoTutoriales(curso.nombre)) {
+    return <BibliotecaTutoriales base={"/cursos/" + curso.id} nombre={curso.nombre} descripcion={curso.descripcion} admin={perfil.rol === "admin"} c={searchParams.c} v={searchParams.v} error={searchParams.error} />;
+  }
   const { data: lecsRaw } = await supabase.from("lecciones").select("*").eq("curso_id", params.id).order("orden");
   const lecs = (lecsRaw ?? []) as Leccion[];
   const admin = perfil.rol === "admin";

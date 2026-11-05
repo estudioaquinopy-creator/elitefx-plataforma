@@ -4,6 +4,7 @@ import { perfilActual, permisos } from "@/lib/sesion";
 import { cambiarPortadaCurso, crearCurso } from "./actions";
 import { portadaDe } from "@/lib/portadas";
 import { bloqueosExamen } from "@/lib/examen";
+import { esCursoTutoriales } from "@/lib/tutoriales";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,7 @@ export default async function Cursos({ searchParams }: { searchParams: { error?:
     const ok = lista.filter((l) => l.curso_id === c.id && hechas.has(l.id)).length;
     const pct = total ? Math.round((ok / total) * 100) : 0;
     const faltaExamen = bloqueos[c.id];
-    const bloqueado = !(admin || c.gratis || miembro) || !!faltaExamen;
+    const bloqueado = !(admin || c.gratis || miembro || esCursoTutoriales(c.nombre)) || !!faltaExamen; // Tutoriales es libre para todos
     const img = c.portada_url || portadaDe(c.nombre);
     const estilo = img ? { backgroundImage: "url(" + img + ")" } : undefined;
     const info = (
