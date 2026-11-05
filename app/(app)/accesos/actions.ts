@@ -198,8 +198,22 @@ export async function enviarInvitacion(f: FormData) {
   if (!email) fallo(ruta, "Esta persona no tiene correo registrado.");
   const h = headers();
   const origen = h.get("origin") || ("https://" + (h.get("x-forwarded-host") || h.get("host")));
-  const { error } = await createClient().auth.resetPasswordForEmail(email, { redirectTo: origen + "/nueva-clave" });
-  if (error) fallo(ruta, "No se pudo enviar el correo: " + error.message);
+  // Con el captcha activo en Supabase, resetPasswordForEmail desde el servidor se rechaza (no lleva token): se usa la API de administrador, que no lo pide.
+  const admin = clienteAdmin();
+  if (!admin) fallo(ruta, "Falta la clave de servicio (SUPABASE_SERVICE_ROLE_KEY) en Vercel.");
+  const { error } = await admin!.auth.admin.inviteUserByEmail(email, { redirectTo: origen + "/nueva-clave" });
+  if (error) {
+    const m = error.message.toLowerCase();
+    if (m.includes("already") || m.includes("registered") || m.includes("exists")) {
+      // Ya activó su cuenta: no se puede "invitar" de nuevo. Se genera un enlace para que cree otra contraseña y se lo pases tú.
+      const { data: lk, error: e2 } = await admin!.auth.admin.generateLink({ type: "recovery", email, options: { redirectTo: origen + "/nueva-clave" } });
+      const enlace = lk?.properties?.action_link;
+      if (e2 || !enlace) fallo(ruta, "No se pudo generar el enlace: " + (e2?.message ?? "sin respuesta"));
+      await registrar("invitación", id, "Enlace de contraseña generado para " + email);
+      aviso(ruta, "Esta persona ya activó su cuenta, por eso no se envía correo. Pásale este enlace (sirve una vez): " + enlace);
+    }
+    fallo(ruta, "No se pudo enviar el correo: " + error.message);
+  }
   await registrar("invitación", id, "Correo enviado a " + email);
   aviso(ruta, "Listo: se envió el correo a " + email + " para que cree su contraseña y entre.");
 }

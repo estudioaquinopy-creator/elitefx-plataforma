@@ -50,7 +50,7 @@ export async function importarLote(filas: FilaImp[], actualizar: boolean, invita
           if (invitar) {
             const { data: u } = await admin!.auth.admin.getUserById(p.id);
             if (u?.user && !u.user.last_sign_in_at) {
-              const { error: e4 } = await admin!.auth.resetPasswordForEmail(email, { redirectTo: origen + "/nueva-clave" });
+              const { error: e4 } = await admin!.auth.admin.inviteUserByEmail(email, { redirectTo: origen + "/nueva-clave" });
               if (e4) return esLimite(e4.message) ? { email, estado: "limite", detalle: e4.message } : { email, estado: "error", detalle: e4.message };
               return { email, estado: "reenviado" };
             }
