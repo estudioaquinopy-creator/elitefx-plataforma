@@ -72,8 +72,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     notifs.unshift({
       id: "v-" + a.id,
       titulo: (a.nombre || a.email) + (a.vence < hoyIso ? " · membresía vencida" : " · por vencer"),
-      cuerpo: "Vence " + fmt(a.vence),
-      enlace: "/accesos",
+      cuerpo: "Vence " + fmt(a.vence) + " · toca para abrir su ficha",
+      enlace: "/accesos/" + a.id,
       fecha: "",
       nueva: true,
     });
