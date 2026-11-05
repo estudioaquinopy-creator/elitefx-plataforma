@@ -42,7 +42,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const [rNot, rVen, rFx, rCl, aj, rVisMias, rVisPend] = await Promise.all([
     supabase.from("notificaciones").select("*").order("created_at", { ascending: false }).limit(15),
     perfil.rol === "admin"
-      ? supabase.from("perfiles").select("id, nombre, email, vence").not("vence", "is", null).lte("vence", limite.toISOString().slice(0, 10)).order("vence").limit(5)
+      ? supabase.from("perfiles").select("id, nombre, email, vence").not("vence", "is", null).gte("vence", new Date(ahora - 30 * 86400000).toISOString().slice(0, 10)).lte("vence", limite.toISOString().slice(0, 10)).order("vence").limit(5)
       : Promise.resolve({ data: null }),
     perm.calendario ? supabase.from("horario_fijo").select("*") : Promise.resolve({ data: null }),
     perm.calendario

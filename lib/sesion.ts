@@ -110,7 +110,11 @@ export type Estado = { clave: "gratis" | "sin" | "activo" | "porvencer" | "venci
 
 // Estado de la membresía según la fecha de vencimiento del calendario.
 export function estadoMembresia(p: { plan: string; vence: string | null; es_alumno?: boolean }): Estado {
-  if (p.plan === "gratis") return { clave: "gratis", texto: p.es_alumno ? "Gratuito alumno" : "Gratuito nuevo" };
+  if (p.plan === "gratis") {
+    // VIP que venció: pasó solo a gratuito alumno pero conserva `vence` como historial; sigue contando como vencido
+    if (p.es_alumno && p.vence && p.vence < hoyPY()) return { clave: "vencido", texto: "Vencido · gratuito alumno" };
+    return { clave: "gratis", texto: p.es_alumno ? "Gratuito alumno" : "Gratuito nuevo" };
+  }
   if (!p.vence) return { clave: "sin", texto: "Sin calendario" };
   const hoy = hoyPY();
   if (p.vence < hoy) return { clave: "vencido", texto: "Vencido" };
