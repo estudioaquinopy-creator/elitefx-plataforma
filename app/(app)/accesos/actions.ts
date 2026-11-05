@@ -37,8 +37,8 @@ async function actualizar(id: string, plan: string, vence: string | null, ruta: 
 }
 
 async function cargar(id: string) {
-  const { data } = await createClient().from("perfiles").select("plan, vence").eq("id", id).single();
-  return data as { plan: string; vence: string | null } | null;
+  const { data } = await createClient().from("perfiles").select("plan, vence, prueba_hasta").eq("id", id).single();
+  return data as { plan: string; vence: string | null; prueba_hasta?: string | null } | null;
 }
 
 export async function cambiarPlan(f: FormData) {
@@ -61,7 +61,8 @@ export async function cambiarPlan(f: FormData) {
   await actualizar(id, plan, act.vence, ruta, alumno ? "Plan actualizado: gratuito alumno." : "Plan actualizado.");
 }
 
-// Suma 1, 2 o 3 meses de calendario, contando desde hoy o desde el vencimiento actual si todavía no pasó.
+// Suma 1, 2 o 3 meses de VIP. Si la persona era gratuita (nueva o alumna) pasa a VIP automáticamente y los meses cuentan desde HOY;
+// si ya es VIP vigente, se suman al vencimiento actual (una prueba VIP cuenta desde hoy).
 export async function sumarCalendario(f: FormData) {
   await soloAdmin();
   const id = String(f.get("id") ?? "");
@@ -70,10 +71,12 @@ export async function sumarCalendario(f: FormData) {
   if (![1, 2, 3].includes(n)) fallo(ruta, "Elige 1, 2 o 3 meses.");
   const act = await cargar(id);
   if (!act) fallo(ruta, "No se encontró la persona.");
-  if (act.plan === "gratis") fallo(ruta, "Primero cambia el plan a VIP.");
   const hoy = hoyPY();
-  const base = act.vence && act.vence > hoy ? act.vence : hoy;
-  await actualizar(id, act.plan, sumarMeses(base, n), ruta, "Calendario extendido " + n + (n === 1 ? " mes." : " meses."));
+  const eraGratis = act.plan === "gratis";
+  const base = !eraGratis && !act.prueba_hasta && act.vence && act.vence > hoy ? act.vence : hoy;
+  const nueva = sumarMeses(base, n);
+  const txt = n + (n === 1 ? " mes" : " meses");
+  await actualizar(id, "live_trading", nueva, ruta, eraGratis ? "Ahora es VIP: " + txt + " desde hoy." : "VIP extendido " + txt + ".");
 }
 
 export async function quitarCalendario(f: FormData) {
@@ -93,7 +96,9 @@ export async function fijarFecha(f: FormData) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) fallo(ruta, "Elige una fecha.");
   const act = await cargar(id);
   if (!act) fallo(ruta, "No se encontró la persona.");
-  await actualizar(id, act.plan, fecha, ruta, "Vencimiento actualizado.");
+  // Si era gratuita y la fecha es de hoy en adelante, pasa a VIP automáticamente.
+  const pasaAVip = act.plan === "gratis" && fecha >= hoyPY();
+  await actualizar(id, pasaAVip ? "live_trading" : act.plan, fecha, ruta, pasaAVip ? "Ahora es VIP hasta la fecha elegida." : "Vencimiento actualizado.");
 }
 
 const SECCIONES = ["cursos", "calendario", "tutoriales", "comunidad", "journal", "noticias"];

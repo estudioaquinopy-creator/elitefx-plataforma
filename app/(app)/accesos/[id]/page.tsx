@@ -77,6 +77,7 @@ export default async function Gestionar({ params, searchParams }: { params: { id
           </form>
 
           <div className="tag" style={{ marginTop: 18 }}>Calendario</div>
+          <p className="mu" style={{ margin: "0 0 8px" }}>Con +1, +2 o +3 meses (o una fecha) la persona pasa a VIP sola: si era gratuita, los meses cuentan desde hoy; si ya es VIP, se suman a su vencimiento.</p>
           <div className="acts">
             {[1, 2, 3].map((n) => (
               <form key={n} action={sumarCalendario}>
