@@ -40,6 +40,26 @@ export async function borrarPublicacion(f: FormData) {
   redirect("/comunidad");
 }
 
+// Editar el título y el texto de una publicación propia (la base de datos solo deja cambiar eso, y solo al autor).
+export async function editarPublicacion(f: FormData): Promise<{ ok: boolean; error?: string }> {
+  const perfil = await perfilActual();
+  const perm = await permisos(perfil);
+  if (!perm.comunidad) return { ok: false, error: "Tu plan solo permite leer la comunidad." };
+  const id = String(f.get("id") ?? "");
+  const cuerpo = String(f.get("cuerpo") ?? "").trim();
+  const titulo = String(f.get("titulo") ?? "").trim().slice(0, 140);
+  if (cuerpo.length > 5000) return { ok: false, error: "El mensaje es demasiado largo (máximo 5.000 caracteres)." };
+  const sb = createClient();
+  const { data: p } = await sb.from("publicaciones").select("id, user_id, imagen_url").eq("id", id).maybeSingle();
+  if (!p || p.user_id !== perfil.id) return { ok: false, error: "Solo puedes editar tus propias publicaciones." };
+  if (!cuerpo && !titulo && !p.imagen_url) return { ok: false, error: "Escribe un mensaje." };
+  const { data: ok, error } = await sb.from("publicaciones").update({ titulo, cuerpo }).eq("id", id).eq("user_id", perfil.id).select("id");
+  if (error) return { ok: false, error: "No se pudo guardar: " + error.message };
+  if (!ok || ok.length === 0) return { ok: false, error: "No se pudo guardar. Falta activar la edición (migración 0048) o ya no tienes permiso." };
+  revalidatePath("/comunidad");
+  return { ok: true };
+}
+
 // Me gusta: se llama desde un botón del navegador (sin recargar la página).
 export async function alternarLike(postId: string): Promise<{ ok: boolean; mio: boolean; n: number; error?: string }> {
   const perfil = await perfilActual();

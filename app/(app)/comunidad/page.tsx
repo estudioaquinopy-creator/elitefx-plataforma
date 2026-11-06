@@ -6,11 +6,12 @@ import Compositor from "@/components/Compositor";
 import BotonEnvio from "@/components/BotonEnvio";
 import PostModal from "@/components/PostModal";
 import FormRespuesta from "@/components/FormRespuesta";
-import { borrarPublicacion, publicar, alternarLike, comentar, borrarComentario, marcarUtil } from "./actions";
+import FormEditarPublicacion from "@/components/FormEditarPublicacion";
+import { editarPublicacion, borrarPublicacion, publicar, alternarLike, comentar, borrarComentario, marcarUtil } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-type Pub = { id: string; user_id: string; autor: string; canal: string; titulo: string; cuerpo: string; imagen_url: string | null; created_at: string };
+type Pub = { id: string; user_id: string; autor: string; canal: string; titulo: string; cuerpo: string; imagen_url: string | null; created_at: string; editado_at?: string | null };
 type Com = { id: string; post_id: string; user_id: string; autor: string; cuerpo: string; created_at: string; util?: boolean };
 const CANALES: Record<string, string> = { anuncios: "Anuncios", preguntas: "Preguntas generales", resultados: "Resultados" };
 const cuando = (iso: string) => new Date(iso).toLocaleString("es-PY", { timeZone: "America/Asuncion", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
@@ -81,7 +82,7 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
         const cabecera = (
           <div className="post-h">
             <span className="av2">{avatar(p.user_id, p.autor)}</span>
-            <div><b>{p.autor}</b><small className="mu" style={{ display: "block" }}>{cuando(p.created_at)}</small></div>
+            <div><b>{p.autor}</b><small className="mu" style={{ display: "block" }}>{cuando(p.created_at)}{p.editado_at ? " · editado" : ""}</small></div>
             <span className={"pill c-" + p.canal} style={{ marginLeft: "auto" }}>{CANALES[p.canal]}</span>
           </div>
         );
@@ -109,7 +110,10 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
               </div>
             }
             extras={(perm.admin || p.user_id === perfil.id) ? (
-              <form action={borrarPublicacion} style={{ marginLeft: "auto" }}><input type="hidden" name="id" value={p.id} /><button className="lk">Eliminar publicación</button></form>
+              <>
+                {p.user_id === perfil.id && perm.comunidad && <FormEditarPublicacion action={editarPublicacion} id={p.id} titulo={p.titulo} cuerpo={p.cuerpo} />}
+                <form action={borrarPublicacion} style={{ marginLeft: "auto" }}><input type="hidden" name="id" value={p.id} /><button className="lk">Eliminar publicación</button></form>
+              </>
             ) : null}
             respuestas={
               <>

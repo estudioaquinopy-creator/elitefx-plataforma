@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 const EMOJIS = ["😀", "😂", "😍", "🔥", "💪", "🎯", "📈", "📉", "💰", "🚀", "✅", "👏", "🙌", "👍", "🤔", "😎", "🏆", "⚡"];
 
 // Cuadro de texto con selector de emoticones desplegable (compacto).
-export default function CajaTexto({ name, rows = 3, placeholder, required = false, maxLength = 2000, autoFocus = false }: { name: string; rows?: number; placeholder?: string; required?: boolean; maxLength?: number; autoFocus?: boolean }) {
+export default function CajaTexto({ name, rows = 3, placeholder, required = false, maxLength = 2000, autoFocus = false, defaultValue }: { name: string; rows?: number; placeholder?: string; required?: boolean; maxLength?: number; autoFocus?: boolean; defaultValue?: string }) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const [emo, setEmo] = useState(false);
   function poner(e: string) {
@@ -15,7 +15,7 @@ export default function CajaTexto({ name, rows = 3, placeholder, required = fals
   }
   return (
     <div className="cajat">
-      <textarea ref={ref} name={name} rows={rows} placeholder={placeholder} required={required} maxLength={maxLength} autoFocus={autoFocus} />
+      <textarea ref={ref} name={name} rows={rows} placeholder={placeholder} required={required} maxLength={maxLength} autoFocus={autoFocus} defaultValue={defaultValue} />
       <button type="button" className="emot" onClick={() => setEmo(!emo)} aria-label="Emoticones" aria-expanded={emo}>😊</button>
       {emo && (
         <div className="emo" aria-label="Emoticones">
