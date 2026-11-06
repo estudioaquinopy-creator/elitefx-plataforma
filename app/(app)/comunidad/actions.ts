@@ -6,6 +6,8 @@ import { perfilActual, permisos } from "@/lib/sesion";
 import { fallo, subirImagen } from "@/lib/subida";
 import { rutaSegura } from "@/lib/seguridad";
 import { registrar } from "@/lib/auditoria";
+import { tieneAyuda, correoAyuda } from "@/lib/ayuda";
+import { headers } from "next/headers";
 
 export async function publicar(f: FormData) {
   const perfil = await perfilActual();
@@ -28,6 +30,12 @@ export async function publicar(f: FormData) {
     canal, titulo, cuerpo, imagen_url: imagen,
   });
   if (error) fallo("/comunidad", "No se pudo publicar: " + error.message);
+  // #ayuda / @ayuda en una pregunta: aviso a los administradores (campana siempre; correo si hay RESEND_API_KEY).
+  if (canal === "preguntas" && !perm.admin && tieneAyuda(titulo, cuerpo)) {
+    const h = headers();
+    const origen = h.get("origin") || ("https://" + (h.get("x-forwarded-host") || h.get("host")));
+    await correoAyuda(perfil.nombre || perfil.email.split("@")[0], titulo, cuerpo, origen);
+  }
   revalidatePath("/comunidad");
   revalidatePath("/", "layout");
   redirect("/comunidad");

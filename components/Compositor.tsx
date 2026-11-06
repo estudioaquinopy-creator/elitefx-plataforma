@@ -35,7 +35,7 @@ export default function Compositor({ action, opciones, iniciales }: { action: (f
   return (
     <form action={action} className="comp">
       <input name="titulo" className="comp-t" placeholder="Título (opcional)" maxLength={140} />
-      <CajaTexto name="cuerpo" rows={3} placeholder="¿Qué quieres compartir? Tu resultado, una duda…" autoFocus />
+      <CajaTexto name="cuerpo" rows={3} placeholder="¿Qué quieres compartir? Tu resultado, una duda… (si es urgente, escribe #ayuda en una pregunta y el equipo recibe un aviso)" autoFocus />
       <div className="comp-f">
         <label className="comp-i" title="Adjuntar imagen">
           🖼️ <span>{archivo || "Imagen"}</span>

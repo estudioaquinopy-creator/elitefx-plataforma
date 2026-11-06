@@ -1,3 +1,4 @@
+import { tieneAyuda } from "@/lib/ayuda";
 import { redirect } from "next/navigation";
 import EnLinea from "@/components/EnLinea";
 import ProgresoNav from "@/components/ProgresoNav";
@@ -87,6 +88,31 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       fecha: fmt(v.revisado_at),
       nueva: new Date(v.revisado_at).getTime() > vistas,
     });
+  }
+  // Admin: preguntas con #ayuda o @ayuda (últimos 7 días) que ningún administrador respondió todavía.
+  if (perfil.rol === "admin") {
+    const { data: pa } = await supabase.from("publicaciones").select("id, autor, titulo, cuerpo, created_at").eq("canal", "preguntas")
+      .gte("created_at", new Date(ahora - 7 * 86400000).toISOString())
+      .or("titulo.ilike.%ayuda%,cuerpo.ilike.%ayuda%").order("created_at", { ascending: false }).limit(20);
+    const pedidos = ((pa ?? []) as { id: string; autor: string; titulo: string; cuerpo: string; created_at: string }[]).filter((x) => tieneAyuda(x.titulo, x.cuerpo));
+    if (pedidos.length) {
+      const [{ data: cmA }, { data: admsA }] = await Promise.all([
+        supabase.from("comentarios").select("post_id, user_id").in("post_id", pedidos.map((x) => x.id)),
+        supabase.from("perfiles").select("id").eq("rol", "admin"),
+      ]);
+      const ids = new Set(((admsA ?? []) as { id: string }[]).map((x) => x.id));
+      const resp = new Set(((cmA ?? []) as { post_id: string; user_id: string }[]).filter((x) => ids.has(x.user_id)).map((x) => x.post_id));
+      for (const x of pedidos.filter((x) => !resp.has(x.id)).reverse()) {
+        notifs.unshift({
+          id: "ay-" + x.id,
+          titulo: "🆘 " + (x.autor || "Alguien") + " pidió ayuda",
+          cuerpo: (x.titulo || x.cuerpo).slice(0, 90),
+          enlace: "/comunidad?canal=preguntas#" + x.id,
+          fecha: fmt(x.created_at),
+          nueva: true,
+        });
+      }
+    }
   }
   if (perfil.rol === "admin" && (rVisPend.count ?? 0) > 0) {
     notifs.unshift({ id: "vis-pend", titulo: (rVisPend.count ?? 0) + (rVisPend.count === 1 ? " visita por aprobar" : " visitas por aprobar"), cuerpo: "Solicitudes de miembros VIP", enlace: "/visitas", fecha: "", nueva: true });
