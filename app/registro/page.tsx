@@ -35,6 +35,17 @@ export default function Registro() {
       }, () => setInfoPrueba({ valida: false, dias: 0 }));
     } catch { /* sin enlace de prueba */ }
   }, []);
+  // Enlace para ex alumnos (/registro?alumno=CÓDIGO): queda como gratuito alumno si el código sigue vigente.
+  const [alumno, setAlumno] = useState("");
+  const [alumnoOk, setAlumnoOk] = useState<boolean | null>(null);
+  useEffect(() => {
+    try {
+      const a = (new URLSearchParams(window.location.search).get("alumno") ?? "").trim().toUpperCase().slice(0, 20);
+      if (!a) return;
+      setAlumno(a);
+      createClient().rpc("alumno_enlace_valido", { p_codigo: a }).then(({ data }) => setAlumnoOk(data === true), () => setAlumnoOk(false));
+    } catch { /* sin enlace de alumno */ }
+  }, []);
   const [err, setErr] = useState("");
   const [listo, setListo] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -55,7 +66,7 @@ export default function Registro() {
     if (CAPTCHA_ACTIVO && !token) return setErr("Completa la verificación de seguridad.");
     setBusy(true);
     const sb = createClient();
-    const { data, error } = await sb.auth.signUp({ email: email.trim(), password: pw, options: { ...(CAPTCHA_ACTIVO ? { captchaToken: token } : {}), data: { nombre: n, telefono: t, ...(cod ? { codigo_ref: cod } : {}), ...(prueba ? { codigo_prueba: prueba } : {}) } } });
+    const { data, error } = await sb.auth.signUp({ email: email.trim(), password: pw, options: { ...(CAPTCHA_ACTIVO ? { captchaToken: token } : {}), data: { nombre: n, telefono: t, ...(cod ? { codigo_ref: cod } : {}), ...(prueba ? { codigo_prueba: prueba } : {}), ...(alumno ? { codigo_alumno: alumno } : {}) } } });
     if (error) {
       setBusy(false);
       setReinicio((x) => x + 1);
@@ -89,6 +100,8 @@ export default function Registro() {
         ) : (
           <>
             <p className="sub">Accede al Curso básico y a nuestro broker recomendado.</p>
+            {alumnoOk === true && <p className="okmsg">👋 ¡Bienvenido de vuelta! Al crear tu cuenta tendrás acceso a todos tus cursos y tutoriales.</p>}
+            {alumnoOk === false && <p className="err">Este enlace ya no está vigente. Puedes crear tu cuenta gratuita igualmente.</p>}
             {infoPrueba?.valida && <p className="okmsg">🎁 ¡Tienes una invitación! Al crear tu cuenta recibes <b>{infoPrueba.dias} días de acceso VIP</b> gratis.</p>}
             {infoPrueba && !infoPrueba.valida && <p className="err">Esta invitación ya venció o se completó el cupo. Puedes crear tu cuenta gratuita igualmente.</p>}
             <label>Nombre completo<input autoComplete="name" required value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre y apellido" /></label>

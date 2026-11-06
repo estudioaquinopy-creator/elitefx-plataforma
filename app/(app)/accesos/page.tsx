@@ -3,8 +3,10 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { estadoMembresia, perfilActual } from "@/lib/sesion";
 import { clienteAdmin } from "@/lib/supabase/admin";
-import { crearPersona } from "./actions";
+import { crearPersona, codigoEnlaceAlumno } from "./actions";
 import { guardarAdminsAyuda } from "../comunidad/actions";
+import { enlaceAlumno, enlaceNuevo } from "@/lib/referidos";
+import CopiarEnlace from "@/components/CopiarEnlace";
 import { leerAjustes } from "@/lib/ajustes";
 import AnclarJournal from "@/components/AnclarJournal";
 
@@ -112,6 +114,28 @@ export default async function Accesos({ searchParams }: { searchParams: { q?: st
           <label className="ck"><input type="checkbox" name="invitar" defaultChecked /> <span><b>Enviar invitación por correo</b> (recomendado): la persona recibe un mail y elige su propia contraseña. Desmárcalo para crearla con la contraseña inicial de arriba.</span></label>
           <button className="btn s">Crear persona</button>
         </form>
+      </details>
+
+      <details className="box adm">
+        <summary>🔗 Enlaces de registro gratuito</summary>
+        <div className="fm">
+          <p className="mu"><b>Gratuito nuevo</b> (solo cursos gratuitos, tutoriales y broker): comparte este enlace.</p>
+          <p style={{ overflowWrap: "anywhere", margin: 0 }}><code>{enlaceNuevo}</code></p>
+          <div><CopiarEnlace texto={enlaceNuevo} /></div>
+          <p className="mu" style={{ marginTop: 14 }}><b>Gratuito alumno</b> (ex alumnos que no renovaron: ven TODOS los cursos y tutoriales): este enlace lleva un código secreto. Cualquiera que lo tenga queda como alumno, así que compártelo solo con ex alumnos; si se filtra, genera uno nuevo y el anterior deja de servir.</p>
+          {ajA.registro_alumno_codigo ? (
+            <>
+              <p style={{ overflowWrap: "anywhere", margin: 0 }}><code>{enlaceAlumno(ajA.registro_alumno_codigo)}</code></p>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <CopiarEnlace texto={enlaceAlumno(ajA.registro_alumno_codigo)} />
+                <form action={codigoEnlaceAlumno}><input type="hidden" name="accion" value="nuevo" /><button className="btn g s">Generar uno nuevo</button></form>
+                <form action={codigoEnlaceAlumno}><input type="hidden" name="accion" value="desactivar" /><button className="btn g s">Desactivar</button></form>
+              </div>
+            </>
+          ) : (
+            <form action={codigoEnlaceAlumno}><input type="hidden" name="accion" value="nuevo" /><button className="btn s">Generar enlace para ex alumnos</button></form>
+          )}
+        </div>
       </details>
 
       <details className="box adm">

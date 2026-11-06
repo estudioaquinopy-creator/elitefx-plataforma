@@ -29,3 +29,5 @@ export function puntosReferidos(ajustes: Record<string, string>) {
 
 export const enlacePrueba = (codigo: string) => DOMINIO + "/registro?prueba=" + encodeURIComponent(codigo);
 export const enlaceReferido = (codigo: string) => DOMINIO + "/registro?ref=" + encodeURIComponent(codigo);
+export const enlaceAlumno = (codigo: string) => DOMINIO + "/registro?alumno=" + encodeURIComponent(codigo);
+export const enlaceNuevo = DOMINIO + "/registro";

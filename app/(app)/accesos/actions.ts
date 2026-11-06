@@ -328,3 +328,17 @@ export async function aprobarPorCsv(formData: FormData) {
   revalidatePath("/accesos/liquid");
   aviso("/accesos/liquid", r.aprobadas + " cuenta(s) aprobada(s) y " + r.reales + " con puntos extra por operar en real; " + (pend ?? 0) + " siguen pendientes. Base guardada: " + r.total + " cuentas.");
 }
+
+// Enlace de registro para ex alumnos (gratuito alumno): generar uno nuevo invalida el anterior; desactivar lo deja sin efecto.
+export async function codigoEnlaceAlumno(f: FormData) {
+  await soloAdmin();
+  const accion = String(f.get("accion") ?? "");
+  const admin = clienteAdmin();
+  if (!admin) fallo("/accesos", FALTA_CLAVE);
+  const codigo = accion === "desactivar" ? "" : "ALU-" + crypto.randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
+  const { error } = await admin!.from("ajustes").upsert({ clave: "registro_alumno_codigo", valor: codigo });
+  if (error) fallo("/accesos", "No se pudo guardar: " + error.message);
+  await registrar("enlace_alumno", null, codigo ? "Nuevo enlace de registro para ex alumnos" : "Enlace de ex alumnos desactivado");
+  revalidatePath("/accesos");
+  aviso("/accesos", codigo ? "Listo: este es el nuevo enlace para ex alumnos (el anterior ya no sirve)." : "Enlace de ex alumnos desactivado.");
+}

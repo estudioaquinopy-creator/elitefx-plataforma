@@ -45,6 +45,7 @@ function parseCSV(texto: string): string[][] {
 function normPlan(v: string, def: string): string {
   const x = norm(v);
   if (!x) return def;
+  if (/alumno|ex.?alumno|student/.test(x)) return "gratis_alumno";
   if (/^(gratis|free|gratuito|0)$/.test(x)) return "gratis";
   if (/live|scanner|miembro|member|pago|premium|vip|paid|activo/.test(x)) return "live_trading";
   return "?";
@@ -106,7 +107,7 @@ export default function ImportarAlumnos({ enviar }: { enviar: (f: FilaImp[], act
   const lista: Fila[] = filas.map((f) => {
     if (f.problema) return f;
     const plan = normPlan(f.plan, planDef);
-    const vence = plan === "gratis" ? "" : (normFecha(f.vence) || venceDef || (mesesDef ? hoyMas(Number(mesesDef)) : ""));
+    const vence = plan === "gratis" || plan === "gratis_alumno" ? "" : (normFecha(f.vence) || venceDef || (mesesDef ? hoyMas(Number(mesesDef)) : ""));
     let problema = "";
     if (plan === "?") problema = "Plan no reconocido: " + f.plan;
     else if (vence === "?") problema = "Fecha no válida: " + f.vence;
@@ -114,8 +115,8 @@ export default function ImportarAlumnos({ enviar }: { enviar: (f: FilaImp[], act
   });
   const buenas = lista.filter((f) => !f.problema);
   const malas = lista.filter((f) => f.problema);
-  const pagos = buenas.filter((f) => f.plan !== "gratis").length;
-  const sinFecha = buenas.filter((f) => f.plan !== "gratis" && !f.vence).length;
+  const pagos = buenas.filter((f) => f.plan !== "gratis" && f.plan !== "gratis_alumno").length;
+  const sinFecha = buenas.filter((f) => f.plan !== "gratis" && f.plan !== "gratis_alumno" && !f.vence).length;
 
   async function importar() {
     setCorriendo(true); setRes(null); setHechos(0); setPendientes([]);
@@ -153,7 +154,7 @@ export default function ImportarAlumnos({ enviar }: { enviar: (f: FilaImp[], act
     <>
       <section className="box">
         <h2>1. Prepara tu archivo</h2>
-        <p className="mu">Un CSV con una fila por alumno. Solo el <b>correo</b> es obligatorio. Columnas que reconozco: <b>nombre</b>, <b>email</b>, <b>telefono</b>, <b>plan</b> (gratis o vip) y <b>vence</b> (fecha hasta la que tiene calendario, como 2026-12-31 o 31/12/2026).</p>
+        <p className="mu">Un CSV con una fila por alumno. Solo el <b>correo</b> es obligatorio. Columnas que reconozco: <b>nombre</b>, <b>email</b>, <b>telefono</b>, <b>plan</b> (gratis, alumno o vip) y <b>vence</b> (fecha hasta la que tiene calendario, como 2026-12-31 o 31/12/2026).</p>
         <button type="button" className="btn g s" onClick={() => descargar("plantilla-alumnos.csv", "nombre,email,telefono,plan,vence\nMaría Pérez,maria@ejemplo.com,595981123456,live_trading,2026-12-31\nJuan Gómez,juan@ejemplo.com,595982654321,gratis,\n")}>Descargar plantilla</button>
       </section>
 
@@ -163,7 +164,7 @@ export default function ImportarAlumnos({ enviar }: { enviar: (f: FilaImp[], act
         <div className="f2">
           <label>Plan para las filas sin plan
             <select value={planDef} onChange={(e) => setPlanDef(e.target.value)}>
-              <option value="gratis">Miembro gratuito</option><option value="live_trading">Miembro VIP</option>
+              <option value="gratis">Miembro gratuito</option><option value="gratis_alumno">Gratuito alumno (ex alumno)</option><option value="live_trading">Miembro VIP</option>
             </select>
           </label>
           <label>Calendario para las filas de pago sin fecha

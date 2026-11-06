@@ -7,7 +7,7 @@ import { registrar } from "@/lib/auditoria";
 export type FilaImp = { nombre: string; email: string; telefono: string; plan: string; vence: string };
 export type ResImp = { email: string; estado: "creado" | "invitado" | "reenviado" | "actualizado" | "existe" | "error" | "limite"; detalle?: string };
 
-const PLANES = ["gratis", "live_trading"]; // gratuito o VIP
+const PLANES = ["gratis", "gratis_alumno", "live_trading"]; // gratuito, gratuito alumno (ex alumno) o VIP
 
 // Procesa un lote (hasta 50 filas). Con invitar=true cada persona recibe el correo de invitación para crear su contraseña;
 // si no, la cuenta se crea con una contraseña aleatoria y la persona entra con "Olvidé mi contraseña". Si se alcanza el
@@ -26,7 +26,9 @@ export async function importarLote(filas: FilaImp[], actualizar: boolean, invita
     const email = String(f.email || "").trim().toLowerCase();
     const nombre = String(f.nombre || "").trim();
     const telefono = String(f.telefono || "").trim();
-    const plan = PLANES.includes(f.plan) ? f.plan : "gratis";
+    const planIn = PLANES.includes(f.plan) ? f.plan : "gratis";
+    const esAlumno = planIn === "gratis_alumno";
+    const plan = esAlumno ? "gratis" : planIn;
     const vence = plan !== "gratis" && /^\d{4}-\d{2}-\d{2}$/.test(f.vence || "") ? f.vence : null;
     if (!/^\S+@\S+\.\S+$/.test(email)) return { email, estado: "error", detalle: "Correo no válido" };
     try {
@@ -41,6 +43,7 @@ export async function importarLote(filas: FilaImp[], actualizar: boolean, invita
           if (!p) return { email, estado: "existe", detalle: "Ya tenía cuenta" };
           if (actualizar) {
             const cambios: Record<string, unknown> = { plan, vence };
+            if (esAlumno) cambios.es_alumno = true;
             if (nombre) cambios.nombre = nombre;
             if (telefono) cambios.telefono = telefono;
             const { error: e3 } = await admin!.from("perfiles").update(cambios).eq("id", p.id);
@@ -65,7 +68,7 @@ export async function importarLote(filas: FilaImp[], actualizar: boolean, invita
         const msg = error?.message ?? "No se pudo crear";
         return esLimite(msg) ? { email, estado: "limite", detalle: msg } : { email, estado: "error", detalle: msg };
       }
-      const { error: e2 } = await admin!.from("perfiles").update({ nombre, telefono: telefono || null, plan, vence }).eq("id", data.user.id);
+      const { error: e2 } = await admin!.from("perfiles").update({ nombre, telefono: telefono || null, plan, vence, ...(esAlumno ? { es_alumno: true } : {}) }).eq("id", data.user.id);
       if (e2) return { email, estado: "error", detalle: "Cuenta creada, pero no se guardó el plan: " + e2.message };
       return { email, estado: invitar ? "invitado" : "creado" };
     } catch (e) {
