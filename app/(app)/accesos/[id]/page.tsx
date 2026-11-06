@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { estadoMembresia, perfilActual } from "@/lib/sesion";
 import { clienteAdmin } from "@/lib/supabase/admin";
 import AnclarJournal from "@/components/AnclarJournal";
-import { cambiarPlan, cambiarRol, eliminarPersona, enviarInvitacion, nuevaClave, fijarFecha, quitarCalendario, sumarCalendario } from "../actions";
+import { cambiarPlan, cambiarRol, eliminarPersona, enviarInvitacion, nuevaClave, fijarFecha, quitarCalendario, sumarCalendario, cambiarCorreo } from "../actions";
 
 export const dynamic = "force-dynamic";
 
@@ -101,12 +101,17 @@ export default async function Gestionar({ params, searchParams }: { params: { id
         </section>
 
         <section className="box">
-          <h2>Rol y contraseña</h2>
+          <h2>Rol, correo y contraseña</h2>
           <p className="mu">{p.rol === "admin" ? "Es administrador: ve y edita todo." : "Es alumno."}</p>
           <form action={cambiarRol} className="fm">
             <input type="hidden" name="id" value={p.id} />
             <input type="hidden" name="rol" value={p.rol === "admin" ? "alumno" : "admin"} />
             <button className={p.rol === "admin" ? "btn d" : "btn g s"} style={{ marginTop: 0 }}>{p.rol === "admin" ? "Quitar rol de administrador" : "Hacer administrador"}</button>
+          </form>
+          <form action={cambiarCorreo} className="fm" style={{ flexDirection: "row", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
+            <input type="hidden" name="id" value={p.id} />
+            <label style={{ flex: 1, minWidth: 220 }}>Correo de acceso<input type="email" name="email" defaultValue={p.email} required /></label>
+            <button className="btn g s" style={{ marginBottom: 14 }}>Cambiar correo</button>
           </form>
           <form action={nuevaClave} className="fm" style={{ flexDirection: "row", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
             <input type="hidden" name="id" value={p.id} />

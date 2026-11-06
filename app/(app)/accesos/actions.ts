@@ -173,6 +173,30 @@ export async function cambiarRol(f: FormData) {
   aviso(ruta, rol === "admin" ? "Ahora es administrador." : "Ahora es alumno.");
 }
 
+// Corrige el correo de una persona (p. ej. si se equivocó al registrarse). Cambia el de acceso (Auth) y el del perfil, sin pedir confirmación.
+export async function cambiarCorreo(f: FormData) {
+  await soloAdmin();
+  const id = String(f.get("id") ?? "");
+  const ruta = "/accesos/" + id;
+  const email = String(f.get("email") ?? "").trim().toLowerCase();
+  if (!/^\S+@\S+\.\S+$/.test(email)) fallo(ruta, "Escribe un correo válido.");
+  const admin = clienteAdmin();
+  if (!admin) fallo(ruta, FALTA_CLAVE);
+  const { data: act } = await admin!.from("perfiles").select("email").eq("id", id).maybeSingle();
+  if (!act) fallo(ruta, "No se encontró la persona.");
+  const antes = String(act!.email ?? "");
+  if (antes.toLowerCase() === email) fallo(ruta, "Ese ya es su correo.");
+  const { data: otro } = await admin!.from("perfiles").select("id").ilike("email", email).neq("id", id).maybeSingle();
+  if (otro) fallo(ruta, "Ya existe otra cuenta con ese correo.");
+  const { error } = await admin!.auth.admin.updateUserById(id, { email, email_confirm: true });
+  if (error) fallo(ruta, "No se pudo cambiar el correo: " + error.message);
+  const { error: e2 } = await admin!.from("perfiles").update({ email }).eq("id", id);
+  if (e2) fallo(ruta, "El acceso ya usa el correo nuevo, pero no se pudo actualizar la ficha: " + e2.message);
+  await registrar("correo", id, antes + " → " + email);
+  revalidatePath("/accesos"); revalidatePath(ruta);
+  aviso(ruta, "Correo actualizado a " + email + ". Si todavía no había activado su cuenta, usa \"Reenviar invitación por correo\" para que le llegue ahí.");
+}
+
 export async function nuevaClave(f: FormData) {
   await soloAdmin();
   const id = String(f.get("id") ?? "");
