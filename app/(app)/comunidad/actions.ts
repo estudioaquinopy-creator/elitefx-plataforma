@@ -6,8 +6,6 @@ import { perfilActual, permisos } from "@/lib/sesion";
 import { fallo, subirImagen } from "@/lib/subida";
 import { rutaSegura } from "@/lib/seguridad";
 import { registrar } from "@/lib/auditoria";
-import { tieneAyuda, correoAyuda } from "@/lib/ayuda";
-import { headers } from "next/headers";
 
 export async function publicar(f: FormData) {
   const perfil = await perfilActual();
@@ -30,12 +28,6 @@ export async function publicar(f: FormData) {
     canal, titulo, cuerpo, imagen_url: imagen,
   });
   if (error) fallo("/comunidad", "No se pudo publicar: " + error.message);
-  // #ayuda / @ayuda en una pregunta: aviso a los administradores (campana siempre; correo si hay RESEND_API_KEY).
-  if (canal === "preguntas" && !perm.admin && tieneAyuda(titulo, cuerpo)) {
-    const h = headers();
-    const origen = h.get("origin") || ("https://" + (h.get("x-forwarded-host") || h.get("host")));
-    await correoAyuda(perfil.nombre || perfil.email.split("@")[0], titulo, cuerpo, origen);
-  }
   revalidatePath("/comunidad");
   revalidatePath("/", "layout");
   redirect("/comunidad");
@@ -121,4 +113,19 @@ export async function ajustarPuntos(f: FormData) {
   await registrar("ranking", user_id, (puntos > 0 ? "+" : "") + puntos + " puntos (" + mes + "): " + motivo);
   revalidatePath(ruta);
   redirect(ruta + "?m=" + mes);
+}
+
+// Elige qué administradores reciben la alerta de #ayuda (sin marcar a nadie = todos).
+export async function guardarAdminsAyuda(f: FormData) {
+  const yo = await perfilActual();
+  if (yo.rol !== "admin") throw new Error("Solo el administrador puede hacer esto.");
+  const sb = createClient();
+  const { data: adm } = await sb.from("perfiles").select("id").eq("rol", "admin");
+  const validos = new Set(((adm ?? []) as { id: string }[]).map((x) => x.id));
+  const ids = f.getAll("admin").map(String).filter((x) => validos.has(x));
+  const { error } = await sb.from("ajustes").upsert({ clave: "ayuda_admins", valor: ids.join(",") });
+  if (error) fallo("/accesos", "No se pudo guardar: " + error.message);
+  await registrar("alerta_ayuda", null, "Destinatarios de la alerta de ayuda: " + (ids.length ? ids.length + " administradores" : "todos"));
+  revalidatePath("/", "layout");
+  redirect("/accesos?ok=" + encodeURIComponent("Guardado: elegiste quién recibe la alerta de ayuda."));
 }

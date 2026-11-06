@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { estadoMembresia, perfilActual } from "@/lib/sesion";
 import { clienteAdmin } from "@/lib/supabase/admin";
 import { crearPersona } from "./actions";
+import { guardarAdminsAyuda } from "../comunidad/actions";
+import { leerAjustes } from "@/lib/ajustes";
 import AnclarJournal from "@/components/AnclarJournal";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +28,7 @@ export default async function Accesos({ searchParams }: { searchParams: { q?: st
   // Estado de la cuenta (¿activó o solo tiene la invitación?) desde el sistema de acceso.
   const estadoCuenta: Record<string, string> = {};
   const adm = clienteAdmin();
+  const ajA = await leerAjustes();
   if (adm) {
     for (let pg = 1; pg <= 20; pg++) {
       const { data: lu } = await adm.auth.admin.listUsers({ page: pg, perPage: 1000 });
@@ -108,6 +111,17 @@ export default async function Accesos({ searchParams }: { searchParams: { q?: st
           <label>O elige una fecha de vencimiento (opcional; reemplaza a los meses)<input type="date" name="vence" /></label>
           <label className="ck"><input type="checkbox" name="invitar" defaultChecked /> <span><b>Enviar invitación por correo</b> (recomendado): la persona recibe un mail y elige su propia contraseña. Desmárcalo para crearla con la contraseña inicial de arriba.</span></label>
           <button className="btn s">Crear persona</button>
+        </form>
+      </details>
+
+      <details className="box adm">
+        <summary>🆘 Alerta de #ayuda: quién la recibe</summary>
+        <form action={guardarAdminsAyuda} className="fm">
+          <p className="mu">Cuando un alumno escribe #ayuda o @ayuda en una pregunta, la alerta roja aparece arriba solo para los administradores marcados. Si no marcas a nadie, la ven todos.</p>
+          {(todos as { id: string; nombre: string; email: string; rol: string }[]).filter((f) => f.rol === "admin").map((f) => (
+            <label key={f.id} className="ck"><input type="checkbox" name="admin" value={f.id} defaultChecked={(ajA.ayuda_admins ?? "").split(",").includes(f.id)} /> <span>{f.nombre || f.email} <small className="mu">{f.email}</small></span></label>
+          ))}
+          <button className="btn s">Guardar</button>
         </form>
       </details>
 
