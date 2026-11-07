@@ -7,11 +7,12 @@ import BotonEnvio from "@/components/BotonEnvio";
 import PostModal from "@/components/PostModal";
 import FormRespuesta from "@/components/FormRespuesta";
 import FormEditarPublicacion from "@/components/FormEditarPublicacion";
-import { editarPublicacion, borrarPublicacion, publicar, alternarLike, comentar, borrarComentario, marcarUtil } from "./actions";
+import TextoMenciones from "@/components/TextoMenciones";
+import { alternarFijada, editarPublicacion, borrarPublicacion, publicar, alternarLike, comentar, borrarComentario, marcarUtil } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-type Pub = { id: string; user_id: string; autor: string; canal: string; titulo: string; cuerpo: string; imagen_url: string | null; created_at: string; editado_at?: string | null };
+type Pub = { id: string; user_id: string; autor: string; canal: string; titulo: string; cuerpo: string; imagen_url: string | null; created_at: string; editado_at?: string | null; fijada_at?: string | null };
 type Com = { id: string; post_id: string; user_id: string; autor: string; cuerpo: string; created_at: string; util?: boolean };
 const CANALES: Record<string, string> = { anuncios: "Anuncios", preguntas: "Preguntas generales", resultados: "Resultados" };
 const cuando = (iso: string) => new Date(iso).toLocaleString("es-PY", { timeZone: "America/Asuncion", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
@@ -32,7 +33,14 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
   const sb = createClient();
   let q = sb.from("publicaciones").select("*").order("created_at", { ascending: false }).limit(60);
   if (filtro) q = q.eq("canal", filtro);
-  const pubs = ((await q).data ?? []) as Pub[];
+  // Publicaciones fijadas como importantes (hasta 3): van arriba. Se piden aparte para que, si aún no se corrió la migración 0050, la comunidad siga funcionando.
+  let pf = sb.from("publicaciones").select("*").not("fijada_at", "is", null).order("fijada_at", { ascending: false }).limit(3);
+  if (filtro) pf = pf.eq("canal", filtro);
+  const [{ data: dRec }, { data: dFij }] = await Promise.all([q, pf]);
+  const fijadas = (dFij ?? []) as Pub[];
+  const idsFijadas = new Set(fijadas.map((p) => p.id));
+  const pubs = [...fijadas, ...((dRec ?? []) as Pub[]).filter((p) => !idsFijadas.has(p.id))];
+  const nFijadas = fijadas.length;
   const ids = pubs.map((p) => p.id);
   // Me gusta y respuestas se piden a la vez (antes iban una detrás de otra).
   const [{ data: lk }, { data: cm }] = await Promise.all([
@@ -83,7 +91,8 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
           <div className="post-h">
             <span className="av2">{avatar(p.user_id, p.autor)}</span>
             <div><b>{p.autor}</b><small className="mu" style={{ display: "block" }}>{cuando(p.created_at)}{p.editado_at ? " · editado" : ""}</small></div>
-            <span className={"pill c-" + p.canal} style={{ marginLeft: "auto" }}>{CANALES[p.canal]}</span>
+            {p.fijada_at && <span className="pill fijada" style={{ marginLeft: "auto" }}>📌 Importante</span>}
+            <span className={"pill c-" + p.canal} style={{ marginLeft: p.fijada_at ? 6 : "auto" }}>{CANALES[p.canal]}</span>
           </div>
         );
         const vista = (
@@ -92,7 +101,7 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
               <div className="pv-t">
                 {cabecera}
                 {p.titulo && <b className="pv-ti">{p.titulo}</b>}
-                {p.cuerpo && <p className="pv-tx">{p.cuerpo}</p>}
+                {p.cuerpo && <p className="pv-tx"><TextoMenciones texto={p.cuerpo} /></p>}
               </div>
               {p.imagen_url && <img className="pv-img" src={p.imagen_url} alt="" loading="lazy" />}
             </div>
@@ -105,12 +114,15 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
               <div className="post2">
                 {cabecera}
                 {p.titulo && <h2 style={{ margin: "4px 0 6px" }}>{p.titulo}</h2>}
-                {p.cuerpo && <p style={{ whiteSpace: "pre-wrap", margin: "6px 0 0" }}>{p.cuerpo}</p>}
+                {p.cuerpo && <p style={{ whiteSpace: "pre-wrap", margin: "6px 0 0" }}><TextoMenciones texto={p.cuerpo} /></p>}
                 {p.imagen_url && <img className="pimg" src={p.imagen_url} alt="Imagen de la publicación" />}
               </div>
             }
             extras={(perm.admin || p.user_id === perfil.id) ? (
               <>
+                {perm.admin && (p.fijada_at || nFijadas < 3) && (
+                  <form action={alternarFijada}><input type="hidden" name="id" value={p.id} /><input type="hidden" name="fijar" value={p.fijada_at ? "0" : "1"} /><button className="lk">{p.fijada_at ? "Quitar de importantes" : "📌 Fijar como importante"}</button></form>
+                )}
                 {p.user_id === perfil.id && perm.comunidad && <FormEditarPublicacion action={editarPublicacion} id={p.id} titulo={p.titulo} cuerpo={p.cuerpo} />}
                 <form action={borrarPublicacion} style={{ marginLeft: "auto" }}><input type="hidden" name="id" value={p.id} /><button className="lk">Eliminar publicación</button></form>
               </>
@@ -122,7 +134,7 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
                     <span className="av2 s">{avatar(c.user_id, c.autor)}</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <b>{c.autor}</b> <small className="mu">{cuando(c.created_at)}</small>{c.util && <span className="pill pos" style={{ marginLeft: 8 }}>✓ Respuesta útil</span>}
-                      <p style={{ whiteSpace: "pre-wrap", margin: "2px 0 0" }}>{c.cuerpo}</p>
+                      <p style={{ whiteSpace: "pre-wrap", margin: "2px 0 0" }}><TextoMenciones texto={c.cuerpo} /></p>
                       <div className="resp-acc">
                       {(perm.admin || p.user_id === perfil.id) && c.user_id !== p.user_id && (
                         <form action={marcarUtil}><input type="hidden" name="id" value={c.id} /><input type="hidden" name="post" value={p.id} /><input type="hidden" name="volver" value={volver} /><input type="hidden" name="util" value={c.util ? "0" : "1"} /><button className="lk">{c.util ? "Quitar útil" : "Marcar útil"}</button></form>

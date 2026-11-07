@@ -749,3 +749,17 @@ button.chip{cursor:pointer;font-family:inherit;line-height:1.2}
 .ayuda-l{display:flex;flex-direction:column;gap:4px}
 .ayuda-l a{color:inherit;text-decoration:none}
 .ayuda-l a:hover{text-decoration:underline}
+
+/* Dudas por lección, menciones y publicaciones fijadas */
+.dudas{margin-top:22px;padding-top:16px;border-top:1px solid var(--line,rgba(255,255,255,.1))}
+.dudas h3{margin:0 0 10px}
+.duda{margin:0 0 14px;padding:10px 12px;border-radius:12px;border:1px solid var(--line,rgba(255,255,255,.1))}
+.duda-r{margin:8px 0 0 14px;padding:8px 10px;border-left:3px solid var(--g,#22c55e);background:rgba(34,197,94,.07);border-radius:0 8px 8px 0}
+.duda .resf{margin-top:8px}
+.mencion{color:var(--g,#22c55e);font-weight:600}
+.pill.fijada{background:rgba(234,179,8,.18);color:#eab308}
+.cajat{position:relative}
+.menc{position:absolute;left:0;bottom:100%;z-index:30;display:flex;flex-direction:column;min-width:200px;max-width:100%;margin-bottom:4px;border-radius:10px;border:1px solid var(--line,rgba(255,255,255,.15));background:var(--card,#101a14);box-shadow:0 8px 24px rgba(0,0,0,.4);overflow:hidden}
+.menc button{text-align:left;padding:8px 12px;background:none;border:0;color:inherit;cursor:pointer;font:inherit}
+.menc button:hover{background:rgba(34,197,94,.15)}
+.menc small{opacity:.6}

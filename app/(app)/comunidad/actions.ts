@@ -149,3 +149,32 @@ export async function guardarAdminsAyuda(f: FormData) {
   revalidatePath("/", "layout");
   redirect("/accesos?ok=" + encodeURIComponent("Guardado: elegiste quién recibe la alerta de ayuda."));
 }
+
+// Autocompletado de @menciones: educadores y miembros que se pueden mencionar (la base de datos decide quiénes).
+export async function buscarMencionables(q: string): Promise<{ id: string; nombre: string; educador: boolean }[]> {
+  await perfilActual();
+  const t = String(q ?? "").slice(0, 30);
+  if (!t.trim()) return [];
+  const { data } = await createClient().rpc("buscar_mencionables", { p_q: t });
+  return (data ?? []) as { id: string; nombre: string; educador: boolean }[];
+}
+
+// Fijar o quitar una publicación como importante (solo administradores; máximo 3 fijadas).
+export async function alternarFijada(f: FormData) {
+  const perfil = await perfilActual();
+  if (perfil.rol !== "admin") throw new Error("Solo el administrador puede hacer esto.");
+  const id = String(f.get("id") ?? "");
+  const fijar = String(f.get("fijar") ?? "") === "1";
+  const sb = createClient();
+  if (fijar) {
+    const { count } = await sb.from("publicaciones").select("id", { count: "exact", head: true }).not("fijada_at", "is", null);
+    if ((count ?? 0) >= 3) fallo("/comunidad", "Ya hay 3 publicaciones fijadas. Quita una antes de fijar otra.");
+  }
+  const { data: ok, error } = await sb.from("publicaciones").update({ fijada_at: fijar ? new Date().toISOString() : null }).eq("id", id).select("id");
+  if (error) fallo("/comunidad", /fijada_at|schema cache/i.test(error.message) ? "Falta correr la migración 0050 en Supabase." : "No se pudo cambiar: " + error.message);
+  if (!ok || ok.length === 0) fallo("/comunidad", "No se pudo cambiar. ¿Corriste la migración 0050 en Supabase?");
+  await registrar(fijar ? "fijar_publicacion" : "quitar_fijada", id, "");
+  revalidatePath("/comunidad");
+  revalidatePath("/", "layout");
+  redirect("/comunidad");
+}

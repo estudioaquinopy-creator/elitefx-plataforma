@@ -176,3 +176,48 @@ export async function reordenarLecciones(cursoId: string, ids: string[]): Promis
   revalidatePath("/inicio");
   return { ok: true };
 }
+
+// ───────── Dudas en las lecciones ─────────
+type Res = { ok: boolean; error?: string };
+
+// Cualquiera con acceso al curso pregunta debajo de la lección (la base de datos limita a 10 por día y valida el acceso).
+export async function preguntarLeccion(f: FormData): Promise<Res> {
+  const perfil = await perfilActual();
+  const cuerpo = String(f.get("cuerpo") ?? "").trim();
+  if (!cuerpo) return { ok: false, error: "Escribe tu pregunta." };
+  if (cuerpo.length > 2000) return { ok: false, error: "La pregunta es demasiado larga (máximo 2.000 caracteres)." };
+  const sb = createClient();
+  const { data: l } = await sb.from("lecciones").select("id, curso_id").eq("id", String(f.get("leccion_id") ?? "")).maybeSingle();
+  if (!l) return { ok: false, error: "No se encontró la lección." };
+  const { error } = await sb.from("lecciones_comentarios").insert({ leccion_id: l.id, curso_id: l.curso_id, user_id: perfil.id, autor: perfil.nombre || "", cuerpo });
+  if (error) return { ok: false, error: error.message.includes("lecciones_comentarios") && /does not exist|schema cache/i.test(error.message) ? "Falta activar las preguntas (migración 0050)." : error.message };
+  revalidatePath("/cursos/" + l.curso_id);
+  return { ok: true };
+}
+
+// Solo los educadores (administradores) responden; la base de datos también lo exige.
+export async function responderDuda(f: FormData): Promise<Res> {
+  const perfil = await perfilActual();
+  if (perfil.rol !== "admin") return { ok: false, error: "Solo los educadores pueden responder." };
+  const cuerpo = String(f.get("cuerpo") ?? "").trim();
+  if (!cuerpo) return { ok: false, error: "Escribe tu respuesta." };
+  if (cuerpo.length > 2000) return { ok: false, error: "La respuesta es demasiado larga (máximo 2.000 caracteres)." };
+  const sb = createClient();
+  const { data: q } = await sb.from("lecciones_comentarios").select("id, leccion_id, curso_id").eq("id", String(f.get("parent_id") ?? "")).maybeSingle();
+  if (!q) return { ok: false, error: "No se encontró la pregunta." };
+  const { error } = await sb.from("lecciones_comentarios").insert({ leccion_id: q.leccion_id, curso_id: q.curso_id, user_id: perfil.id, autor: perfil.nombre || "", cuerpo, parent_id: q.id });
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/cursos/" + q.curso_id);
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+export async function borrarDuda(f: FormData) {
+  await perfilActual();
+  const sb = createClient();
+  const id = String(f.get("id") ?? "");
+  const { data: q } = await sb.from("lecciones_comentarios").select("curso_id").eq("id", id).maybeSingle();
+  await sb.from("lecciones_comentarios").delete().eq("id", id);
+  if (q) revalidatePath("/cursos/" + q.curso_id);
+  revalidatePath("/", "layout");
+}

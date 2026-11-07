@@ -41,7 +41,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const limite = new Date(); limite.setDate(limite.getDate() + 7);
   const hace14 = new Date(ahora - 14 * 86400000).toISOString();
   const [rNot, rVen, rFx, rCl, aj, rVisMias, rVisPend] = await Promise.all([
-    supabase.from("notificaciones").select("*").order("created_at", { ascending: false }).limit(15),
+    supabase.from("notificaciones").select("*").or("user_id.is.null,user_id.eq." + perfil.id).order("created_at", { ascending: false }).limit(15),
     perfil.rol === "admin"
       ? supabase.from("perfiles").select("id, nombre, email, vence").not("vence", "is", null).gte("vence", new Date(ahora - 30 * 86400000).toISOString().slice(0, 10)).lte("vence", limite.toISOString().slice(0, 10)).order("vence").limit(5)
       : Promise.resolve({ data: null }),
@@ -58,6 +58,23 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       ? supabase.from("visitas").select("id", { count: "exact", head: true }).eq("estado", "pendiente").gte("fecha", hoyPY())
       : Promise.resolve({ count: 0 }),
   ]);
+  // Si aún no se corrió la migración 0050 (columna user_id), se pide la lista general como antes.
+  if (rNot.error) {
+    const r2 = await supabase.from("notificaciones").select("*").order("created_at", { ascending: false }).limit(15);
+    (rNot as { data: unknown }).data = r2.data;
+  }
+  // Administrador: preguntas de lecciones sin responder (últimos 14 días).
+  let dudasSin = 0;
+  if (perfil.rol === "admin" && !perfil.vista) {
+    const [rq, rr] = await Promise.all([
+      supabase.from("lecciones_comentarios").select("id").is("parent_id", null).gte("created_at", hace14).limit(100),
+      supabase.from("lecciones_comentarios").select("parent_id").not("parent_id", "is", null).gte("created_at", hace14).limit(300),
+    ]);
+    if (!rq.error && !rr.error) {
+      const resp = new Set((rr.data ?? []).map((x: { parent_id: string }) => x.parent_id));
+      dudasSin = (rq.data ?? []).filter((x: { id: string }) => !resp.has(x.id)).length;
+    }
+  }
   const vistas = perfil.notif_leidas_at ? new Date(perfil.notif_leidas_at).getTime() : 0;
   const fmt = (d: string) => new Date(d).toLocaleDateString("es-PY");
   const notifs: Notif[] = ((rNot.data ?? []) as { id: string; titulo: string; cuerpo: string; enlace: string | null; created_at: string }[]).map((n) => ({
@@ -133,6 +150,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     items.splice(pos, 0, { href: "/visitas", label: perfil.rol === "admin" ? "Visitas" : "Agendar visita", lock: false, icon: "M3 21V8l9-5l9 5v13M9 21v-6h6v6M7 11h2M15 11h2" });
   }
   const redes = armarRedes(aj);
+  if (dudasSin > 0) notifs.unshift({ id: "dudas-sin", titulo: dudasSin + (dudasSin === 1 ? " pregunta de lección sin responder" : " preguntas de lecciones sin responder"), cuerpo: "Alumnos esperando respuesta", enlace: "/cursos", fecha: "", nueva: true });
   const noLeidas = notifs.filter((n) => n.nueva).length;
   const nombre = perfil.nombre || perfil.email;
   const iniciales = nombre.split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((x) => x[0].toUpperCase()).join("");
