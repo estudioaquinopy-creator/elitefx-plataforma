@@ -85,7 +85,7 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
   return (
     <>
       <Link href={perm.comunidad ? "/comunidad" : "/inicio"} className="back">{perm.comunidad ? "← Comunidad" : "← Inicio"}</Link>
-      <h1>🏆 Ranking de la comunidad</h1>
+      <h1><span className="emo-t">🏆</span> Ranking de la comunidad</h1>
       <p className="sub">Quienes más participan con calidad ganan puntos cada mes. Solo participan los miembros VIP; los administradores y el equipo de ELITE FX no participan.</p>
       {gratis && (
         <section className="box" style={{ borderColor: "var(--go)" }}>

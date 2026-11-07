@@ -773,3 +773,6 @@ button.chip{cursor:pointer;font-family:inherit;line-height:1.2}
 .zoom-img.grande{max-width:none;max-height:none;width:200%;cursor:zoom-out}
 .zoom-x{position:absolute;top:12px;right:14px;width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.15);color:#fff;font-size:18px;cursor:pointer}
 .zoom-ayuda{color:#fff;opacity:.7;margin-top:8px}
+
+/* Los títulos tienen degradado en el texto: los emoticones dentro de ellos se veían blancos; así conservan su color */
+.emo-t{-webkit-text-fill-color:initial;color:initial;background:none}
