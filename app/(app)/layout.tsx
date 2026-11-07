@@ -43,7 +43,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const [rNot, rVen, rFx, rCl, aj, rVisMias, rVisPend] = await Promise.all([
     supabase.from("notificaciones").select("*").or("user_id.is.null,user_id.eq." + perfil.id).order("created_at", { ascending: false }).limit(15),
     perfil.rol === "admin"
-      ? supabase.from("perfiles").select("id, nombre, email, vence").not("vence", "is", null).gte("vence", new Date(ahora - 30 * 86400000).toISOString().slice(0, 10)).lte("vence", limite.toISOString().slice(0, 10)).order("vence").limit(5)
+      ? supabase.from("perfiles").select("id, nombre, email, vence").not("vence", "is", null).gte("vence", new Date(ahora - 30 * 86400000).toISOString().slice(0, 10)).lte("vence", limite.toISOString().slice(0, 10)).order("vence").limit(500)
       : Promise.resolve({ data: null }),
     perm.calendario ? supabase.from("horario_fijo").select("*") : Promise.resolve({ data: null }),
     perm.calendario
@@ -90,16 +90,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     nueva: new Date(n.created_at).getTime() > vistas,
   }));
   const hoyIso = new Date().toISOString().slice(0, 10);
-  for (const a of (rVen.data ?? []) as { id: string; nombre: string; email: string; vence: string }[]) {
-    notifs.unshift({
-      id: "v-" + a.id,
-      titulo: (a.nombre || a.email) + (a.vence < hoyIso ? " · membresía vencida" : " · por vencer"),
-      cuerpo: "Vence " + fmt(a.vence) + " · toca para abrir su ficha",
-      enlace: "/accesos/" + a.id,
-      fecha: "",
-      nueva: true,
-    });
-  }
+  // Membresías: una sola notificación con el número de vencidas (últimos 30 días) y otra con las que vencen en 7 días; al tocarlas abren la lista en Accesos.
+  const venc = ((rVen.data ?? []) as { vence: string }[]);
+  const nVencidas = venc.filter((a) => a.vence < hoyIso).length;
+  const nPorVencer = venc.length - nVencidas;
+  if (nPorVencer > 0) notifs.unshift({ id: "v-por", titulo: nPorVencer + (nPorVencer === 1 ? " membresía por vencer" : " membresías por vencer"), cuerpo: "Vencen en los próximos 7 días · toca para ver la lista", enlace: "/accesos?e=porvencer", fecha: "", nueva: true });
+  if (nVencidas > 0) notifs.unshift({ id: "v-venc", titulo: nVencidas + (nVencidas === 1 ? " membresía vencida" : " membresías vencidas"), cuerpo: "Vencidas en los últimos 30 días · toca para ver la lista", enlace: "/accesos?e=vencido", fecha: "", nueva: true });
   for (const v of (rVisMias.data ?? []) as { id: string; fecha: string; hora: string; estado: string; revisado_at: string }[]) {
     const dia = new Date(v.fecha + "T12:00:00Z").toLocaleDateString("es-PY", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" });
     notifs.unshift({
