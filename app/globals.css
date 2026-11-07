@@ -783,3 +783,10 @@ button.chip{cursor:pointer;font-family:inherit;line-height:1.2}
 /* Reportar contenido de la comunidad */
 .reportar{display:inline-block;position:relative}
 .reportar-f{display:flex;flex-direction:column;gap:8px;margin-top:8px;padding:10px;border-radius:10px;border:1px solid var(--bd,rgba(255,255,255,.15));min-width:240px;max-width:100%}
+
+/* Cajas de respuesta y de preguntas: ocupan todo el ancho (el botón va debajo) */
+.resf{flex-direction:column;align-items:stretch}
+.resf .cajat{width:100%;flex:none;align-self:stretch}
+.resf .cajat textarea{width:100%;box-sizing:border-box}
+.resf .btn{align-self:flex-start}
+.dudas .resf .cajat textarea{min-height:76px}
