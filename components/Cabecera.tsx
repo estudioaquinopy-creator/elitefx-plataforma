@@ -86,10 +86,14 @@ export default function Cabecera({ nombre, email, iniciales, avatar, notifs, noL
           <Link href="/perfil?t=notif" onClick={cerrar} className="mi">Notificaciones</Link>
           <Link href="/ayuda" onClick={cerrar} className="mi">Ayuda y soporte</Link>
           {real && (
-            <form action={modoAlumno}>
-              {vista !== "miembro" && <button name="como" value="miembro" className="mi">Ver como alumno miembro</button>}
-              {vista !== "gratis" && <button name="como" value="gratis" className="mi">Ver como alumno gratis</button>}
-              {vista && <button name="como" value="" className="mi">Salir del modo alumno</button>}
+            <form action={modoAlumno} className="mi" style={{ display: "flex", flexDirection: "column", gap: 4, cursor: "default" }}>
+              <label htmlFor="ver-como" style={{ fontSize: 12, opacity: 0.7 }}>Ver la plataforma como</label>
+              <select id="ver-como" name="como" value={vista} onChange={(e) => e.currentTarget.form?.requestSubmit()} style={{ width: "100%" }}>
+                <option value="">Administrador</option>
+                <option value="gratis">Gratuito</option>
+                <option value="alumno">Gratuito alumno</option>
+                <option value="miembro">VIP</option>
+              </select>
             </form>
           )}
           <form action="/auth/salir" method="post">

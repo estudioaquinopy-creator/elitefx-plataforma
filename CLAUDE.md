@@ -52,7 +52,7 @@ Plataforma propia de la academia ELITE FX (+900 alumnos, migrando desde Skool). 
 - Tutoriales: ya NO hay opción en el menú lateral. La biblioteca de videos (tabla `tutoriales`, categorías, agregar/eliminar del admin) se muestra dentro de Cursos → curso "Tutoriales" (`components/BibliotecaTutoriales.tsx`, `lib/tutoriales.ts`: `esCursoTutoriales` por nombre, `rutaTutoriales()`); ese curso es libre para todos (también gratuitos). filtros por categoría (Todos, Plataforma, Broker, Cripto…, las que existan) y vista en cuadros o en lista (`?vista=lista`, se conserva al filtrar); `/tutoriales` solo reenvía a esa página conservando `?v=` y `?c=` (enlaces de Broker y Journal siguen sirviendo). Las lecciones sueltas que tuviera ese curso ya no se muestran.
 - Videos: Vimeo (privado, restringido a dominios, sin descarga) y YouTube; `lib/video.ts` acepta el enlace o el código de "Incrustar".
 - Bienvenida: quien aún no marcó como visto el video "Bienvenido…" de Primeros pasos es llevado a él al entrar a `/inicio` (`lib/bienvenida.ts`); se busca por nombre del curso y título de la lección.
-- Modo alumno: el admin ve la plataforma como alumno miembro/gratis (cookie `ver_como`, ver `lib/sesion.ts`).
+- Modo alumno: en el menú de la foto, un solo desplegable "Ver la plataforma como": Administrador / Gratuito (nuevo) / Gratuito alumno / VIP (cookie `ver_como` = `gratis` | `alumno` | `miembro`, ver `lib/sesion.ts` y `modoAlumno`).
 - Diseño: tema oscuro verde por defecto (+ modo claro). Mantener el menú lateral en tono neutro. No agregar marcas de agua.
 
 ## Seguridad

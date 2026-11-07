@@ -19,7 +19,7 @@ export async function modoAlumno(f: FormData) {
   const { data } = await sb.from("perfiles").select("rol").eq("id", user.id).single();
   if (data?.rol !== "admin") redirect("/inicio");
   const como = String(f.get("como") ?? "");
-  if (como === "miembro" || como === "gratis") cookies().set("ver_como", como, { path: "/", httpOnly: true, sameSite: "lax", secure: true });
+  if (como === "miembro" || como === "gratis" || como === "alumno") cookies().set("ver_como", como, { path: "/", httpOnly: true, sameSite: "lax", secure: true });
   else cookies().delete("ver_como");
   revalidatePath("/", "layout");
   redirect("/inicio");

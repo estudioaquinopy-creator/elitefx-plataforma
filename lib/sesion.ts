@@ -16,7 +16,7 @@ export type Perfil = {
   es_alumno?: boolean; // fue VIP alguna vez: si hoy es gratuito, es "gratuito alumno" (todos los cursos)
   calendario_bono_hasta?: string | null; // calendario gratis por tener cuenta de Liquid (miembros gratuitos)
   notif_leidas_at: string | null;
-  vista?: "gratis" | "miembro"; // el administrador está viendo la plataforma como alumno
+  vista?: "gratis" | "alumno" | "miembro"; // el administrador está viendo la plataforma como alumno
 };
 
 export const ZONA = "America/Asuncion";
@@ -46,9 +46,10 @@ export const perfilActual = cache(async (): Promise<Perfil> => {
   }
   // Modo alumno: el administrador ve la plataforma tal como la ve un alumno (miembro o gratis).
   const vista = cookies().get("ver_como")?.value;
-  if (real.rol === "admin" && (vista === "miembro" || vista === "gratis")) {
+  if (real.rol === "admin" && (vista === "miembro" || vista === "gratis" || vista === "alumno")) {
     const lim = new Date(); lim.setDate(lim.getDate() + 30);
-    return { ...real, rol: "alumno", plan: vista === "gratis" ? "gratis" : "live_trading", vence: vista === "gratis" ? null : lim.toISOString().slice(0, 10), es_alumno: false, vista };
+    const vip = vista === "miembro"; // "gratis" = gratuito nuevo, "alumno" = gratuito alumno, "miembro" = VIP
+    return { ...real, rol: "alumno", plan: vip ? "live_trading" : "gratis", vence: vip ? lim.toISOString().slice(0, 10) : null, es_alumno: vista === "alumno", vista };
   }
   return real;
 });
