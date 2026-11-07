@@ -21,7 +21,7 @@ export const SECCIONES: Seccion[] = [
   },
   {
     t: "2. Aceptación de los términos",
-    p: ["Al registrarse, iniciar sesión o usar la plataforma de ELITE FX (academia.elitefx.com.py), la persona declara que leyó y acepta estos términos y el aviso del apartado 1. Si no está de acuerdo, no debe usar la plataforma."],
+    p: ["Al registrarse, iniciar sesión o usar la plataforma de ELITE FX, nombre comercial de ELITE FX EAS, con sede en Asunción, Paraguay (academia.elitefx.com.py), la persona declara que leyó y acepta estos términos y el aviso del apartado 1. Si no está de acuerdo, no debe usar la plataforma."],
     items: [
       "Debe tener al menos 18 años cumplidos.",
       "Los datos que entrega al registrarse (nombre, correo, teléfono) deben ser verdaderos y estar actualizados.",
