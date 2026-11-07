@@ -65,14 +65,18 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
   // Administrador: preguntas de lecciones sin responder (últimos 14 días).
   let dudasSin = 0;
+  let dudasLista: Notif[] = [];
   if (perfil.rol === "admin" && !perfil.vista) {
     const [rq, rr] = await Promise.all([
-      supabase.from("lecciones_comentarios").select("id").is("parent_id", null).gte("created_at", hace14).limit(100),
+      supabase.from("lecciones_comentarios").select("id, curso_id, leccion_id, autor, cuerpo, created_at").is("parent_id", null).gte("created_at", hace14).order("created_at", { ascending: false }).limit(100),
       supabase.from("lecciones_comentarios").select("parent_id").not("parent_id", "is", null).gte("created_at", hace14).limit(300),
     ]);
     if (!rq.error && !rr.error) {
       const resp = new Set((rr.data ?? []).map((x: { parent_id: string }) => x.parent_id));
-      dudasSin = (rq.data ?? []).filter((x: { id: string }) => !resp.has(x.id)).length;
+      const sin = (rq.data ?? []).filter((x: { id: string }) => !resp.has(x.id)) as { id: string; curso_id: string; leccion_id: string; autor: string; cuerpo: string; created_at: string }[];
+      dudasSin = sin.length;
+      // Una entrada por pregunta (las 5 más recientes), cada una lleva directo a esa pregunta.
+      dudasLista = sin.slice(0, 5).map((x) => ({ id: "duda-" + x.id, titulo: "Pregunta sin responder: " + (x.autor || "alumno"), cuerpo: x.cuerpo.length > 80 ? x.cuerpo.slice(0, 80) + "…" : x.cuerpo, enlace: "/cursos/" + x.curso_id + "?l=" + x.leccion_id + "#d-" + x.id, fecha: "", nueva: true }));
     }
   }
   const vistas = perfil.notif_leidas_at ? new Date(perfil.notif_leidas_at).getTime() : 0;
@@ -150,7 +154,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     items.splice(pos, 0, { href: "/visitas", label: perfil.rol === "admin" ? "Visitas" : "Agendar visita", lock: false, icon: "M3 21V8l9-5l9 5v13M9 21v-6h6v6M7 11h2M15 11h2" });
   }
   const redes = armarRedes(aj);
-  if (dudasSin > 0) notifs.unshift({ id: "dudas-sin", titulo: dudasSin + (dudasSin === 1 ? " pregunta de lección sin responder" : " preguntas de lecciones sin responder"), cuerpo: "Alumnos esperando respuesta", enlace: "/cursos", fecha: "", nueva: true });
+  if (dudasSin > 5) notifs.unshift({ id: "dudas-mas", titulo: "Hay " + dudasSin + " preguntas de lecciones sin responder", cuerpo: "Se muestran las 5 más recientes", enlace: dudasLista[0]?.enlace ?? "/cursos", fecha: "", nueva: true });
+  notifs.unshift(...dudasLista);
   const noLeidas = notifs.filter((n) => n.nueva).length;
   const nombre = perfil.nombre || perfil.email;
   const iniciales = nombre.split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((x) => x[0].toUpperCase()).join("");

@@ -15,7 +15,7 @@ export default function DudasLeccion({ leccionId, yo, educador, dudas, falta }: 
       {falta && <p className="alerta">Falta correr la migración 0050 en Supabase para activar las preguntas.</p>}
       {!falta && preguntas.length === 0 && <p className="mu">Todavía no hay preguntas. ¡Haz la primera!</p>}
       {preguntas.map((q) => (
-        <div key={q.id} className="duda">
+        <div key={q.id} id={"d-" + q.id} className="duda">
           <div className="duda-q">
             <b>{q.autor}</b> <small className="mu">{cuando(q.created_at)}</small>
             <p style={{ whiteSpace: "pre-wrap", margin: "2px 0 0" }}><TextoMenciones texto={q.cuerpo} /></p>
