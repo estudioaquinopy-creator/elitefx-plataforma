@@ -153,6 +153,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     items.splice(pos, 0, { href: "/visitas", label: perfil.rol === "admin" ? "Visitas" : "Agendar visita", lock: false, icon: "M3 21V8l9-5l9 5v13M9 21v-6h6v6M7 11h2M15 11h2" });
   }
   const redes = armarRedes(aj);
+  // Administrador: contenido reportado por los miembros, sin revisar.
+  if (perfil.rol === "admin" && !perfil.vista) {
+    const rp = await supabase.from("reportes").select("id", { count: "exact", head: true }).eq("estado", "pendiente");
+    const nRep = rp.error ? 0 : rp.count ?? 0;
+    if (nRep > 0) notifs.unshift({ id: "reportes", titulo: nRep + (nRep === 1 ? " reporte de la comunidad por revisar" : " reportes de la comunidad por revisar"), cuerpo: "Contenido marcado por los miembros · toca para revisarlo", enlace: "/comunidad/reportes", fecha: "", nueva: true });
+  }
   if (dudasSin > 5) notifs.unshift({ id: "dudas-mas", titulo: "Hay " + dudasSin + " preguntas de lecciones sin responder", cuerpo: "Se muestran las 5 más recientes", enlace: dudasLista[0]?.enlace ?? "/cursos", fecha: "", nueva: true });
   notifs.unshift(...dudasLista);
   const noLeidas = notifs.filter((n) => n.nueva).length;

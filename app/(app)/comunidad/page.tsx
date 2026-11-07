@@ -7,9 +7,10 @@ import BotonEnvio from "@/components/BotonEnvio";
 import PostModal from "@/components/PostModal";
 import FormRespuesta from "@/components/FormRespuesta";
 import FormEditarPublicacion from "@/components/FormEditarPublicacion";
+import BotonReportar from "@/components/BotonReportar";
 import ImagenZoom from "@/components/ImagenZoom";
 import TextoMenciones from "@/components/TextoMenciones";
-import { alternarFijada, editarPublicacion, borrarPublicacion, publicar, alternarLike, comentar, borrarComentario, marcarUtil } from "./actions";
+import { MOTIVOS_REPORTE, reportar, alternarFijada, editarPublicacion, borrarPublicacion, publicar, alternarLike, comentar, borrarComentario, marcarUtil } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +43,13 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
   const idsFijadas = new Set(fijadas.map((p) => p.id));
   const pubs = [...fijadas, ...((dRec ?? []) as Pub[]).filter((p) => !idsFijadas.has(p.id))];
   const nFijadas = fijadas.length;
+  let nReportes = 0;
+  if (perm.admin) {
+    const rc = await sb.from("reportes").select("id", { count: "exact", head: true }).eq("estado", "pendiente");
+    nReportes = rc.error ? 0 : rc.count ?? 0;
+  }
+  const rr = await sb.from("reportes").select("tipo, post_id, comentario_id").eq("reportado_por", perfil.id).limit(300);
+  const misReportes = new Set(((rr.error ? [] : rr.data ?? []) as { tipo: string; post_id: string; comentario_id: string | null }[]).map((x) => x.tipo + ":" + (x.comentario_id ?? x.post_id)));
   const ids = pubs.map((p) => p.id);
   // Me gusta y respuestas se piden a la vez (antes iban una detrás de otra).
   const [{ data: lk }, { data: cm }] = await Promise.all([
@@ -65,7 +73,7 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
     <>
       <h1>Comunidad</h1>
       <p className="sub">Comparte tus resultados, resuelve dudas y apoya a otros alumnos.</p>
-      <p style={{ margin: "0 0 14px" }}><Link className="btn sd s" href="/comunidad/ranking">🏆 Ranking del mes</Link></p>
+      <p style={{ margin: "0 0 14px", display: "flex", gap: 8, flexWrap: "wrap" }}><Link className="btn sd s" href="/comunidad/ranking">🏆 Ranking del mes</Link>{perm.admin && <Link className="btn sd s" href="/comunidad/reportes">⚑ Reportes{nReportes > 0 ? " (" + nReportes + ")" : ""}</Link>}</p>
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
 
       {perm.comunidad ? (
@@ -119,13 +127,14 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
                 {p.imagen_url && <ImagenZoom className="pimg" src={p.imagen_url} alt="Imagen de la publicación" />}
               </div>
             }
-            extras={(perm.admin || p.user_id === perfil.id) ? (
+            extras={(perm.admin || p.user_id === perfil.id || perm.comunidad) ? (
               <>
                 {perm.admin && (p.fijada_at || nFijadas < 3) && (
                   <form action={alternarFijada}><input type="hidden" name="id" value={p.id} /><input type="hidden" name="fijar" value={p.fijada_at ? "0" : "1"} /><button className="lk">{p.fijada_at ? "Quitar de importantes" : "📌 Fijar como importante"}</button></form>
                 )}
                 {p.user_id === perfil.id && perm.comunidad && <FormEditarPublicacion action={editarPublicacion} id={p.id} titulo={p.titulo} cuerpo={p.cuerpo} />}
-                <form action={borrarPublicacion} style={{ marginLeft: "auto" }}><input type="hidden" name="id" value={p.id} /><button className="lk">Eliminar publicación</button></form>
+                {p.user_id !== perfil.id && perm.comunidad && <BotonReportar action={reportar} motivos={MOTIVOS_REPORTE} campos={{ tipo: "publicacion", post_id: p.id }} ya={misReportes.has("publicacion:" + p.id)} />}
+                {(perm.admin || p.user_id === perfil.id) && <form action={borrarPublicacion} style={{ marginLeft: "auto" }}><input type="hidden" name="id" value={p.id} /><button className="lk">Eliminar publicación</button></form>}
               </>
             ) : null}
             respuestas={
@@ -140,6 +149,7 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
                       {(perm.admin || p.user_id === perfil.id) && c.user_id !== p.user_id && (
                         <form action={marcarUtil}><input type="hidden" name="id" value={c.id} /><input type="hidden" name="post" value={p.id} /><input type="hidden" name="volver" value={volver} /><input type="hidden" name="util" value={c.util ? "0" : "1"} /><button className="lk">{c.util ? "Quitar útil" : "Marcar útil"}</button></form>
                       )}
+                      {c.user_id !== perfil.id && perm.comunidad && <BotonReportar action={reportar} motivos={MOTIVOS_REPORTE} campos={{ tipo: "comentario", post_id: p.id, comentario_id: c.id }} ya={misReportes.has("comentario:" + c.id)} />}
                       {(perm.admin || c.user_id === perfil.id) && (
                         <form action={borrarComentario}><input type="hidden" name="id" value={c.id} /><input type="hidden" name="post" value={p.id} /><input type="hidden" name="volver" value={volver} /><button className="lk">Eliminar</button></form>
                       )}

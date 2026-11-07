@@ -178,3 +178,68 @@ export async function alternarFijada(f: FormData) {
   revalidatePath("/", "layout");
   redirect("/comunidad");
 }
+
+// ───────── Reportar contenido ─────────
+export const MOTIVOS_REPORTE = ["Spam o publicidad", "Estafa o pedido de dinero", "Insulto o acoso", "Información falsa o engañosa", "Otro motivo"];
+
+// Cualquier miembro con acceso a la comunidad reporta una publicación o una respuesta ajena; los administradores la revisan.
+export async function reportar(f: FormData): Promise<{ ok: boolean; error?: string }> {
+  const perfil = await perfilActual();
+  const perm = await permisos(perfil);
+  if (!perm.comunidad) return { ok: false, error: "Solo los miembros pueden reportar." };
+  const tipo = String(f.get("tipo") ?? "") === "comentario" ? "comentario" : "publicacion";
+  const postId = String(f.get("post_id") ?? "");
+  const comId = tipo === "comentario" ? String(f.get("comentario_id") ?? "") : "";
+  const motivo = String(f.get("motivo") ?? "");
+  const detalle = String(f.get("detalle") ?? "").trim().slice(0, 500);
+  if (!MOTIVOS_REPORTE.includes(motivo)) return { ok: false, error: "Elige un motivo." };
+  const sb = createClient();
+  // No se puede reportar lo propio.
+  if (tipo === "comentario") {
+    const { data: c } = await sb.from("comentarios").select("user_id").eq("id", comId).maybeSingle();
+    if (!c) return { ok: false, error: "Esa respuesta ya no existe." };
+    if (c.user_id === perfil.id) return { ok: false, error: "No puedes reportar tu propia respuesta." };
+  } else {
+    const { data: p } = await sb.from("publicaciones").select("user_id").eq("id", postId).maybeSingle();
+    if (!p) return { ok: false, error: "Esa publicación ya no existe." };
+    if (p.user_id === perfil.id) return { ok: false, error: "No puedes reportar tu propia publicación." };
+  }
+  const { error } = await sb.from("reportes").insert({ tipo, post_id: postId, comentario_id: comId || null, reportado_por: perfil.id, motivo, detalle });
+  if (error) {
+    if (error.code === "23505") return { ok: false, error: "Ya reportaste esto. Los administradores lo van a revisar." };
+    if (/reportes/.test(error.message) && /does not exist|schema cache/i.test(error.message)) return { ok: false, error: "Falta correr la migración 0053 en Supabase." };
+    return { ok: false, error: error.message };
+  }
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+// Administrador: marca como revisados los reportes de un contenido (sin borrarlo).
+export async function revisarReporte(f: FormData) {
+  const perfil = await perfilActual();
+  if (perfil.rol !== "admin") throw new Error("Solo el administrador puede hacer esto.");
+  const sb = createClient();
+  const claves = String(f.get("ids") ?? "").split(",").filter(Boolean);
+  if (claves.length) await sb.from("reportes").update({ estado: "revisado", revisado_por: perfil.id, revisado_at: new Date().toISOString() }).in("id", claves);
+  await registrar("revisar_reporte", claves.join(",").slice(0, 200), "");
+  revalidatePath("/comunidad/reportes");
+  revalidatePath("/", "layout");
+}
+
+// Administrador: elimina el contenido reportado y cierra sus reportes.
+export async function eliminarReportado(f: FormData) {
+  const perfil = await perfilActual();
+  if (perfil.rol !== "admin") throw new Error("Solo el administrador puede hacer esto.");
+  const sb = createClient();
+  const tipo = String(f.get("tipo") ?? "");
+  const postId = String(f.get("post_id") ?? "");
+  const comId = String(f.get("comentario_id") ?? "");
+  const claves = String(f.get("ids") ?? "").split(",").filter(Boolean);
+  if (tipo === "comentario" && comId) await sb.from("comentarios").delete().eq("id", comId);
+  else if (postId) await sb.from("publicaciones").delete().eq("id", postId);
+  if (claves.length) await sb.from("reportes").update({ estado: "revisado", revisado_por: perfil.id, revisado_at: new Date().toISOString() }).in("id", claves);
+  await registrar("eliminar_reportado", (tipo === "comentario" ? comId : postId), "");
+  revalidatePath("/comunidad/reportes");
+  revalidatePath("/comunidad");
+  revalidatePath("/", "layout");
+}

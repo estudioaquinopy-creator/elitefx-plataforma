@@ -779,3 +779,7 @@ button.chip{cursor:pointer;font-family:inherit;line-height:1.2}
 
 /* Logo del menú lateral 16 % más grande (117 px → 136 px) */
 .slogo img{max-width:136px}
+
+/* Reportar contenido de la comunidad */
+.reportar{display:inline-block;position:relative}
+.reportar-f{display:flex;flex-direction:column;gap:8px;margin-top:8px;padding:10px;border-radius:10px;border:1px solid var(--bd,rgba(255,255,255,.15));min-width:240px;max-width:100%}
