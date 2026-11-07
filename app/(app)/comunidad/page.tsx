@@ -7,6 +7,7 @@ import BotonEnvio from "@/components/BotonEnvio";
 import PostModal from "@/components/PostModal";
 import FormRespuesta from "@/components/FormRespuesta";
 import FormEditarPublicacion from "@/components/FormEditarPublicacion";
+import ImagenZoom from "@/components/ImagenZoom";
 import TextoMenciones from "@/components/TextoMenciones";
 import { alternarFijada, editarPublicacion, borrarPublicacion, publicar, alternarLike, comentar, borrarComentario, marcarUtil } from "./actions";
 
@@ -115,7 +116,7 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
                 {cabecera}
                 {p.titulo && <h2 style={{ margin: "4px 0 6px" }}>{p.titulo}</h2>}
                 {p.cuerpo && <p style={{ whiteSpace: "pre-wrap", margin: "6px 0 0" }}><TextoMenciones texto={p.cuerpo} /></p>}
-                {p.imagen_url && <img className="pimg" src={p.imagen_url} alt="Imagen de la publicación" />}
+                {p.imagen_url && <ImagenZoom className="pimg" src={p.imagen_url} alt="Imagen de la publicación" />}
               </div>
             }
             extras={(perm.admin || p.user_id === perfil.id) ? (
