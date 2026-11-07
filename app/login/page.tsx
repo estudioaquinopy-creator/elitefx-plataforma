@@ -54,6 +54,7 @@ export default function Login() {
         <Captcha onToken={setToken} reinicio={reinicio} />
         {err && <p className="err">{err}</p>}
         <button className="btn" disabled={busy}>{busy ? "Entrando…" : "Entrar"}</button>
+        <p className="mu" style={{ textAlign: "center", marginTop: 12, fontSize: 12 }}>Al entrar aceptas los <Link href="/terminos" className="lk">términos y condiciones</Link>. Contenido educativo, no es recomendación de inversión.</p>
         <p className="mu" style={{ textAlign: "center", marginTop: 12 }}>¿No tienes cuenta? <Link href="/registro" className="lk">Crea una gratis</Link></p>
       </form>
     </main>

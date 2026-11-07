@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { TERMINOS_VERSION } from "@/lib/terminos";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Tema from "@/components/Tema";
@@ -14,6 +15,7 @@ export default function Registro() {
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [pw2, setPw2] = useState("");
+  const [acepta, setAcepta] = useState(false);
   const [codigo, setCodigo] = useState("");
   // El campo de código solo se muestra desde la fecha de inicio de los referidos (la base de datos también la controla).
   const [verCodigo, setVerCodigo] = useState(false);
@@ -63,6 +65,7 @@ export default function Registro() {
     if (pw !== pw2) return setErr("Las contraseñas no coinciden.");
     const cod = codigo.trim().toUpperCase();
     if (verCodigo && cod && !/^EFX-[A-Z0-9]{6}$/.test(cod)) return setErr("El código de referido no es válido (ejemplo: EFX-1A2B3C). Déjalo vacío si no tienes uno.");
+    if (!acepta) return setErr("Debes aceptar los términos y condiciones para crear tu cuenta.");
     if (CAPTCHA_ACTIVO && !token) return setErr("Completa la verificación de seguridad.");
     setBusy(true);
     const sb = createClient();
@@ -79,6 +82,7 @@ export default function Registro() {
     // Si el proyecto no pide confirmar el correo, la sesión ya está activa: guardamos el teléfono.
     if (data.session && data.user) {
       await sb.from("perfiles").update({ nombre: n, telefono: t }).eq("id", data.user.id);
+      await sb.rpc("aceptar_terminos", { p_version: TERMINOS_VERSION }); // si falla (migración 0052 sin correr) no bloquea el registro
       router.replace("/inicio"); router.refresh();
       return;
     }
@@ -110,6 +114,10 @@ export default function Registro() {
             <label>Contraseña (mínimo 8 caracteres)<input type="password" autoComplete="new-password" minLength={8} required value={pw} onChange={(e) => setPw(e.target.value)} /></label>
             <label>Repite la contraseña<input type="password" autoComplete="new-password" minLength={8} required value={pw2} onChange={(e) => setPw2(e.target.value)} /></label>
             {verCodigo && <label>Código de referido (opcional)<input value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder="EFX-1A2B3C" maxLength={20} autoComplete="off" /></label>}
+            <label style={{ display: "flex", gap: 10, alignItems: "flex-start", margin: "4px 0 12px" }}>
+              <input type="checkbox" required checked={acepta} onChange={(e) => setAcepta(e.target.checked)} style={{ width: "auto", marginTop: 3 }} />
+              <span style={{ fontSize: 13 }}>Soy mayor de 18 años y acepto los <a href="/terminos" target="_blank" rel="noopener noreferrer" className="lk">términos y condiciones</a>. Entiendo que todo el contenido es educativo y no es una recomendación de inversión.</span>
+            </label>
             <Captcha onToken={setToken} reinicio={reinicio} />
             {err && <p className="err">{err}</p>}
             <button className="btn" disabled={busy}>{busy ? "Creando tu cuenta…" : "Crear cuenta"}</button>

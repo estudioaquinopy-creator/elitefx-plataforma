@@ -12,6 +12,7 @@ export type Perfil = {
   vence: string | null;
   telefono: string | null;
   avatar_url?: string | null;
+  terminos_version?: string | null; // versión de los términos aceptada (undefined = migración 0052 sin correr)
   prueba_hasta?: string | null; // prueba VIP por enlace de invitación (vuelve a gratuito al vencer)
   es_alumno?: boolean; // fue VIP alguna vez: si hoy es gratuito, es "gratuito alumno" (todos los cursos)
   calendario_bono_hasta?: string | null; // calendario gratis por tener cuenta de Liquid (miembros gratuitos)

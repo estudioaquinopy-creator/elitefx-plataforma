@@ -13,6 +13,7 @@ import { hoyPY } from "@/lib/sesion";
 import { leerAjustes } from "@/lib/ajustes";
 import { armarRedes } from "@/lib/redes";
 import { referidosActivos, fechaReferidos } from "@/lib/referidos";
+import { TERMINOS_VERSION } from "@/lib/terminos";
 import type { Notif } from "@/components/Cabecera";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +21,8 @@ export const dynamic = "force-dynamic";
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const perfil = await perfilActual();
   const perm = await permisos(perfil);
+  // Términos y condiciones: quien no aceptó la versión vigente debe aceptarlos (si aún no se corrió la migración 0052, la columna no existe y no se pide).
+  if (perfil.terminos_version !== undefined && perfil.terminos_version !== TERMINOS_VERSION) redirect("/aceptar-terminos");
   // La foto de perfil es obligatoria (excepto para administradores y su modo alumno).
   if (perfil.rol !== "admin" && !perfil.vista && !perfil.avatar_url) redirect("/foto");
   const items: { href: string; label: string; lock: boolean; icon: string; soon?: string }[] = [
