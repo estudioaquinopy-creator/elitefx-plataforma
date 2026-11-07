@@ -77,8 +77,8 @@ export default async function Referidos() {
 
         <section className="box">
           <h2>Cómo suman los puntos</h2>
-          <div className="ses"><div style={{ flex: 1 }}><b>Tu referido se activa</b><small className="mu" style={{ display: "block" }}>Se registra con tu código y completa su primera lección (máx. {pts.tope} al mes)</small></div><b>{pts.registro} pts</b></div>
-          <div className="ses"><div style={{ flex: 1 }}><b>Tu referido pasa a VIP</b><small className="mu" style={{ display: "block" }}>Se suma además de los puntos anteriores, en el mes en que se hace VIP</small></div><b>+{pts.vip} pts</b></div>
+          {pts.registro > 0 && <div className="ses"><div style={{ flex: 1 }}><b>Tu referido se activa</b><small className="mu" style={{ display: "block" }}>Se registra con tu código y completa su primera lección (máx. {pts.tope} al mes)</small></div><b>{pts.registro} pts</b></div>}
+          <div className="ses"><div style={{ flex: 1 }}><b>Tu referido pasa a VIP</b><small className="mu" style={{ display: "block" }}>{pts.registro > 0 ? "Se suma además de los puntos anteriores, en el mes en que se hace VIP" : "Por cada persona que se registra con tu código y se hace VIP, en el mes en que se hace VIP"}</small></div><b>{pts.registro > 0 ? "+" : ""}{pts.vip} pts</b></div>
           <small className="mu" style={{ display: "block", marginTop: 10 }}>Estos puntos no cuentan para el tope diario del ranking. Solo valen referidos nuevos: quienes ya tenían cuenta, o comparten teléfono contigo o con otra cuenta, no suman. ELITE FX puede ajustar o descalificar puntos por conductas de spam o trampa.</small>
         </section>
       </div>

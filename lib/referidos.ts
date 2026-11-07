@@ -24,7 +24,7 @@ export function fechaReferidos(ajustes: Record<string, string>) {
 const num = (t: string | undefined, def: number) => (/^\s*\d{1,3}\s*$/.test(t ?? "") ? Number((t as string).trim()) : def);
 // Puntos configurables (mismos valores por defecto que la base de datos).
 export function puntosReferidos(ajustes: Record<string, string>) {
-  return { registro: num(ajustes.ranking_pts_ref, 5), vip: num(ajustes.ranking_pts_ref_vip, 10), tope: num(ajustes.ranking_ref_tope, 10) };
+  return { registro: num(ajustes.ranking_pts_ref, 0), vip: num(ajustes.ranking_pts_ref_vip, 30), tope: num(ajustes.ranking_ref_tope, 10) };
 }
 
 export const enlacePrueba = (codigo: string) => DOMINIO + "/registro?prueba=" + encodeURIComponent(codigo);
