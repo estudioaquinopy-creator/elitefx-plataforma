@@ -26,6 +26,15 @@ function Sec({ s }: { s: Seccion }) {
   );
 }
 
+export function TextoLegal({ secciones, fecha }: { secciones: Seccion[]; fecha: string }) {
+  return (
+    <div className="terminos-txt" style={{ lineHeight: 1.55, fontSize: 14 }}>
+      {secciones.map((s) => <Sec key={s.t} s={s} />)}
+      <p className="mu">Última actualización: {fecha}.</p>
+    </div>
+  );
+}
+
 export default function TextoTerminos() {
   return (
     <div className="terminos-txt" style={{ lineHeight: 1.55, fontSize: 14 }}>

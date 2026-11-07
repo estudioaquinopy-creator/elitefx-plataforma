@@ -32,7 +32,7 @@ export default async function AceptarTerminos({ searchParams }: { searchParams: 
         </div>
         <label style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 14 }}>
           <input type="checkbox" name="acepto" required style={{ width: "auto", marginTop: 3 }} />
-          <span>He leído y acepto los términos y condiciones, y entiendo que el contenido es educativo y no constituye una recomendación de inversión.</span>
+          <span>He leído y acepto los términos y condiciones y la <a href="/privacidad" target="_blank" rel="noopener noreferrer" className="lk">política de privacidad</a>, y entiendo que el contenido es educativo y no constituye una recomendación de inversión.</span>
         </label>
         {searchParams.error && <p className="err">{searchParams.error}</p>}
         <BotonEnvio className="btn" enviando="Guardando…">Acepto y continuar</BotonEnvio>

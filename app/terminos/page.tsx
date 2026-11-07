@@ -11,7 +11,7 @@ export default function Terminos() {
         <div className="logo"><img src="/logo-elitefx.png" alt="ELITE FX · Trading de Alta Precisión" /></div>
         <h1>Términos y condiciones</h1>
         <TextoTerminos />
-        <p style={{ textAlign: "center", marginTop: 16 }}><Link href="/login" className="lk">Volver al inicio de sesión</Link></p>
+        <p style={{ textAlign: "center", marginTop: 16 }}><Link href="/privacidad" className="lk">Política de privacidad</Link> · <Link href="/login" className="lk">Volver al inicio de sesión</Link></p>
       </div>
     </main>
   );

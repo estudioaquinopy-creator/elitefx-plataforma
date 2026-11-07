@@ -116,7 +116,7 @@ export default function Registro() {
             {verCodigo && <label>Código de referido (opcional)<input value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder="EFX-1A2B3C" maxLength={20} autoComplete="off" /></label>}
             <label style={{ display: "flex", gap: 10, alignItems: "flex-start", margin: "4px 0 12px" }}>
               <input type="checkbox" required checked={acepta} onChange={(e) => setAcepta(e.target.checked)} style={{ width: "auto", marginTop: 3 }} />
-              <span style={{ fontSize: 13 }}>Soy mayor de 18 años y acepto los <a href="/terminos" target="_blank" rel="noopener noreferrer" className="lk">términos y condiciones</a>. Entiendo que todo el contenido es educativo y no es una recomendación de inversión.</span>
+              <span style={{ fontSize: 13 }}>Soy mayor de 18 años y acepto los <a href="/terminos" target="_blank" rel="noopener noreferrer" className="lk">términos y condiciones</a> y la <a href="/privacidad" target="_blank" rel="noopener noreferrer" className="lk">política de privacidad</a>. Entiendo que todo el contenido es educativo y no es una recomendación de inversión.</span>
             </label>
             <Captcha onToken={setToken} reinicio={reinicio} />
             {err && <p className="err">{err}</p>}
