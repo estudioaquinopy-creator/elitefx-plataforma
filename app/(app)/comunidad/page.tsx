@@ -7,10 +7,11 @@ import BotonEnvio from "@/components/BotonEnvio";
 import PostModal from "@/components/PostModal";
 import FormRespuesta from "@/components/FormRespuesta";
 import FormEditarPublicacion from "@/components/FormEditarPublicacion";
+import { MOTIVOS_REPORTE } from "@/lib/reportes";
 import BotonReportar from "@/components/BotonReportar";
 import ImagenZoom from "@/components/ImagenZoom";
 import TextoMenciones from "@/components/TextoMenciones";
-import { MOTIVOS_REPORTE, reportar, alternarFijada, editarPublicacion, borrarPublicacion, publicar, alternarLike, comentar, borrarComentario, marcarUtil } from "./actions";
+import { reportar, alternarFijada, editarPublicacion, borrarPublicacion, publicar, alternarLike, comentar, borrarComentario, marcarUtil } from "./actions";
 
 export const dynamic = "force-dynamic";
 

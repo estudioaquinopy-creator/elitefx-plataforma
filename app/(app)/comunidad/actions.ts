@@ -6,6 +6,7 @@ import { perfilActual, permisos } from "@/lib/sesion";
 import { fallo, subirImagen } from "@/lib/subida";
 import { rutaSegura } from "@/lib/seguridad";
 import { registrar } from "@/lib/auditoria";
+import { MOTIVOS_REPORTE } from "@/lib/reportes";
 
 export async function publicar(f: FormData) {
   const perfil = await perfilActual();
@@ -180,7 +181,6 @@ export async function alternarFijada(f: FormData) {
 }
 
 // ───────── Reportar contenido ─────────
-export const MOTIVOS_REPORTE = ["Spam o publicidad", "Estafa o pedido de dinero", "Insulto o acoso", "Información falsa o engañosa", "Otro motivo"];
 
 // Cualquier miembro con acceso a la comunidad reporta una publicación o una respuesta ajena; los administradores la revisan.
 export async function reportar(f: FormData): Promise<{ ok: boolean; error?: string }> {
