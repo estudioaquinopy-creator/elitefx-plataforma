@@ -63,7 +63,7 @@ begin
     'top_cursos', (select coalesce(jsonb_agg(x), '[]') from (select jsonb_build_object('curso', c.nombre, 'lecciones', count(*)::int) x from public.progreso g join public.lecciones l on l.id = g.leccion_id join public.cursos c on c.id = l.curso_id join pf on pf.id = g.user_id
                  where g.completada_at > now() - interval '30 days' group by c.nombre order by count(*) desc limit 6) s),
     'examenes_30', (select jsonb_build_object('intentos', count(*), 'aprobados', count(*) filter (where aprobado)) from public.examen_intentos where created_at > now() - interval '30 days'),
-    'certificados_30', (select count(*) from public.certificados where created_at > now() - interval '30 days'),
+    'certificados_30', (select count(*) from public.certificados where emitido_at > now() - interval '30 days'),
     'publicaciones_30', (select count(*) from public.publicaciones where created_at > now() - interval '30 days'),
     'respuestas_30', (select count(*) from public.comentarios where created_at > now() - interval '30 days'),
     'dudas_30', (select count(*) from public.lecciones_comentarios where parent_id is null and created_at > now() - interval '30 days'),
