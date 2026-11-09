@@ -70,6 +70,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // Administrador: preguntas de lecciones sin responder (últimos 14 días).
   let dudasSin = 0;
   let dudasLista: Notif[] = [];
+  let leccionesSin: Set<string> | null = null; // lecciones con alguna pregunta sin responder (solo se calcula para el administrador)
   if (perfil.rol === "admin" && !perfil.vista) {
     const [rq, rr] = await Promise.all([
       supabase.from("lecciones_comentarios").select("id, curso_id, leccion_id, autor, cuerpo, created_at").is("parent_id", null).gte("created_at", hace14).order("created_at", { ascending: false }).limit(100),
@@ -79,6 +80,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       const resp = new Set((rr.data ?? []).map((x: { parent_id: string }) => x.parent_id));
       const sin = (rq.data ?? []).filter((x: { id: string }) => !resp.has(x.id)) as { id: string; curso_id: string; leccion_id: string; autor: string; cuerpo: string; created_at: string }[];
       dudasSin = sin.length;
+      leccionesSin = new Set(sin.map((x) => x.leccion_id));
       // Una entrada por pregunta (las 5 más recientes), cada una lleva directo a esa pregunta.
       dudasLista = sin.slice(0, 5).map((x) => ({ id: "duda-" + x.id, titulo: "Pregunta sin responder: " + (x.autor || "alumno"), cuerpo: x.cuerpo.length > 80 ? x.cuerpo.slice(0, 80) + "…" : x.cuerpo, enlace: "/cursos/" + x.curso_id + "?l=" + x.leccion_id + "#d-" + x.id, fecha: "", nueva: true }));
     }
@@ -93,6 +95,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     fecha: fmt(n.created_at),
     nueva: new Date(n.created_at).getTime() > vistas,
   }));
+  // Administrador: el aviso "te mencionó en «lección»" ya no se muestra cuando la pregunta de esa lección fue respondida.
+  if (leccionesSin) {
+    for (let i = notifs.length - 1; i >= 0; i--) {
+      const m = /\?l=([^#&]+)#dudas/.exec(notifs[i].enlace ?? "");
+      if (m && notifs[i].titulo.includes("te mencionó en") && !leccionesSin.has(m[1])) notifs.splice(i, 1);
+    }
+  }
   const hoyIso = new Date().toISOString().slice(0, 10);
   // Membresías: una sola notificación con el número de vencidas (últimos 30 días) y otra con las que vencen en 7 días; al tocarlas abren la lista en Accesos.
   const venc = ((rVen.data ?? []) as { vence: string }[]);
