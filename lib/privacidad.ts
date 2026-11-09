@@ -2,7 +2,7 @@ import type { Seccion } from "@/lib/terminos";
 
 // Política de privacidad de ELITE FX. Si cambias el texto, cambia PRIVACIDAD_FECHA.
 // Cuando se tenga el RUC de ELITE FX EAS, escríbelo aquí (aparece en el apartado 1).
-export const PRIVACIDAD_RUC = "";
+export const PRIVACIDAD_RUC = "80173533-5";
 export const PRIVACIDAD_FECHA = "7 de noviembre de 2026";
 
 export const SECCIONES_PRIVACIDAD: Seccion[] = [
