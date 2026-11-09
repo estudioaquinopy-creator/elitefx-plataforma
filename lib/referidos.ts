@@ -1,6 +1,8 @@
 // Sistema de referidos (solo VIP). Se activa para los miembros desde esta fecha (hora de Paraguay).
 // Ojo: la fecha que de verdad manda en la base de datos es el ajuste "referidos_desde" (por defecto 2026-11-09); esta constante solo decide qué se muestra en pantalla.
 export const REFERIDOS_DESDE = "2026-11-09";
+// Único administrador que ve las métricas de referidos (también se comprueba en la base de datos, migración 0054).
+export const DUENO_EMAIL = "estudioaquinopy@gmail.com";
 export const DOMINIO = "https://academia.elitefx.com.py";
 
 // ¿Se muestra el sistema de referidos? Después de la fecha, para todos; antes, solo para el administrador (y su modo alumno) para que lo pruebe.

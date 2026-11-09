@@ -2,11 +2,12 @@ import Link from "next/link";
 import { perfilActual, hoyPY, vipVigente } from "@/lib/sesion";
 import { createClient } from "@/lib/supabase/server";
 import { leerAjustes } from "@/lib/ajustes";
-import { referidosActivos, puntosReferidos, enlaceReferido } from "@/lib/referidos";
+import { referidosActivos, puntosReferidos, enlaceReferido, DUENO_EMAIL } from "@/lib/referidos";
 import CopiarEnlace from "@/components/CopiarEnlace";
 
 export const dynamic = "force-dynamic";
 
+type Met = { referente_id: string; nombre: string; codigo: string | null; total: number; activos: number; vip: number; ultimos30: number; ultimo: string | null };
 type Ref = { nombre: string; registrado: string; activo: boolean; vip: boolean };
 const cuando = (iso: string) => new Date(iso).toLocaleDateString("es-PY", { timeZone: "America/Asuncion", day: "numeric", month: "short" });
 
@@ -32,6 +33,47 @@ export default async function Referidos() {
   }
 
   const sb = createClient();
+  // Los administradores no tienen referidos: no se les crea código. Solo el dueño ve las métricas de quienes refieren.
+  if (adminReal) {
+    const dueno = (perfil.email || "").toLowerCase() === DUENO_EMAIL;
+    const m = dueno ? await sb.rpc("referidos_metricas") : null;
+    const filas = ((m?.data ?? []) as Met[]);
+    const t = filas.reduce((a, f) => ({ total: a.total + f.total, activos: a.activos + f.activos, vip: a.vip + f.vip, m30: a.m30 + f.ultimos30 }), { total: 0, activos: 0, vip: 0, m30: 0 });
+    const pct = (a: number, b: number) => (b ? Math.round((a * 100) / b) + " %" : "—");
+    return (
+      <>
+        <Link href="/comunidad/ranking" className="back">← Ranking</Link>
+        <h1>Referidos · métricas</h1>
+        <p className="sub">Los administradores no tienen código de referidos. Aquí ves cómo van los referidos de los miembros VIP.</p>
+        {!dueno && <section className="box"><p className="mu">Las métricas de referidos las ve solo el administrador principal.</p></section>}
+        {dueno && m?.error && <p className="alerta">Todavía no está activo: corre la migración 0054_referidos_metricas.sql en Supabase.</p>}
+        {dueno && !m?.error && (
+          <>
+            <section className="box">
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(130px,1fr))", gap: 12 }}>
+                {[["Personas referidas", t.total], ["Activos (1.ª lección)", t.activos + " · " + pct(t.activos, t.total)], ["Pasaron a VIP", t.vip + " · " + pct(t.vip, t.total)], ["Últimos 30 días", t.m30], ["Referentes", filas.length]].map(([k, v]) => (
+                  <div key={String(k)}><small className="mu">{k}</small><h2 style={{ margin: "2px 0 0" }}>{v}</h2></div>
+                ))}
+              </div>
+            </section>
+            <section className="box">
+              <h2>Quiénes más refieren</h2>
+              {filas.length === 0 && <p className="mu">Todavía nadie se registró con un código de referido.</p>}
+              {filas.map((f, i) => (
+                <div key={f.referente_id} className="ses" style={{ padding: "8px 0" }}>
+                  <b style={{ width: 28 }}>{i + 1}</b>
+                  <div style={{ flex: 1, minWidth: 0 }}><b>{f.nombre}</b><small className="mu" style={{ display: "block" }}>{f.codigo ?? ""}{f.ultimo ? " · último registro " + cuando(f.ultimo) : ""}</small></div>
+                  <span className="pill">{f.total} referidos</span>
+                  <span className="pill">{f.activos} activos</span>
+                  <span className={"pill" + (f.vip ? " ok" : "")}>★ {f.vip} VIP</span>
+                </div>
+              ))}
+            </section>
+          </>
+        )}
+      </>
+    );
+  }
   const [rc, rl] = await Promise.all([sb.rpc("mi_codigo_referido"), sb.rpc("mis_referidos")]);
   const codigo = (rc.data as string | null) ?? "";
   const falta = !!rc.error;
@@ -46,7 +88,6 @@ export default async function Referidos() {
       <Link href="/comunidad/ranking" className="back">← Ranking</Link>
       <h1>Invita y gana puntos</h1>
       <p className="sub">Comparte tu enlace. Quien se registre entra como miembro gratuito y tú sumas puntos en el ranking del mes.</p>
-      {adminReal && perfil.rol === "admin" && <p className="okmsg">Vista previa de administrador: los miembros la verán desde el 9 de noviembre.</p>}
       {falta && <p className="alerta">Todavía no está activo: corre la migración 0027_referidos.sql en Supabase.</p>}
 
       {codigo && (
