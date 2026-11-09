@@ -27,6 +27,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (perfil.terminos_version !== undefined && perfil.terminos_version !== TERMINOS_VERSION) redirect("/aceptar-terminos");
   // La foto de perfil es obligatoria (excepto para administradores y su modo alumno).
   if (perfil.rol !== "admin" && !perfil.vista && !perfil.avatar_url) redirect("/foto");
+  // El teléfono es obligatorio: quien aún no lo tiene (cuentas anteriores) debe registrarlo (excepto administradores y su modo alumno).
+  if (perfil.rol !== "admin" && !perfil.vista && (perfil.telefono ?? "").replace(/\D/g, "").length < 8) redirect("/telefono");
   const items: { href: string; label: string; lock: boolean; icon: string; soon?: string; aviso?: { texto: string; tipo: "ok" | "no" } }[] = [
     { href: "/inicio", label: "Inicio", lock: false, icon: "M3 11l9-8 9 8M5 10v10h14V10" },
     { href: "/cursos", label: "Cursos", lock: false, icon: "M4 5h7a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H4zM20 5h-3a3 3 0 0 0-3 3" },

@@ -32,7 +32,7 @@ export default async function PerfilPage({ searchParams }: { searchParams: { t?:
       {t === "editar" && (
         <form action={guardarPerfil} className="box fm" style={{ maxWidth: 520 }}>
           <label>Nombre completo<input name="nombre" defaultValue={perfil.nombre} required /></label>
-          <label>Teléfono / WhatsApp<input name="telefono" defaultValue={perfil.telefono ?? ""} /></label>
+          <label>Teléfono / WhatsApp<input name="telefono" type="tel" defaultValue={perfil.telefono ?? ""} required={perfil.rol !== "admin"} placeholder="+595 981 123456" /></label>
           <label>Correo<input value={perfil.email} disabled readOnly /></label>
           <button className="btn s">Guardar cambios</button>
         </form>

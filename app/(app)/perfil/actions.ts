@@ -12,7 +12,9 @@ export async function guardarPerfil(f: FormData) {
   const nombre = String(f.get("nombre") ?? "").trim();
   const telefono = String(f.get("telefono") ?? "").trim();
   if (!nombre) msg("editar", "error", "Escribe tu nombre.");
-  const { error } = await createClient().from("perfiles").update({ nombre, telefono: telefono || null }).eq("id", perfil.id);
+  const tel = telefono.replace(/[^\d+]/g, "");
+  if (perfil.rol !== "admin" && tel.replace(/\D/g, "").length < 8) msg("editar", "error", "El teléfono es obligatorio (con código de país, ej.: +595981123456).");
+  const { error } = await createClient().from("perfiles").update({ nombre, telefono: perfil.rol === "admin" ? telefono || null : tel }).eq("id", perfil.id);
   if (error) msg("editar", "error", "No se pudo guardar: " + error.message);
   msg("editar", "ok", "Perfil actualizado.");
 }
