@@ -124,7 +124,8 @@ export async function marcarUtil(f: FormData) {
 export async function ajustarPuntos(f: FormData) {
   const yo = await perfilActual();
   if (yo.rol !== "admin") throw new Error("Solo el administrador puede hacer esto.");
-  const ruta = "/comunidad/ranking";
+  const volver = String(f.get("volver") ?? "");
+  const ruta = /^\/comunidad\/ranking(\/revisar\?u=[0-9a-f-]{36}&m=\d{4}-\d{2})?$/i.test(volver) ? volver : "/comunidad/ranking";
   const mes = String(f.get("mes") ?? "");
   const user_id = String(f.get("user_id") ?? "");
   const puntos = Math.trunc(Number(f.get("puntos")));
@@ -135,8 +136,8 @@ export async function ajustarPuntos(f: FormData) {
   const { error } = await createClient().from("ranking_ajustes").insert({ mes, user_id, puntos, motivo, admin_id: yo.id });
   if (error) fallo(ruta, "No se pudo guardar el ajuste: " + error.message);
   await registrar("ranking", user_id, (puntos > 0 ? "+" : "") + puntos + " puntos (" + mes + "): " + motivo);
-  revalidatePath(ruta);
-  redirect(ruta + "?m=" + mes);
+  revalidatePath(ruta.split("?")[0]);
+  redirect(ruta.includes("?") ? ruta : ruta + "?m=" + mes);
 }
 
 // Elige qué administradores reciben la alerta de #ayuda (sin marcar a nadie = todos).

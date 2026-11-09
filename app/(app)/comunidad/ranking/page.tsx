@@ -146,12 +146,13 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
       <div className="cols">
         <section className="box">
           <h2>Top 10</h2>
+          {perm.admin && <p className="mu" style={{ margin: "0 0 8px" }}>Toca un nombre para revisar sus publicaciones y respuestas.</p>}
           {top.length === 0 && !falta && <p className="mu">Todavía nadie sumó puntos este mes.{gratis ? "" : " ¡Sé el primero!"}</p>}
           {top.map((f, i) => (
             <div key={f.user_id} className="ses" style={f.user_id === perfil.id ? { background: "var(--sf2)", borderRadius: 12, padding: "12px", borderBottom: 0 } : undefined}>
               <div className="dt" style={{ minWidth: 46 }}>{MEDALLA[i] ?? "#" + (i + 1)}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <b>{f.nombre}{f.user_id === perfil.id ? " (tú)" : ""}</b>{flecha(f.user_id)}
+                {perm.admin ? <Link href={"/comunidad/ranking/revisar?u=" + f.user_id + "&m=" + mes} title="Revisar sus publicaciones y respuestas"><b>{f.nombre}</b> 🔍</Link> : <b>{f.nombre}{f.user_id === perfil.id ? " (tú)" : ""}</b>}{flecha(f.user_id)}
                 <small className="mu" style={{ display: "block" }}>{f.resultados} resultados · {f.preguntas} preguntas · {f.respuestas} respuestas · {f.utiles} útiles · {f.likes} me gusta{f.certificados ? " · " + f.certificados + (f.certificados === 1 ? " certificado" : " certificados") : ""}{f.referidos ? " · " + f.referidos + (f.referidos === 1 ? " referido" : " referidos") : ""}</small>
               </div>
               <span style={{ textAlign: "right" }}><b style={{ fontSize: 18 }}>{f.puntos} pts</b>{i < 3 && <small className="mu" style={{ display: "block" }}>{premios[i]} USDT</small>}</span>
