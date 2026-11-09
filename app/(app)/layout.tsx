@@ -44,6 +44,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const ahora = Date.now();
   const limite = new Date(); limite.setDate(limite.getDate() + 7);
   const hace14 = new Date(ahora - 14 * 86400000).toISOString();
+  const hace7 = new Date(ahora - 7 * 86400000).toISOString();
   const [rNot, rVen, rFx, rCl, aj, rVisMias, rVisPend] = await Promise.all([
     supabase.from("notificaciones").select("*").or("user_id.is.null,user_id.eq." + perfil.id).order("created_at", { ascending: false }).limit(15),
     perfil.rol === "admin"
@@ -67,14 +68,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     const r2 = await supabase.from("notificaciones").select("*").order("created_at", { ascending: false }).limit(15);
     (rNot as { data: unknown }).data = r2.data;
   }
-  // Administrador: preguntas de lecciones sin responder (últimos 14 días).
+  // Administrador: preguntas de lecciones sin responder (últimos 7 días).
   let dudasSin = 0;
   let dudasLista: Notif[] = [];
   let leccionesSin: Set<string> | null = null; // lecciones con alguna pregunta sin responder (solo se calcula para el administrador)
   if (perfil.rol === "admin" && !perfil.vista) {
     const [rq, rr] = await Promise.all([
-      supabase.from("lecciones_comentarios").select("id, curso_id, leccion_id, autor, cuerpo, created_at").is("parent_id", null).gte("created_at", hace14).order("created_at", { ascending: false }).limit(100),
-      supabase.from("lecciones_comentarios").select("parent_id").not("parent_id", "is", null).gte("created_at", hace14).limit(300),
+      supabase.from("lecciones_comentarios").select("id, curso_id, leccion_id, autor, cuerpo, created_at").is("parent_id", null).gte("created_at", hace7).order("created_at", { ascending: false }).limit(100),
+      supabase.from("lecciones_comentarios").select("parent_id").not("parent_id", "is", null).gte("created_at", hace7).limit(300),
     ]);
     if (!rq.error && !rr.error) {
       const resp = new Set((rr.data ?? []).map((x: { parent_id: string }) => x.parent_id));
