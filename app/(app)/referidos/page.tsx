@@ -51,7 +51,7 @@ export default async function Referidos({ searchParams }: { searchParams: { r?: 
           <Link href="/referidos" className="back">← Métricas de referidos</Link>
           <h1>{ref?.nombre ?? "Referente"}</h1>
           <p className="sub">{ref?.codigo ? "Código " + ref.codigo + " · " : ""}{lista.length} {lista.length === 1 ? "persona referida" : "personas referidas"}{ref ? " · " + ref.activos + " activas · " + ref.vip + " pasaron a VIP" : ""}</p>
-          {dr.error && <p className="alerta">Todavía no está activo: corre la migración 0055_referidos_detalle.sql en Supabase.</p>}
+          {dr.error && <p className="alerta">No se pudo cargar el detalle ({dr.error.message}). Si dice que la función no existe, corre la migración 0055_referidos_detalle.sql en Supabase.</p>}
           <section className="box">
             {!dr.error && lista.length === 0 && <p className="mu">Esta persona todavía no tiene referidos.</p>}
             {lista.map((d) => (

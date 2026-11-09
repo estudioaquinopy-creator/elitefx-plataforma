@@ -10,7 +10,7 @@ begin
   select p.id, coalesce(nullif(btrim(p.nombre), ''), split_part(p.email, '@', 1)), p.email, p.telefono, p.created_at,
          (select min(g.completada_at) from public.progreso g where g.user_id = p.id),
          (select count(*)::int from public.progreso g where g.user_id = p.id),
-         p.plan, p.vence::date, p.vip_desde, p.es_alumno, (p.prueba_hasta is not null and p.prueba_hasta > now())
+         p.plan::text, p.vence::date, p.vip_desde, p.es_alumno, (p.prueba_hasta is not null and p.prueba_hasta > now())
   from public.perfiles p
   where p.referido_por = p_referente
   order by p.created_at desc;
