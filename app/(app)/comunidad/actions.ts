@@ -18,7 +18,10 @@ export async function publicar(f: FormData) {
   if (!["anuncios", "preguntas", "resultados"].includes(canal)) fallo("/comunidad", "Elige una etiqueta.");
   if (canal === "anuncios" && !perm.admin) fallo("/comunidad", "Solo el equipo de ELITE FX publica anuncios.");
   if (!perm.comunidad) fallo("/comunidad", "Tu plan solo permite leer la comunidad.");
-  const imagen = await subirImagen(f.get("imagen"), "/comunidad", "comunidad");
+  // Si la subida falla por una excepción (red lenta, almacenamiento caído), se avisa en pantalla en vez de quedar el botón girando.
+  let imagen: string | null = null;
+  try { imagen = await subirImagen(f.get("imagen"), "/comunidad", "comunidad"); }
+  catch (e) { if (String((e as { digest?: string })?.digest ?? "").startsWith("NEXT_REDIRECT")) throw e; fallo("/comunidad", "No se pudo subir la imagen. Prueba con una más liviana o sin imagen."); }
   if (!cuerpo && !imagen && !titulo) fallo("/comunidad", "Escribe un mensaje o sube una imagen.");
   // Evita duplicados: si se envió exactamente lo mismo hace menos de 2 minutos, no se vuelve a crear.
   const { data: rep } = await createClient().from("publicaciones").select("id").eq("user_id", perfil.id).eq("canal", canal).eq("titulo", titulo).eq("cuerpo", cuerpo).gte("created_at", new Date(Date.now() - 120000).toISOString()).limit(1);

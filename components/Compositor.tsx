@@ -44,6 +44,11 @@ export default function Compositor({ action, opciones, iniciales }: { action: (f
             if (!f0) return setArchivo("");
             setArchivo("Preparando…");
             const f1 = await achicar(f0);
+            // Se avisa aquí mismo si la imagen no sirve (formato no admitido o muy pesada), en vez de fallar al publicar.
+            if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(f1.type) || f1.size > 4.5 * 1024 * 1024) {
+              inp.value = "";
+              return setArchivo("⚠ Imagen no válida (usa JPG/PNG/WEBP de menos de 4 MB)");
+            }
             const dt = new DataTransfer(); dt.items.add(f1); inp.files = dt.files;
             setArchivo(f1.name.slice(0, 18));
           }} />
