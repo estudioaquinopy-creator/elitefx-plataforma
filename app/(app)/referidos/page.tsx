@@ -8,10 +8,12 @@ import CopiarEnlace from "@/components/CopiarEnlace";
 export const dynamic = "force-dynamic";
 
 type Met = { referente_id: string; nombre: string; codigo: string | null; total: number; activos: number; vip: number; ultimos30: number; ultimo: string | null };
+type Det = { id: string; nombre: string; email: string; telefono: string | null; registrado: string; primera_leccion: string | null; lecciones: number; plan: string; vence: string | null; vip_desde: string | null; es_alumno: boolean; en_prueba: boolean };
+const estadoDe = (d: Det) => (d.en_prueba ? "Prueba VIP" : d.plan !== "gratis" ? "VIP vigente" : d.vip_desde || d.es_alumno ? "VIP vencido" : "Gratuito");
 type Ref = { nombre: string; registrado: string; activo: boolean; vip: boolean };
 const cuando = (iso: string) => new Date(iso).toLocaleDateString("es-PY", { timeZone: "America/Asuncion", day: "numeric", month: "short" });
 
-export default async function Referidos() {
+export default async function Referidos({ searchParams }: { searchParams: { r?: string } }) {
   const perfil = await perfilActual();
   const aj = await leerAjustes();
   const adminReal = perfil.rol === "admin"; // en modo alumno se comporta como un alumno real (sin atajo)
@@ -38,6 +40,35 @@ export default async function Referidos() {
     const dueno = (perfil.email || "").toLowerCase() === DUENO_EMAIL;
     const m = dueno ? await sb.rpc("referidos_metricas") : null;
     const filas = ((m?.data ?? []) as Met[]);
+    const rid = /^[0-9a-f-]{36}$/i.test(searchParams.r ?? "") ? searchParams.r! : "";
+    if (dueno && rid) {
+      const ref = filas.find((f) => f.referente_id === rid);
+      const dr = await sb.rpc("referidos_detalle", { p_referente: rid });
+      const lista = ((dr.data ?? []) as Det[]);
+      const cd = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("es-PY", { timeZone: "America/Asuncion", day: "numeric", month: "short", year: "numeric" }) : "—");
+      return (
+        <>
+          <Link href="/referidos" className="back">← Métricas de referidos</Link>
+          <h1>{ref?.nombre ?? "Referente"}</h1>
+          <p className="sub">{ref?.codigo ? "Código " + ref.codigo + " · " : ""}{lista.length} {lista.length === 1 ? "persona referida" : "personas referidas"}{ref ? " · " + ref.activos + " activas · " + ref.vip + " pasaron a VIP" : ""}</p>
+          {dr.error && <p className="alerta">Todavía no está activo: corre la migración 0055_referidos_detalle.sql en Supabase.</p>}
+          <section className="box">
+            {!dr.error && lista.length === 0 && <p className="mu">Esta persona todavía no tiene referidos.</p>}
+            {lista.map((d) => (
+              <div key={d.id} className="ses" style={{ flexWrap: "wrap", gap: 10, padding: "10px 0" }}>
+                <div style={{ flex: 1, minWidth: 240 }}>
+                  <b>{d.nombre}</b>
+                  <small className="mu" style={{ display: "block" }}>{d.email}{d.telefono ? " · " + d.telefono : ""}</small>
+                  <small className="mu" style={{ display: "block" }}>Se registró el {cd(d.registrado)} · {d.primera_leccion ? "primera lección el " + cd(d.primera_leccion) + " (" + d.lecciones + " completadas)" : "todavía no completa ninguna lección"}{d.vip_desde ? " · VIP desde " + cd(d.vip_desde) : ""}{d.vence ? " · vence " + cd(d.vence) : ""}</small>
+                </div>
+                <span className={"pill" + (d.lecciones > 0 ? " ok" : "")}>{d.lecciones > 0 ? "Activo" : "Sin actividad"}</span>
+                <span className={"pill" + (estadoDe(d) === "VIP vigente" ? " ok" : "")}>{estadoDe(d)}</span>
+              </div>
+            ))}
+          </section>
+        </>
+      );
+    }
     const t = filas.reduce((a, f) => ({ total: a.total + f.total, activos: a.activos + f.activos, vip: a.vip + f.vip, m30: a.m30 + f.ultimos30 }), { total: 0, activos: 0, vip: 0, m30: 0 });
     const pct = (a: number, b: number) => (b ? Math.round((a * 100) / b) + " %" : "—");
     return (
@@ -58,11 +89,12 @@ export default async function Referidos() {
             </section>
             <section className="box">
               <h2>Quiénes más refieren</h2>
+              <p className="mu" style={{ margin: "0 0 6px" }}>Toca un nombre para ver a todos sus referidos.</p>
               {filas.length === 0 && <p className="mu">Todavía nadie se registró con un código de referido.</p>}
               {filas.map((f, i) => (
                 <div key={f.referente_id} className="ses" style={{ padding: "8px 0" }}>
                   <b style={{ width: 28 }}>{i + 1}</b>
-                  <div style={{ flex: 1, minWidth: 0 }}><b>{f.nombre}</b><small className="mu" style={{ display: "block" }}>{f.codigo ?? ""}{f.ultimo ? " · último registro " + cuando(f.ultimo) : ""}</small></div>
+                  <div style={{ flex: 1, minWidth: 0 }}><Link href={"/referidos?r=" + f.referente_id}><b>{f.nombre}</b></Link><small className="mu" style={{ display: "block" }}>{f.codigo ?? ""}{f.ultimo ? " · último registro " + cuando(f.ultimo) : ""}</small></div>
                   <span className="pill">{f.total} referidos</span>
                   <span className="pill">{f.activos} activos</span>
                   <span className={"pill" + (f.vip ? " ok" : "")}>★ {f.vip} VIP</span>
