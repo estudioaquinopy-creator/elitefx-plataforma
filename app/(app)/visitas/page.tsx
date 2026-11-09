@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual, hoyPY, vipVigente } from "@/lib/sesion";
-import { HORAS, TEMAS, proximosMiercoles, fechaLarga, horaCorta, whatsapp } from "@/lib/visitas";
+import { HORAS, TEMAS, proximosMiercoles, visitaVigente, fechaLarga, horaCorta, whatsapp } from "@/lib/visitas";
 import { agendarVisita, cancelarVisita, revisarVisita } from "./actions";
 import { leerAjustes } from "@/lib/ajustes";
 import FormVisita from "@/components/FormVisita";
@@ -41,8 +41,8 @@ export default async function Visitas({ searchParams }: { searchParams: { ok?: s
     const ids = Array.from(new Set(todas.map((v) => v.user_id)));
     const { data: ps } = await sb.from("perfiles").select("id, nombre, email, telefono").in("id", ids.concat(["00000000-0000-0000-0000-000000000000"]));
     const quien = new Map(((ps ?? []) as { id: string; nombre: string; email: string; telefono: string | null }[]).map((p) => [p.id, p]));
-    const pend = todas.filter((v) => v.estado === "pendiente" && v.fecha >= hoy);
-    const prox = todas.filter((v) => v.estado === "aprobada" && v.fecha >= hoy);
+    const pend = todas.filter((v) => v.estado === "pendiente" && visitaVigente(v.fecha, v.hora));
+    const prox = todas.filter((v) => v.estado === "aprobada" && visitaVigente(v.fecha, v.hora));
     const resto = todas.filter((v) => !pend.includes(v) && !prox.includes(v)).reverse().slice(0, 30);
     const Tarjeta = ({ v }: { v: Visita }) => {
       const p = quien.get(v.user_id);
@@ -101,7 +101,7 @@ export default async function Visitas({ searchParams }: { searchParams: { ok?: s
   ]);
   const faltaMigracion = !!rMis.error;
   const mis = (rMis.data ?? []) as Visita[];
-  const activa = mis.find((v) => (v.estado === "pendiente" || v.estado === "aprobada") && v.fecha >= hoy);
+  const activa = mis.find((v) => (v.estado === "pendiente" || v.estado === "aprobada") && visitaVigente(v.fecha, v.hora));
   // Resultado de la última solicitud revisada: se muestra arriba, bien visible (aprobada o rechazada).
   const ultima = mis.find((v) => v.estado === "rechazada" && v.revisado_at && Date.now() - new Date(v.revisado_at).getTime() < 14 * 86400000);
   const rechazadaReciente = !activa && ultima && mis[0]?.id === ultima.id ? ultima : undefined;

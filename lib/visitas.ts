@@ -27,3 +27,9 @@ export function whatsapp(tel: string | null | undefined): string {
   if (d.startsWith("0")) return "595" + d.slice(1);
   return d.length <= 9 ? "595" + d : d;
 }
+
+// ¿La visita todavía no terminó? Cada turno dura 1 hora (hora de Paraguay, UTC-3): a las 15:00 el turno termina a las 16:00.
+export function visitaVigente(fecha: string, hora: string, ahora: number = Date.now()): boolean {
+  const fin = new Date(fecha + "T" + hora.slice(0, 5) + ":00-03:00").getTime() + 3600000;
+  return Number.isNaN(fin) ? fecha >= new Date(ahora - 3 * 3600000).toISOString().slice(0, 10) : ahora < fin;
+}

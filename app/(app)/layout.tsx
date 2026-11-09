@@ -10,6 +10,7 @@ import { perfilActual, permisos, vipVigente } from "@/lib/sesion";
 import { modoAlumno } from "./actions";
 import { ocurrencias, type Fijo } from "@/lib/horario";
 import { hoyPY } from "@/lib/sesion";
+import { visitaVigente } from "@/lib/visitas";
 import { leerAjustes } from "@/lib/ajustes";
 import { armarRedes } from "@/lib/redes";
 import { referidosActivos, fechaReferidos } from "@/lib/referidos";
@@ -153,9 +154,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     // Aviso dentro del propio menú "Agendar visita": visita aprobada (mientras falte) o rechazada (los últimos 3 días).
     let aviso: { texto: string; tipo: "ok" | "no" } | undefined;
     if (perfil.rol !== "admin") {
-      const rv = await supabase.from("visitas").select("fecha, estado, revisado_at").eq("user_id", perfil.id).in("estado", ["aprobada", "rechazada"]).order("revisado_at", { ascending: false }).limit(5);
-      const vs = ((rv.data ?? []) as { fecha: string; estado: string; revisado_at: string | null }[]);
-      const ap = vs.find((v) => v.estado === "aprobada" && v.fecha >= hoyPY());
+      const rv = await supabase.from("visitas").select("fecha, hora, estado, revisado_at").eq("user_id", perfil.id).in("estado", ["aprobada", "rechazada"]).order("revisado_at", { ascending: false }).limit(5);
+      const vs = ((rv.data ?? []) as { fecha: string; hora: string; estado: string; revisado_at: string | null }[]);
+      const ap = vs.find((v) => v.estado === "aprobada" && visitaVigente(v.fecha, v.hora));
       const re = vs.find((v) => v.estado === "rechazada" && v.revisado_at && Date.now() - new Date(v.revisado_at).getTime() < 3 * 86400000);
       if (ap) aviso = { texto: "Aprobada", tipo: "ok" };
       else if (re) aviso = { texto: "Rechazada", tipo: "no" };
