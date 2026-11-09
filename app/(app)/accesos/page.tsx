@@ -70,7 +70,7 @@ export default async function Accesos({ searchParams }: { searchParams: { q?: st
       {searchParams.ok && <p className="okmsg">{searchParams.ok}</p>}
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
 
-      <p style={{ margin: "0 0 12px" }}><Link className="btn g s" href="/accesos/importar">Importar alumnos desde CSV</Link> <Link className="btn g s" href="/accesos/liquid">Cuentas de Liquid</Link> <Link className="btn g s" href="/accesos/invitaciones">Invitaciones de prueba</Link> <Link className="btn g s" href="/accesos/registro">Registro de acciones</Link></p>
+      <p style={{ margin: "0 0 12px" }}><Link className="btn s" href="/accesos/metricas">📊 Métricas</Link> <Link className="btn g s" href="/accesos/importar">Importar alumnos desde CSV</Link> <Link className="btn g s" href="/accesos/liquid">Cuentas de Liquid</Link> <Link className="btn g s" href="/accesos/invitaciones">Invitaciones de prueba</Link> <Link className="btn g s" href="/accesos/registro">Registro de acciones</Link></p>
 
       {anclados.length > 0 && (
         <section className="box">

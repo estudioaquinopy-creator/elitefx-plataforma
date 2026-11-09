@@ -5,6 +5,7 @@ import EnLinea from "@/components/EnLinea";
 import ProgresoNav from "@/components/ProgresoNav";
 import Shell from "@/components/Shell";
 import InactividadAuto from "@/components/InactividadAuto";
+import RastroActividad from "@/components/RastroActividad";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual, permisos, vipVigente } from "@/lib/sesion";
 import { modoAlumno } from "./actions";
@@ -208,6 +209,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <ProgresoNav />
       {children}
       <InactividadAuto />
+      <RastroActividad />
     </Shell>
   );
 }
