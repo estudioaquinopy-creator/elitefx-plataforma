@@ -7,7 +7,7 @@ import FormVisita from "@/components/FormVisita";
 
 export const dynamic = "force-dynamic";
 
-type Visita = { id: string; user_id: string; fecha: string; hora: string; tema: string; detalle: string; estado: string; nota: string; created_at: string };
+type Visita = { id: string; user_id: string; fecha: string; hora: string; tema: string; detalle: string; estado: string; nota: string; created_at: string; revisado_at?: string | null };
 const ETIQ: Record<string, string> = { pendiente: "Pendiente de aprobación", aprobada: "Aprobada", rechazada: "Rechazada", cancelada: "Cancelada" };
 const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 
@@ -102,6 +102,9 @@ export default async function Visitas({ searchParams }: { searchParams: { ok?: s
   const faltaMigracion = !!rMis.error;
   const mis = (rMis.data ?? []) as Visita[];
   const activa = mis.find((v) => (v.estado === "pendiente" || v.estado === "aprobada") && v.fecha >= hoy);
+  // Resultado de la última solicitud revisada: se muestra arriba, bien visible (aprobada o rechazada).
+  const ultima = mis.find((v) => v.estado === "rechazada" && v.revisado_at && Date.now() - new Date(v.revisado_at).getTime() < 14 * 86400000);
+  const rechazadaReciente = !activa && ultima && mis[0]?.id === ultima.id ? ultima : undefined;
   const ocupadas = ((rOc.data ?? []) as { fecha: string; hora: string }[]).map((o) => o.fecha + " " + horaCorta(o.hora));
   const fechas = proximosMiercoles(hoy).map((f) => ({ v: f, t: cap(fechaLarga(f)) }));
   return (
@@ -109,6 +112,8 @@ export default async function Visitas({ searchParams }: { searchParams: { ok?: s
       <h1>Agendar visita</h1>
       <p className="sub">Visita nuestras oficinas para resolver tus dudas, cargar brokers, configurar MetaTrader o revisar cualquier pregunta sobre la estrategia. Atendemos solo los <b>miércoles de 8:00 a 17:00</b> y cada visita se confirma manualmente.</p>
       {msgs}
+      {activa?.estado === "aprobada" && <section className="box" style={{ borderColor: "var(--go)" }}><div className="tag" style={{ marginTop: 0 }}>✓ Tu solicitud fue aprobada</div><p style={{ margin: "6px 0 0" }}><b>{cap(fechaLarga(activa.fecha))} · {horaCorta(activa.hora)}</b>. Te esperamos en la oficina.{activa.nota ? " " + activa.nota : ""}</p></section>}
+      {rechazadaReciente && <section className="box" style={{ borderColor: "var(--co)" }}><div className="tag" style={{ marginTop: 0, color: "var(--co)" }}>✕ Tu solicitud no pudo aprobarse</div><p style={{ margin: "6px 0 0" }}><b>{cap(fechaLarga(rechazadaReciente.fecha))} · {horaCorta(rechazadaReciente.hora)}</b>.{rechazadaReciente.nota ? " " + rechazadaReciente.nota : " Puedes elegir otro horario abajo."}</p></section>}
       {faltaMigracion ? (
         <section className="box"><p className="mu">Esta función todavía no está disponible.</p></section>
       ) : activa ? (
@@ -116,8 +121,7 @@ export default async function Visitas({ searchParams }: { searchParams: { ok?: s
           <div className="tag">{ETIQ[activa.estado]}</div>
           <h2>{cap(fechaLarga(activa.fecha))} · {horaCorta(activa.hora)}</h2>
           <p className="mu">Tema: {activa.tema}{activa.detalle ? " — " + activa.detalle : ""}</p>
-          {activa.estado === "pendiente" && <p className="mu">Estamos revisando tu solicitud; te avisaremos en las notificaciones (la campana) apenas la aprobemos.</p>}
-          {activa.estado === "aprobada" && <p className="okmsg">¡Tu visita está confirmada! Te esperamos en la oficina.{activa.nota ? " " + activa.nota : ""}</p>}
+          {activa.estado === "pendiente" && <p className="mu">Estamos revisando tu solicitud. Apenas la aprobemos (o no), lo verás aquí arriba y en el menú “Agendar visita”.</p>}
           <form action={cancelarVisita}><input type="hidden" name="id" value={activa.id} /><button className="btn g s">Cancelar esta visita</button></form>
         </section>
       ) : (

@@ -25,7 +25,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (perfil.terminos_version !== undefined && perfil.terminos_version !== TERMINOS_VERSION) redirect("/aceptar-terminos");
   // La foto de perfil es obligatoria (excepto para administradores y su modo alumno).
   if (perfil.rol !== "admin" && !perfil.vista && !perfil.avatar_url) redirect("/foto");
-  const items: { href: string; label: string; lock: boolean; icon: string; soon?: string }[] = [
+  const items: { href: string; label: string; lock: boolean; icon: string; soon?: string; aviso?: { texto: string; tipo: "ok" | "no" } }[] = [
     { href: "/inicio", label: "Inicio", lock: false, icon: "M3 11l9-8 9 8M5 10v10h14V10" },
     { href: "/cursos", label: "Cursos", lock: false, icon: "M4 5h7a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H4zM20 5h-3a3 3 0 0 0-3 3" },
     { href: "/calendario", label: "Calendario", lock: !perm.calendario, icon: "M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v13H3zM3 11h18M8 3v4M16 3v4" },
@@ -150,7 +150,17 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // Agendar visita: solo VIP y administrador (después de Noticias; Referidos queda debajo).
   if ((perfil.rol === "admin" && perfil.vista !== "gratis") || (vipVigente(perfil) && !perfil.prueba_hasta)) {
     const pos = items.findIndex((i) => i.href === "/noticias") + 1; // justo después de Noticias, por encima de Referidos
-    items.splice(pos, 0, { href: "/visitas", label: perfil.rol === "admin" ? "Visitas" : "Agendar visita", lock: false, icon: "M3 21V8l9-5l9 5v13M9 21v-6h6v6M7 11h2M15 11h2" });
+    // Aviso dentro del propio menú "Agendar visita": visita aprobada (mientras falte) o rechazada (los últimos 3 días).
+    let aviso: { texto: string; tipo: "ok" | "no" } | undefined;
+    if (perfil.rol !== "admin") {
+      const rv = await supabase.from("visitas").select("fecha, estado, revisado_at").eq("user_id", perfil.id).in("estado", ["aprobada", "rechazada"]).order("revisado_at", { ascending: false }).limit(5);
+      const vs = ((rv.data ?? []) as { fecha: string; estado: string; revisado_at: string | null }[]);
+      const ap = vs.find((v) => v.estado === "aprobada" && v.fecha >= hoyPY());
+      const re = vs.find((v) => v.estado === "rechazada" && v.revisado_at && Date.now() - new Date(v.revisado_at).getTime() < 3 * 86400000);
+      if (ap) aviso = { texto: "Aprobada", tipo: "ok" };
+      else if (re) aviso = { texto: "Rechazada", tipo: "no" };
+    }
+    items.splice(pos, 0, { href: "/visitas", label: perfil.rol === "admin" ? "Visitas" : "Agendar visita", lock: false, aviso, icon: "M3 21V8l9-5l9 5v13M9 21v-6h6v6M7 11h2M15 11h2" });
   }
   const redes = armarRedes(aj);
   // Administrador: contenido reportado por los miembros, sin revisar.

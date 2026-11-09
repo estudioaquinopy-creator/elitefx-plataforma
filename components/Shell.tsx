@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import type { GrupoRedes } from "@/lib/redes";
 import Cabecera, { type Notif } from "./Cabecera";
 
-type Item = { href: string; label: string; lock: boolean; icon: string; soon?: string };
+type Item = { href: string; label: string; lock: boolean; icon: string; soon?: string; aviso?: { texto: string; tipo: "ok" | "no" } };
 
 type Props = { items: Item[]; nombre: string; email: string; iniciales: string; avatar?: string; notifs: Notif[]; noLeidas: number; real: boolean; vista: string; redes: GrupoRedes[]; editarRedes: boolean; enLinea?: React.ReactNode; children: React.ReactNode };
 
@@ -40,6 +40,7 @@ export default function Shell({ items, nombre, email, iniciales, avatar, notifs,
             </svg></span>
             <span className="nl">{it.label}</span>
             {it.lock && <span className="pill">Miembros</span>}
+            {it.aviso && <span className={it.aviso.tipo === "ok" ? "pill ok" : "pill st-vencido"} style={{ marginLeft: "auto" }}>{it.aviso.texto}</span>}
           </Link>
         ))}
         {(redes.length > 0 || editarRedes) && (
