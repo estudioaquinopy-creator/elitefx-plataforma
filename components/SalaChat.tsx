@@ -87,7 +87,7 @@ export default function SalaChat({ yo, esAdmin, inicial, reaccionesIni, bloquead
   // Pone o quita mi reacción a un mensaje (se ve al instante y se confirma en la base).
   async function reaccionar(id: string, emoji: string) {
     if (bloqueado || !abierta) return;
-    setAbrirReac("");
+    setMenu("");
     const ya = reacs.some((x) => x.mensaje_id === id && x.user_id === yo && x.emoji === emoji);
     const sb = createClient();
     setErr("");
