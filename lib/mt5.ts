@@ -167,7 +167,13 @@ function filasCsv(texto: string): string[][] {
 async function filasXlsx(buf: ArrayBuffer): Promise<string[][]> {
   const { unzipSync, strFromU8 } = await import("fflate");
   const z = unzipSync(new Uint8Array(buf));
-  const xml = (k: string) => new DOMParser().parseFromString(strFromU8(z[k]), "application/xml");
+  // Los XLSX que exporta MetaTrader 5 guardan sus XML en UTF-16 (con BOM); los de Excel, en UTF-8.
+  const texto = (k: string) => {
+    const u = z[k];
+    if ((u[0] === 0xff && u[1] === 0xfe) || (u[0] === 0xfe && u[1] === 0xff)) return decodificar(u.buffer.slice(u.byteOffset, u.byteOffset + u.byteLength) as ArrayBuffer).replace(/^\uFEFF/, "");
+    return strFromU8(u);
+  };
+  const xml = (k: string) => new DOMParser().parseFromString(texto(k).replace(/^\uFEFF/, ""), "application/xml");
   const compartidas: string[] = [];
   if (z["xl/sharedStrings.xml"]) {
     for (const si of Array.from(xml("xl/sharedStrings.xml").getElementsByTagName("si"))) {
