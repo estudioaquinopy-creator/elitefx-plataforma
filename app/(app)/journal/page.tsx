@@ -89,6 +89,17 @@ export default async function Journal({ searchParams }: { searchParams: { alumno
               </div>
               <Link className="btn s" href={cuentaUrl(x.id)}>Abrir journal</Link>
               {!ver && (
+                <details style={{ flexBasis: "100%" }}>
+                  <summary className="mu" style={{ cursor: "pointer" }}>Editar nombre</summary>
+                  <form action={renombrarCuenta} className="fm" style={{ flexDirection: "row", gap: 8, alignItems: "flex-end", marginTop: 8 }}>
+                    <input type="hidden" name="cuenta" value={x.id} />
+                    <input type="hidden" name="volver" value="lista" />
+                    <input name="nombre" defaultValue={x.nombre} maxLength={40} required />
+                    <button className="btn g s" style={{ marginBottom: 14 }}>Guardar nombre</button>
+                  </form>
+                </details>
+              )}
+              {!ver && (
                 <form action={eliminarCuenta}>
                   <input type="hidden" name="cuenta" value={x.id} />
                   <ConfirmarEnvio mensaje={"¿Eliminar la cuenta \"" + x.nombre + "\" con sus " + (cont[i].count ?? 0) + " operaciones? No se puede deshacer."} className="btn g s">Eliminar</ConfirmarEnvio>

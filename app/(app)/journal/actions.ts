@@ -42,10 +42,12 @@ export async function renombrarCuenta(f: FormData) {
   const id = String(f.get("cuenta") ?? "");
   const nombre = String(f.get("nombre") ?? "").trim().slice(0, 40);
   if (!RE_ID.test(id)) fallo("/journal", "Cuenta no válida.");
-  if (!nombre) fallo(rutaCuenta(id), "El nombre no puede quedar vacío.");
+  if (!nombre) fallo(String(f.get("volver") ?? "") === "lista" ? "/journal" : rutaCuenta(id), "El nombre no puede quedar vacío.");
+  const desdeLista = String(f.get("volver") ?? "") === "lista";
   const { error } = await createClient().from("journal_cuentas").update({ nombre }).eq("id", id).eq("user_id", perfil.id);
-  if (error) fallo(rutaCuenta(id), "No se pudo cambiar el nombre: " + error.message);
+  if (error) fallo(desdeLista ? "/journal" : rutaCuenta(id), "No se pudo cambiar el nombre: " + error.message);
   revalidatePath("/journal");
+  if (desdeLista) redirect("/journal?ok=" + encodeURIComponent("Nombre actualizado."));
   redirect(rutaCuenta(id));
 }
 
