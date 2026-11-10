@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { salaAbierta } from "@/lib/sala";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual, permisos } from "@/lib/sesion";
 import CajaTexto from "@/components/CajaTexto";
@@ -74,7 +75,7 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
     <>
       <h1>Comunidad</h1>
       <p className="sub">Comparte tus resultados, resuelve dudas y apoya a otros alumnos.</p>
-      <p style={{ margin: "0 0 14px", display: "flex", gap: 8, flexWrap: "wrap" }}><Link className="btn sd s" href="/comunidad/ranking">🏆 Ranking del mes</Link><Link className="btn sd s" href="/comunidad/sala">💬 Sala de trading en vivo</Link>{perm.admin && <Link className="btn sd s" href="/comunidad/reportes">⚑ Reportes{nReportes > 0 ? " (" + nReportes + ")" : ""}</Link>}</p>
+      <p style={{ margin: "0 0 14px", display: "flex", gap: 8, flexWrap: "wrap" }}><Link className="btn sd s" href="/comunidad/ranking">🏆 Ranking del mes</Link><Link className={"btn s sala-vivo" + (salaAbierta() ? " on" : "")} href="/comunidad/sala"><span className="sala-punto" />{salaAbierta() ? "EN VIVO · Sala de trading" : "Sala de trading en vivo"}</Link>{perm.admin && <Link className="btn sd s" href="/comunidad/reportes">⚑ Reportes{nReportes > 0 ? " (" + nReportes + ")" : ""}</Link>}</p>
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
 
       {perm.comunidad ? (
