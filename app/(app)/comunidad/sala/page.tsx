@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { clienteAdmin } from "@/lib/supabase/admin";
 import { perfilActual, permisos } from "@/lib/sesion";
-import SalaChat, { type MsgSala } from "@/components/SalaChat";
+import SalaChat, { type MsgSala, type ReaccionSala } from "@/components/SalaChat";
 import { SALA_DESDE, SALA_HASTA, SALA_HORAS_HISTORIAL } from "@/lib/sala";
 import { desbloquearEnSala } from "./actions";
 
@@ -38,6 +38,9 @@ export default async function Sala() {
   const r = await sb.from("sala_mensajes").select("*").order("created_at", { ascending: false }).limit(200);
   const faltaMigracion = !!r.error;
   const inicial = ((r.data ?? []) as MsgSala[]).reverse();
+  // Reacciones (si aún no se corrió la migración 0061, simplemente no hay).
+  const rr = await sb.from("sala_reacciones").select("mensaje_id, user_id, emoji").limit(3000);
+  const reacciones = (rr.error ? [] : rr.data ?? []) as ReaccionSala[];
   const { data: bl } = await sb.from("sala_bloqueos").select("user_id, hasta").or("hasta.is.null,hasta.gt." + new Date().toISOString());
   const bloqueos = (bl ?? []) as { user_id: string; hasta: string | null }[];
   const bloqueado = bloqueos.some((b) => b.user_id === perfil.id) && !perm.admin;
@@ -54,7 +57,7 @@ export default async function Sala() {
       <p className="sub">Chat en tiempo real para los miembros VIP: escribe, comparte tus gráficos y mira lo que opera la comunidad. Abre todos los días de {SALA_DESDE} a {SALA_HASTA} (hora de Paraguay) y los mensajes se borran a las {SALA_HORAS_HISTORIAL} horas. Contenido educativo, no es recomendación de inversión.</p>
       {faltaMigracion
         ? <section className="box"><p className="mu">La sala todavía no está activada.</p></section>
-        : <SalaChat yo={perfil.id} esAdmin={perm.admin} inicial={inicial} bloqueado={bloqueado} />}
+        : <SalaChat yo={perfil.id} esAdmin={perm.admin} inicial={inicial} reaccionesIni={reacciones} bloqueado={bloqueado} />}
       {perm.admin && bloqueos.length > 0 && (
         <section className="box">
           <h2>Personas bloqueadas ({bloqueos.length})</h2>

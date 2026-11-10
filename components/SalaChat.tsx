@@ -4,7 +4,9 @@ import { createClient } from "@/lib/supabase/client";
 import { borrarMensajeSala, bloquearEnSala } from "@/app/(app)/comunidad/sala/actions";
 import { SALA_DESDE, SALA_HASTA, salaAbierta } from "@/lib/sala";
 
-export type MsgSala = { id: string; user_id: string; autor_nombre: string; autor_avatar: string | null; autor_admin: boolean; texto: string; imagen_url: string | null; created_at: string };
+export type MsgSala = { id: string; user_id: string; autor_nombre: string; autor_avatar: string | null; autor_admin: boolean; texto: string; imagen_url: string | null; created_at: string; responde_a?: string | null; resp_nombre?: string | null; resp_texto?: string | null };
+export type ReaccionSala = { mensaje_id: string; user_id: string; emoji: string };
+const REACCIONES = ["👍", "❤️", "🔥", "😂", "🎯", "🚀"];
 
 const TIPOS = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const hora = (iso: string) => new Date(iso).toLocaleTimeString("es-PY", { timeZone: "America/Asuncion", hour: "2-digit", minute: "2-digit", hour12: false });
@@ -12,8 +14,11 @@ const dia = (iso: string) => new Date(iso).toLocaleDateString("es-PY", { timeZon
 const EMOJIS = ["😀", "😂", "😅", "😎", "🤔", "😬", "😡", "😢", "👍", "👎", "👏", "🙌", "💪", "🙏", "🤝", "🔥", "🚀", "🎯", "💰", "💵", "📈", "📉", "✅", "❌", "⚠️", "🟢", "🔴", "🟡", "⏰", "👀", "💚", "❤️", "🏆", "🎉", "😴", "🤑", "😱", "🧠", "📊", "🥇"];
 const iniciales = (n: string) => (n || "?").split(/\s+/).map((x) => x[0]).slice(0, 2).join("").toUpperCase();
 
-export default function SalaChat({ yo, esAdmin, inicial, bloqueado }: { yo: string; esAdmin: boolean; inicial: MsgSala[]; bloqueado: boolean }) {
+export default function SalaChat({ yo, esAdmin, inicial, reaccionesIni, bloqueado }: { yo: string; esAdmin: boolean; inicial: MsgSala[]; reaccionesIni: ReaccionSala[]; bloqueado: boolean }) {
   const [msgs, setMsgs] = useState<MsgSala[]>(inicial);
+  const [reacs, setReacs] = useState<ReaccionSala[]>(reaccionesIni);
+  const [respondiendo, setRespondiendo] = useState<MsgSala | null>(null);
+  const [abrirReac, setAbrirReac] = useState("");
   const [texto, setTexto] = useState("");
   const [foto, setFoto] = useState<File | null>(null);
   const [err, setErr] = useState("");
@@ -42,6 +47,8 @@ export default function SalaChat({ yo, esAdmin, inicial, bloqueado }: { yo: stri
     const recargar = async () => {
       const { data } = await sb.from("sala_mensajes").select("*").order("created_at", { ascending: false }).limit(200);
       if (data) setMsgs((data as MsgSala[]).reverse());
+      const rr = await sb.from("sala_reacciones").select("mensaje_id, user_id, emoji").limit(3000);
+      if (rr.data) setReacs(rr.data as ReaccionSala[]);
     };
     const canal = sb.channel("sala-trading")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "sala_mensajes" }, (p) => {
@@ -50,7 +57,15 @@ export default function SalaChat({ yo, esAdmin, inicial, bloqueado }: { yo: stri
       })
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "sala_mensajes" }, (p) => {
         const id = (p.old as { id?: string }).id;
-        if (id) setMsgs((m) => m.filter((x) => x.id !== id));
+        if (id) { setMsgs((m) => m.filter((x) => x.id !== id)); setReacs((r) => r.filter((x) => x.mensaje_id !== id)); }
+      })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "sala_reacciones" }, (p) => {
+        const n = p.new as ReaccionSala;
+        setReacs((r) => (r.some((x) => x.mensaje_id === n.mensaje_id && x.user_id === n.user_id && x.emoji === n.emoji) ? r : [...r, n]));
+      })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "sala_reacciones" }, (p) => {
+        const o = p.old as Partial<ReaccionSala>;
+        if (o.mensaje_id && o.user_id && o.emoji) setReacs((r) => r.filter((x) => !(x.mensaje_id === o.mensaje_id && x.user_id === o.user_id && x.emoji === o.emoji)));
       })
       .subscribe((estado) => { vivoRef.current = estado === "SUBSCRIBED"; setEnVivo(estado === "SUBSCRIBED"); });
     const t = setInterval(() => { setAbierta(salaAbierta()); if (!vivoRef.current) recargar(); }, 5000);
@@ -62,6 +77,32 @@ export default function SalaChat({ yo, esAdmin, inicial, bloqueado }: { yo: stri
     const c = caja.current;
     if (c && cerca.current) c.scrollTop = c.scrollHeight;
   }, [msgs]);
+
+  // Pone o quita mi reacción a un mensaje (se ve al instante y se confirma en la base).
+  async function reaccionar(id: string, emoji: string) {
+    if (bloqueado || !abierta) return;
+    setAbrirReac("");
+    const ya = reacs.some((x) => x.mensaje_id === id && x.user_id === yo && x.emoji === emoji);
+    const sb = createClient();
+    setErr("");
+    if (ya) {
+      setReacs((r) => r.filter((x) => !(x.mensaje_id === id && x.user_id === yo && x.emoji === emoji)));
+      const { error } = await sb.from("sala_reacciones").delete().eq("mensaje_id", id).eq("user_id", yo).eq("emoji", emoji);
+      if (error) { setErr(error.message); setReacs((r) => [...r, { mensaje_id: id, user_id: yo, emoji }]); }
+    } else {
+      setReacs((r) => [...r, { mensaje_id: id, user_id: yo, emoji }]);
+      const { error } = await sb.from("sala_reacciones").insert({ mensaje_id: id, user_id: yo, emoji });
+      if (error) { setErr(error.message.includes("sala_reacciones") && error.message.includes("does not exist") ? "Las reacciones todavía no están activadas." : error.message); setReacs((r) => r.filter((x) => !(x.mensaje_id === id && x.user_id === yo && x.emoji === emoji))); }
+    }
+  }
+
+  function irA(id: string) {
+    const el = document.getElementById("sala-" + id);
+    if (!el) return;
+    el.scrollIntoView({ block: "center", behavior: "smooth" });
+    el.style.transition = "background .3s"; el.style.background = "rgba(0,212,122,.18)";
+    setTimeout(() => { el.style.background = ""; }, 1200);
+  }
 
   async function enviar() {
     if (enviando || bloqueado || !abierta) return;
@@ -79,14 +120,14 @@ export default function SalaChat({ yo, esAdmin, inicial, bloqueado }: { yo: stri
       if (up.error) { setErr("No se pudo subir la imagen: " + up.error.message); setEnviando(false); return; }
       url = sb.storage.from("sala").getPublicUrl(path).data.publicUrl;
     }
-    const { data, error } = await sb.from("sala_mensajes").insert({ user_id: yo, texto: t, imagen_url: url, imagen_path: path }).select("*").single();
+    const { data, error } = await sb.from("sala_mensajes").insert({ user_id: yo, texto: t, imagen_url: url, imagen_path: path, ...(respondiendo ? { responde_a: respondiendo.id } : {}) }).select("*").single();
     if (error) {
       setErr(error.message.includes("sala_mensajes") && error.message.includes("does not exist") ? "La sala todavía no está activada." : error.message);
       if (path) await sb.storage.from("sala").remove([path]);
     } else if (data) {
       cerca.current = true;
       setMsgs((m) => (m.some((x) => x.id === (data as MsgSala).id) ? m : [...m, data as MsgSala]));
-      setTexto(""); setFoto(null);
+      setTexto(""); setFoto(null); setRespondiendo(null);
       if (archivo.current) archivo.current.value = "";
     }
     setEnviando(false);
@@ -112,7 +153,7 @@ export default function SalaChat({ yo, esAdmin, inicial, bloqueado }: { yo: stri
           ultimoDia = d;
           const mio = m.user_id === yo;
           return (
-            <div key={m.id}>
+            <div key={m.id} id={"sala-" + m.id} style={{ borderRadius: 10 }}>
               {sep && <div className="mu" style={{ textAlign: "center", fontSize: 12, margin: "4px 0 8px" }}>{sep === dia(new Date().toISOString()) ? "Hoy" : sep}</div>}
               <div style={{ display: "flex", gap: 10, alignItems: "flex-start", flexDirection: mio ? "row-reverse" : "row" }}>
                 {m.autor_avatar
@@ -124,8 +165,41 @@ export default function SalaChat({ yo, esAdmin, inicial, bloqueado }: { yo: stri
                     {m.autor_admin && <span style={{ marginLeft: 6, color: "var(--go)", fontWeight: 700 }}>Educador</span>}
                     <span className="mu" style={{ marginLeft: 8 }}>{hora(m.created_at)}</span>
                   </div>
+                  {m.resp_nombre && (
+                    <div
+                      onClick={() => m.responde_a && irA(m.responde_a)}
+                      style={{ borderLeft: "3px solid var(--ac)", background: "rgba(255,255,255,.05)", borderRadius: 6, padding: "4px 8px", margin: "2px 0 6px", fontSize: 12, cursor: m.responde_a ? "pointer" : "default" }}
+                    >
+                      <b>{m.resp_nombre}</b>
+                      <div className="mu" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 360 }}>{m.resp_texto}</div>
+                    </div>
+                  )}
                   {m.texto && <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{m.texto}</div>}
                   {m.imagen_url && <a href={m.imagen_url} target="_blank" rel="noopener noreferrer"><img src={m.imagen_url} alt="Imagen enviada" style={{ maxWidth: "100%", maxHeight: 260, borderRadius: 8, marginTop: 6, display: "block" }} /></a>}
+                  {(() => {
+                    const grupos = REACCIONES.map((e) => ({ e, n: reacs.filter((x) => x.mensaje_id === m.id && x.emoji === e).length, yo: reacs.some((x) => x.mensaje_id === m.id && x.emoji === e && x.user_id === yo) })).filter((g) => g.n > 0);
+                    return (
+                      <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap", alignItems: "center" }}>
+                        {grupos.map((g) => (
+                          <button key={g.e} type="button" onClick={() => reaccionar(m.id, g.e)} disabled={deshabilitado}
+                            style={{ fontSize: 13, padding: "1px 8px", borderRadius: 999, border: "1px solid " + (g.yo ? "var(--ac)" : "var(--bd)"), background: g.yo ? "rgba(0,212,122,.18)" : "transparent", color: "var(--tx)", cursor: "pointer" }}>
+                            {g.e} {g.n}
+                          </button>
+                        ))}
+                        {!deshabilitado && (
+                          <>
+                            <button type="button" className="mu" onClick={() => setAbrirReac(abrirReac === m.id ? "" : m.id)} style={{ fontSize: 12, border: 0, background: "transparent", cursor: "pointer", padding: "1px 4px" }} aria-label="Reaccionar">☺ Reaccionar</button>
+                            <button type="button" className="mu" onClick={() => { setRespondiendo(m); area.current?.focus(); }} style={{ fontSize: 12, border: 0, background: "transparent", cursor: "pointer", padding: "1px 4px" }}>↩ Responder</button>
+                          </>
+                        )}
+                        {abrirReac === m.id && (
+                          <span style={{ display: "inline-flex", gap: 2, padding: "2px 6px", border: "1px solid var(--bd)", borderRadius: 999, background: "var(--sf)" }}>
+                            {REACCIONES.map((e) => <button key={e} type="button" onClick={() => reaccionar(m.id, e)} style={{ fontSize: 18, border: 0, background: "transparent", cursor: "pointer", padding: 2 }} aria-label={e}>{e}</button>)}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
                   {esAdmin && (
                     <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap", alignItems: "center" }}>
                       <form action={async (f) => { await borrarMensajeSala(f); setMsgs((x) => x.filter((y) => y.id !== m.id)); }}>
@@ -153,6 +227,15 @@ export default function SalaChat({ yo, esAdmin, inicial, bloqueado }: { yo: stri
         {err && <p className="alerta" style={{ margin: "0 0 8px" }}>{err}</p>}
         {bloqueado && <p className="alerta" style={{ margin: "0 0 8px" }}>Un administrador te bloqueó en la sala de trading. Puedes leer, pero no escribir.</p>}
         {!bloqueado && !abierta && <p className="mu" style={{ margin: "0 0 8px" }}>La sala está cerrada. Abre todos los días a las {SALA_DESDE} y cierra a las {SALA_HASTA} (hora de Paraguay).</p>}
+        {respondiendo && (
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center", borderLeft: "3px solid var(--ac)", background: "var(--sf2)", borderRadius: 8, padding: "6px 10px", margin: "0 0 8px", fontSize: 13 }}>
+            <div style={{ minWidth: 0 }}>
+              <b>Respondiendo a {respondiendo.autor_nombre || "Miembro"}</b>
+              <div className="mu" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{respondiendo.texto || "📷 Imagen"}</div>
+            </div>
+            <button type="button" onClick={() => setRespondiendo(null)} style={{ border: 0, background: "transparent", color: "var(--tx)", cursor: "pointer", fontSize: 16 }} aria-label="Cancelar respuesta">✕</button>
+          </div>
+        )}
         {foto && <p className="mu" style={{ margin: "0 0 8px" }}>📎 {foto.name} <button type="button" className="btn g s" style={{ fontSize: 11, padding: "2px 8px", minHeight: 0 }} onClick={() => { setFoto(null); if (archivo.current) archivo.current.value = ""; }}>Quitar</button></p>}
         {emojis && !deshabilitado && (
           <div style={{ display: "flex", flexWrap: "wrap", gap: 4, padding: 8, marginBottom: 8, border: "1px solid var(--bd)", borderRadius: 12, background: "var(--sf2)" }}>
