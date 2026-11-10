@@ -160,19 +160,19 @@ export default function SalaChat({ yo, esAdmin, inicial, bloqueado }: { yo: stri
           </div>
         )}
         <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
-          <label className="btn g s" style={{ cursor: deshabilitado ? "not-allowed" : "pointer", opacity: deshabilitado ? 0.5 : 1, margin: 0 }} title="Enviar una imagen o un gráfico">
+          <label className="btn g s" style={{ cursor: deshabilitado ? "not-allowed" : "pointer", opacity: deshabilitado ? 0.5 : 1, margin: 0, flex: "none", width: "auto", height: 44, display: "grid", placeItems: "center" }} title="Enviar una imagen o un gráfico">
             📷
             <input ref={archivo} type="file" accept="image/jpeg,image/png,image/webp,image/gif" style={{ display: "none" }} disabled={deshabilitado} onChange={(e) => setFoto(e.target.files?.[0] ?? null)} />
           </label>
-          <button type="button" className="btn g s" style={{ margin: 0 }} disabled={deshabilitado} onClick={() => setEmojis((v) => !v)} title="Emojis" aria-label="Emojis">😀</button>
+          <button type="button" className="btn g s" style={{ margin: 0, flex: "none", width: "auto", height: 44 }} disabled={deshabilitado} onClick={() => setEmojis((v) => !v)} title="Emojis" aria-label="Emojis">😀</button>
           <textarea
             ref={area}
-            value={texto} onChange={(e) => setTexto(e.target.value)} rows={1} maxLength={500} disabled={deshabilitado}
+            value={texto} onChange={(e) => setTexto(e.target.value)} rows={2} maxLength={500} disabled={deshabilitado}
             placeholder={deshabilitado ? "No puedes escribir ahora" : "Escribe un mensaje…"}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); enviar(); } }}
-            style={{ flex: 1, minWidth: 0, width: "auto", resize: "none", minHeight: 40, maxHeight: 120, margin: 0 }}
+            style={{ flex: "1 1 auto", minWidth: 0, width: "auto", resize: "none", minHeight: 44, maxHeight: 140, margin: 0 }}
           />
-          <button type="button" className="btn" onClick={enviar} disabled={deshabilitado || enviando} style={{ margin: 0 }}>{enviando ? "…" : "Enviar"}</button>
+          <button type="button" className="btn s" onClick={enviar} disabled={deshabilitado || enviando} style={{ margin: 0, flex: "none", width: "auto", minWidth: 0, padding: "0 18px", height: 44 }}>{enviando ? "…" : "Enviar"}</button>
         </div>
       </div>
     </div>
