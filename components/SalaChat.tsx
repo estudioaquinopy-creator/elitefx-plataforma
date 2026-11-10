@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { borrarMensajeSala, bloquearEnSala } from "@/app/(app)/comunidad/sala/actions";
 import { SALA_DESDE, SALA_HASTA, salaAbierta } from "@/lib/sala";
 
-export type MsgSala = { id: string; user_id: string; autor_nombre: string; autor_avatar: string | null; autor_admin: boolean; texto: string; imagen_url: string | null; created_at: string; responde_a?: string | null; resp_nombre?: string | null; resp_texto?: string | null };
+export type MsgSala = { id: string; user_id: string; autor_nombre: string; autor_avatar: string | null; autor_admin: boolean; texto: string; imagen_url: string | null; created_at: string; responde_a?: string | null; resp_nombre?: string | null; resp_texto?: string | null; imagen_path?: string | null; editado_at?: string | null };
 export type ReaccionSala = { mensaje_id: string; user_id: string; emoji: string };
 const REACCIONES = ["👍", "❤️", "🔥", "😂", "🎯", "🚀"];
 
@@ -19,6 +19,8 @@ export default function SalaChat({ yo, esAdmin, inicial, reaccionesIni, bloquead
   const [reacs, setReacs] = useState<ReaccionSala[]>(reaccionesIni);
   const [respondiendo, setRespondiendo] = useState<MsgSala | null>(null);
   const [abrirReac, setAbrirReac] = useState("");
+  const [editando, setEditando] = useState<{ id: string; texto: string } | null>(null);
+  const [ahoraMs, setAhoraMs] = useState(() => Date.now());
   const [texto, setTexto] = useState("");
   const [foto, setFoto] = useState<File | null>(null);
   const [err, setErr] = useState("");
@@ -55,6 +57,10 @@ export default function SalaChat({ yo, esAdmin, inicial, reaccionesIni, bloquead
         const n = p.new as MsgSala;
         setMsgs((m) => (m.some((x) => x.id === n.id) ? m : [...m, n].slice(-300)));
       })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "sala_mensajes" }, (p) => {
+        const n = p.new as MsgSala;
+        setMsgs((m) => m.map((x) => (x.id === n.id ? { ...x, ...n } : x)));
+      })
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "sala_mensajes" }, (p) => {
         const id = (p.old as { id?: string }).id;
         if (id) { setMsgs((m) => m.filter((x) => x.id !== id)); setReacs((r) => r.filter((x) => x.mensaje_id !== id)); }
@@ -68,7 +74,7 @@ export default function SalaChat({ yo, esAdmin, inicial, reaccionesIni, bloquead
         if (o.mensaje_id && o.user_id && o.emoji) setReacs((r) => r.filter((x) => !(x.mensaje_id === o.mensaje_id && x.user_id === o.user_id && x.emoji === o.emoji)));
       })
       .subscribe((estado) => { vivoRef.current = estado === "SUBSCRIBED"; setEnVivo(estado === "SUBSCRIBED"); });
-    const t = setInterval(() => { setAbierta(salaAbierta()); if (!vivoRef.current) recargar(); }, 5000);
+    const t = setInterval(() => { setAbierta(salaAbierta()); setAhoraMs(Date.now()); if (!vivoRef.current) recargar(); }, 5000);
     return () => { clearInterval(t); sb.removeChannel(canal); };
   }, []);
 
@@ -94,6 +100,27 @@ export default function SalaChat({ yo, esAdmin, inicial, reaccionesIni, bloquead
       const { error } = await sb.from("sala_reacciones").insert({ mensaje_id: id, user_id: yo, emoji });
       if (error) { setErr(error.message.includes("sala_reacciones") && error.message.includes("does not exist") ? "Las reacciones todavía no están activadas." : error.message); setReacs((r) => r.filter((x) => !(x.mensaje_id === id && x.user_id === yo && x.emoji === emoji))); }
     }
+  }
+
+  // Eliminar mi mensaje (solo durante el primer minuto) y editarlo (hasta 5 minutos).
+  async function eliminarMio(m: MsgSala) {
+    if (!window.confirm("¿Eliminar tu mensaje?")) return;
+    setErr("");
+    const sb = createClient();
+    const { data, error } = await sb.from("sala_mensajes").delete().eq("id", m.id).select("id");
+    if (error) { setErr(error.message); return; }
+    if (!data || data.length === 0) { setErr("Ya pasó más de un minuto: este mensaje ya no se puede eliminar."); return; }
+    setMsgs((x) => x.filter((y) => y.id !== m.id));
+    if (m.imagen_path) await sb.storage.from("sala").remove([m.imagen_path]);
+  }
+  async function guardarEdicion() {
+    if (!editando) return;
+    setErr("");
+    const sb = createClient();
+    const { data, error } = await sb.from("sala_mensajes").update({ texto: editando.texto }).eq("id", editando.id).select("*").single();
+    if (error) { setErr(error.message.includes("0 rows") || error.message.includes("coerce") ? "Ya pasaron más de 5 minutos: este mensaje ya no se puede editar." : error.message); return; }
+    if (data) setMsgs((m) => m.map((x) => (x.id === editando.id ? { ...x, ...(data as MsgSala) } : x)));
+    setEditando(null);
   }
 
   function irA(id: string) {
@@ -163,7 +190,7 @@ export default function SalaChat({ yo, esAdmin, inicial, reaccionesIni, bloquead
                   <div style={{ fontSize: 12, marginBottom: 2 }}>
                     <b>{m.autor_nombre || "Miembro"}</b>
                     {m.autor_admin && <span style={{ marginLeft: 6, color: "var(--go)", fontWeight: 700 }}>Educador</span>}
-                    <span className="mu" style={{ marginLeft: 8 }}>{hora(m.created_at)}</span>
+                    <span className="mu" style={{ marginLeft: 8 }}>{hora(m.created_at)}{m.editado_at ? " · editado" : ""}</span>
                   </div>
                   {m.resp_nombre && (
                     <div
@@ -174,7 +201,17 @@ export default function SalaChat({ yo, esAdmin, inicial, reaccionesIni, bloquead
                       <div className="mu" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 360 }}>{m.resp_texto}</div>
                     </div>
                   )}
-                  {m.texto && <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{m.texto}</div>}
+                  {editando?.id === m.id ? (
+                    <div>
+                      <textarea value={editando.texto} onChange={(e) => setEditando({ id: m.id, texto: e.target.value })} rows={2} maxLength={500} autoFocus
+                        onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); guardarEdicion(); } if (e.key === "Escape") setEditando(null); }}
+                        style={{ width: "100%", minWidth: 220, resize: "none", margin: 0 }} />
+                      <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                        <button type="button" className="btn s" style={{ fontSize: 12, padding: "2px 10px", minHeight: 0, width: "auto", margin: 0 }} onClick={guardarEdicion}>Guardar</button>
+                        <button type="button" className="btn g s" style={{ fontSize: 12, padding: "2px 10px", minHeight: 0, width: "auto", margin: 0 }} onClick={() => setEditando(null)}>Cancelar</button>
+                      </div>
+                    </div>
+                  ) : (m.texto && <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{m.texto}</div>)}
                   {m.imagen_url && <a href={m.imagen_url} target="_blank" rel="noopener noreferrer"><img src={m.imagen_url} alt="Imagen enviada" style={{ maxWidth: "100%", maxHeight: 260, borderRadius: 8, marginTop: 6, display: "block" }} /></a>}
                   {(() => {
                     const grupos = REACCIONES.map((e) => ({ e, n: reacs.filter((x) => x.mensaje_id === m.id && x.emoji === e).length, yo: reacs.some((x) => x.mensaje_id === m.id && x.emoji === e && x.user_id === yo) })).filter((g) => g.n > 0);
@@ -190,6 +227,12 @@ export default function SalaChat({ yo, esAdmin, inicial, reaccionesIni, bloquead
                           <>
                             <button type="button" className="mu" onClick={() => setAbrirReac(abrirReac === m.id ? "" : m.id)} style={{ fontSize: 12, border: 0, background: "transparent", cursor: "pointer", padding: "1px 4px" }} aria-label="Reaccionar">☺ Reaccionar</button>
                             <button type="button" className="mu" onClick={() => { setRespondiendo(m); area.current?.focus(); }} style={{ fontSize: 12, border: 0, background: "transparent", cursor: "pointer", padding: "1px 4px" }}>↩ Responder</button>
+                            {mio && ahoraMs - new Date(m.created_at).getTime() < 5 * 60000 && (m.texto || !m.imagen_url) && editando?.id !== m.id && (
+                              <button type="button" className="mu" onClick={() => setEditando({ id: m.id, texto: m.texto })} style={{ fontSize: 12, border: 0, background: "transparent", cursor: "pointer", padding: "1px 4px" }}>✎ Editar</button>
+                            )}
+                            {mio && ahoraMs - new Date(m.created_at).getTime() < 60000 && (
+                              <button type="button" className="mu" onClick={() => eliminarMio(m)} style={{ fontSize: 12, border: 0, background: "transparent", cursor: "pointer", padding: "1px 4px" }}>🗑 Eliminar</button>
+                            )}
                           </>
                         )}
                         {abrirReac === m.id && (
