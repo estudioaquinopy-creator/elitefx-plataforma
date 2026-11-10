@@ -7,7 +7,7 @@ import FormVisita from "@/components/FormVisita";
 
 export const dynamic = "force-dynamic";
 
-type Visita = { id: string; user_id: string; fecha: string; hora: string; tema: string; detalle: string; estado: string; nota: string; created_at: string; revisado_at?: string | null };
+type Visita = { id: string; user_id: string; fecha: string; hora: string; tema: string; detalle: string; estado: string; nota: string; created_at: string; revisado_at?: string | null; encargado_id?: string | null; encargado_nombre?: string };
 const ETIQ: Record<string, string> = { pendiente: "Pendiente de aprobación", aprobada: "Aprobada", rechazada: "Rechazada", cancelada: "Cancelada" };
 const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 
@@ -35,7 +35,9 @@ export default async function Visitas({ searchParams }: { searchParams: { ok?: s
 
   // ---------- Administrador ----------
   if (admin) {
-    const cupo = Math.max(1, Number((await leerAjustes()).visitas_cupo) || 3);
+    const cupo = Math.max(1, Number((await leerAjustes()).visitas_cupo) || 1);
+    const { data: adm } = await sb.from("perfiles").select("id, nombre").eq("rol", "admin").order("nombre");
+    const admins = (adm ?? []) as { id: string; nombre: string }[];
     const { data } = await sb.from("visitas").select("*").order("fecha").order("hora").limit(300);
     const todas = (data ?? []) as Visita[];
     const ids = Array.from(new Set(todas.map((v) => v.user_id)));
@@ -48,14 +50,15 @@ export default async function Visitas({ searchParams }: { searchParams: { ok?: s
       const p = quien.get(v.user_id);
       const lleno = todas.filter((x) => x.estado === "aprobada" && x.fecha === v.fecha && x.hora === v.hora).length;
       const wa = whatsapp(p?.telefono);
-      const texto = "Hola " + (p?.nombre || "").split(" ")[0] + ", tu visita a la oficina quedó " + (v.estado === "aprobada" ? "aprobada" : "rechazada") + ": " + fechaLarga(v.fecha) + " a las " + horaCorta(v.hora) + "." + (v.nota ? " " + v.nota : "");
+      const texto = "Hola " + (p?.nombre || "").split(" ")[0] + ", tu visita a la oficina quedó " + (v.estado === "aprobada" ? "aprobada" : "rechazada") + ": " + fechaLarga(v.fecha) + " a las " + horaCorta(v.hora) + "." + (v.estado === "aprobada" && v.encargado_nombre ? " Te va a recibir " + v.encargado_nombre + "." : "") + (v.nota ? " " + v.nota : "");
       return (
         <div className="ses" style={{ flexWrap: "wrap", gap: 10 }}>
           <div style={{ flex: 1, minWidth: 240 }}>
             <b>{p?.nombre || p?.email || "—"}</b>
             <small className="mu" style={{ display: "block" }}>{p?.email}{p?.telefono ? " · " + p.telefono : ""}</small>
             <small style={{ display: "block" }}><b>{cap(fechaLarga(v.fecha))} · {horaCorta(v.hora)}</b> · {v.tema}</small>
-            {v.estado === "pendiente" && <small className="mu" style={{ display: "block" }}>Cupo en ese horario: {lleno} de {cupo} aprobadas</small>}
+            {v.estado === "pendiente" && lleno >= cupo && <small style={{ display: "block", color: "var(--co)" }}>Ese horario ya está ocupado por otra visita aprobada.</small>}
+            {v.estado === "aprobada" && <small style={{ display: "block" }}>Recibe: <b>{v.encargado_nombre || "sin asignar"}</b></small>}
             {v.detalle && <small className="mu" style={{ display: "block", whiteSpace: "pre-wrap" }}>{v.detalle}</small>}
             {v.estado !== "pendiente" && <small className="mu" style={{ display: "block" }}>{ETIQ[v.estado]}{v.nota ? " · " + v.nota : ""}</small>}
           </div>
@@ -63,7 +66,15 @@ export default async function Visitas({ searchParams }: { searchParams: { ok?: s
             <form action={revisarVisita} style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
               <input type="hidden" name="id" value={v.id} />
               <input name="nota" placeholder="Nota para la persona (opcional)" maxLength={200} style={{ width: 200 }} defaultValue={v.nota} />
-              {v.estado === "pendiente" && lleno < cupo && <button className="btn s" name="decision" value="aprobar">Aprobar</button>}
+              {v.estado === "pendiente" && lleno < cupo && (
+                <>
+                  <select name="encargado" defaultValue="" style={{ width: 190 }} aria-label="Quién recibe a la persona">
+                    <option value="" disabled>Quién la recibe…</option>
+                    {admins.map((a) => <option key={a.id} value={a.id}>{a.nombre}</option>)}
+                  </select>
+                  <button className="btn s" name="decision" value="aprobar">Aprobar</button>
+                </>
+              )}
               <button className="btn g s" name="decision" value="rechazar">{v.estado === "aprobada" ? "Anular" : "Rechazar"}</button>
               {v.estado === "aprobada" && wa && <a className="btn sd s" href={"https://wa.me/" + wa + "?text=" + encodeURIComponent(texto)} target="_blank" rel="noopener noreferrer">WhatsApp</a>}
             </form>
@@ -74,7 +85,7 @@ export default async function Visitas({ searchParams }: { searchParams: { ok?: s
     return (
       <>
         <h1>Visitas a la oficina</h1>
-        <p className="sub">Solicitudes de los miembros VIP. Solo miércoles de 8:00 a 17:00, hasta {cupo} personas por horario. Al aprobar o rechazar, la persona recibe el aviso en sus notificaciones.</p>
+        <p className="sub">Solicitudes de los miembros VIP. Solo miércoles de 8:00 a 17:00, una sola persona por horario. Al aprobar debes elegir quién la recibe. Una vez aprobada, el horario se bloquea para los demás. Al aprobar o rechazar, la persona recibe el aviso en sus notificaciones.</p>
         {msgs}
         <section className="box">
           <h2>Por aprobar ({pend.length})</h2>
@@ -112,7 +123,7 @@ export default async function Visitas({ searchParams }: { searchParams: { ok?: s
       <h1>Agendar visita</h1>
       <p className="sub">Visita nuestras oficinas para resolver tus dudas, cargar brokers, configurar MetaTrader o revisar cualquier pregunta sobre la estrategia. Atendemos solo los <b>miércoles de 8:00 a 17:00</b> y cada visita se confirma manualmente.</p>
       {msgs}
-      {activa?.estado === "aprobada" && <section className="box" style={{ borderColor: "var(--go)" }}><div className="tag" style={{ marginTop: 0 }}>✓ Tu solicitud fue aprobada</div><p style={{ margin: "6px 0 0" }}><b>{cap(fechaLarga(activa.fecha))} · {horaCorta(activa.hora)}</b>. Te esperamos en la oficina.{activa.nota ? " " + activa.nota : ""}</p></section>}
+      {activa?.estado === "aprobada" && <section className="box" style={{ borderColor: "var(--go)" }}><div className="tag" style={{ marginTop: 0 }}>✓ Tu solicitud fue aprobada</div><p style={{ margin: "6px 0 0" }}><b>{cap(fechaLarga(activa.fecha))} · {horaCorta(activa.hora)}</b>. Te esperamos en la oficina.{activa.encargado_nombre ? " Te recibe " + activa.encargado_nombre + "." : ""}{activa.nota ? " " + activa.nota : ""}</p></section>}
       {rechazadaReciente && <section className="box" style={{ borderColor: "var(--co)" }}><div className="tag" style={{ marginTop: 0, color: "var(--co)" }}>✕ Tu solicitud no pudo aprobarse</div><p style={{ margin: "6px 0 0" }}><b>{cap(fechaLarga(rechazadaReciente.fecha))} · {horaCorta(rechazadaReciente.hora)}</b>.{rechazadaReciente.nota ? " " + rechazadaReciente.nota : " Puedes elegir otro horario abajo."}</p></section>}
       {faltaMigracion ? (
         <section className="box"><p className="mu">Esta función todavía no está disponible.</p></section>
