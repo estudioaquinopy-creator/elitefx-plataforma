@@ -60,7 +60,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     leerAjustes(),
     // Avisos de visitas: a la persona, cuando se aprueba o rechaza su solicitud; al admin, cuántas hay por aprobar.
     perfil.rol !== "admin"
-      ? supabase.from("visitas").select("id, fecha, hora, estado, revisado_at").eq("user_id", perfil.id).in("estado", ["aprobada", "rechazada"]).gte("revisado_at", hace14).order("revisado_at", { ascending: false }).limit(5)
+      ? supabase.from("visitas").select("*").eq("user_id", perfil.id).in("estado", ["aprobada", "rechazada", "propuesta"]).gte("revisado_at", hace14).order("revisado_at", { ascending: false }).limit(5)
       : Promise.resolve({ data: null }),
     perfil.rol === "admin"
       ? supabase.from("visitas").select("id", { count: "exact", head: true }).eq("estado", "pendiente").gte("fecha", hoyPY())
@@ -113,12 +113,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const nPorVencer = venc.length - nVencidas;
   if (nPorVencer > 0) notifs.unshift({ id: "v-por", titulo: nPorVencer + (nPorVencer === 1 ? " membresía por vencer" : " membresías por vencer"), cuerpo: "Vencen en los próximos 7 días · toca para ver la lista", enlace: "/accesos?e=porvencer", fecha: "", nueva: true });
   if (nVencidas > 0) notifs.unshift({ id: "v-venc", titulo: nVencidas + (nVencidas === 1 ? " membresía vencida" : " membresías vencidas"), cuerpo: "Vencidas en los últimos 30 días · toca para ver la lista", enlace: "/accesos?e=vencido", fecha: "", nueva: true });
-  for (const v of (rVisMias.data ?? []) as { id: string; fecha: string; hora: string; estado: string; revisado_at: string }[]) {
-    const dia = new Date(v.fecha + "T12:00:00Z").toLocaleDateString("es-PY", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" });
+  for (const v of (rVisMias.data ?? []) as { id: string; fecha: string; hora: string; estado: string; revisado_at: string; propuesta_fecha?: string | null; propuesta_hora?: string | null }[]) {
+    const prop = v.estado === "propuesta" && !!v.propuesta_fecha;
+    const dia = new Date((prop ? v.propuesta_fecha! : v.fecha) + "T12:00:00Z").toLocaleDateString("es-PY", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" });
     notifs.unshift({
       id: "vis-" + v.id,
-      titulo: v.estado === "aprobada" ? "Tu visita fue aprobada" : "Tu visita no pudo aprobarse",
-      cuerpo: dia + " a las " + String(v.hora).slice(0, 5),
+      titulo: prop ? "Te propusieron otro horario para tu visita" : v.estado === "aprobada" ? "Tu visita fue aprobada" : "Tu visita no pudo aprobarse",
+      cuerpo: (prop ? "Acéptalo o recházalo: " : "") + dia + " a las " + String(prop ? v.propuesta_hora : v.hora).slice(0, 5),
       enlace: "/visitas",
       fecha: fmt(v.revisado_at),
       nueva: new Date(v.revisado_at).getTime() > vistas,
@@ -167,11 +168,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     // Aviso dentro del propio menú "Agendar visita": visita aprobada (mientras falte) o rechazada (los últimos 3 días).
     let aviso: { texto: string; tipo: "ok" | "no" } | undefined;
     if (perfil.rol !== "admin") {
-      const rv = await supabase.from("visitas").select("fecha, hora, estado, revisado_at").eq("user_id", perfil.id).in("estado", ["aprobada", "rechazada"]).order("revisado_at", { ascending: false }).limit(5);
+      const rv = await supabase.from("visitas").select("fecha, hora, estado, revisado_at").eq("user_id", perfil.id).in("estado", ["aprobada", "rechazada", "propuesta"]).order("revisado_at", { ascending: false }).limit(5);
       const vs = ((rv.data ?? []) as { fecha: string; hora: string; estado: string; revisado_at: string | null }[]);
       const ap = vs.find((v) => v.estado === "aprobada" && visitaVigente(v.fecha, v.hora));
       const re = vs.find((v) => v.estado === "rechazada" && v.revisado_at && Date.now() - new Date(v.revisado_at).getTime() < 3 * 86400000);
-      if (ap) aviso = { texto: "Aprobada", tipo: "ok" };
+      const pr = vs.find((v) => v.estado === "propuesta");
+      if (pr) aviso = { texto: "Responde", tipo: "ok" };
+      else if (ap) aviso = { texto: "Aprobada", tipo: "ok" };
       else if (re) aviso = { texto: "Rechazada", tipo: "no" };
     }
     items.splice(pos, 0, { href: "/visitas", label: perfil.rol === "admin" ? "Visitas" : "Agendar visita", lock: false, aviso, icon: "M3 21V8l9-5l9 5v13M9 21v-6h6v6M7 11h2M15 11h2" });
