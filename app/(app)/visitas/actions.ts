@@ -57,7 +57,7 @@ export async function revisarVisita(f: FormData) {
   if (!vis) fallo("/visitas", "No se encontró la solicitud.");
   const estado = decision === "aprobar" ? "aprobada" : "rechazada";
   const { error } = await sb.from("visitas").update({ estado, nota, revisado_at: new Date().toISOString(), revisado_por: yo.id, ...(encargado ? { encargado_id: encargado.id, encargado_nombre: encargado.nombre } : {}) }).eq("id", id);
-  if (error) fallo("/visitas", error.message.includes("cupo") ? "Ese horario ya está ocupado por otra visita aprobada." : error.message.includes("encargado") && error.message.includes("column") ? "Falta correr la migración 0057 en Supabase." : "No se pudo guardar: " + error.message);
+  if (error) fallo("/visitas", error.message.includes("cupo") ? "Ese horario ya está ocupado por otra visita aprobada." :  "No se pudo guardar: " + error.message);
   await registrar("visita", vis.user_id, (estado === "aprobada" ? "Aprobó" : "Rechazó") + " la visita del " + vis.fecha + " a las " + vis.hora.slice(0, 5) + (nota ? " (" + nota + ")" : "") + (encargado ? " · recibe: " + encargado.nombre : ""));
   revalidatePath("/visitas");
   aviso("/visitas", estado === "aprobada" ? "Visita aprobada: la persona verá el aviso en sus notificaciones." : "Solicitud rechazada.");
@@ -90,7 +90,7 @@ export async function proponerHorario(f: FormData) {
     estado: "propuesta", propuesta_fecha: fecha, propuesta_hora: hora, encargado_id: ee!.id, encargado_nombre: ee!.nombre,
     nota, revisado_at: new Date().toISOString(), revisado_por: yo.id,
   }).eq("id", id).eq("estado", "pendiente");
-  if (error) fallo("/visitas", error.message.includes("column") ? "Falta correr la migración 0058 en Supabase." : "No se pudo guardar: " + error.message);
+  if (error) fallo("/visitas", "No se pudo guardar: " + error.message);
   await registrar("visita", vis!.user_id, "Propuso otro horario: " + fecha + " a las " + horaCorta(hora) + " (pidió " + vis!.fecha + " " + vis!.hora.slice(0, 5) + ") · recibe: " + ee!.nombre);
   revalidatePath("/visitas");
   aviso("/visitas", "Propuesta enviada: la persona verá el aviso y deberá aceptar el nuevo horario (" + fechaLarga(fecha) + " a las " + horaCorta(hora) + ").");
