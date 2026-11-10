@@ -9,7 +9,7 @@ import { EMOCIONES, SESIONES } from "@/lib/journal";
 import { generarConsejos } from "@/lib/consejos";
 import { registrar } from "@/lib/auditoria";
 import AnclarJournal from "@/components/AnclarJournal";
-import { borrarImportadas, borrarOperacion, guardarCapital, guardarOperacion } from "./actions";
+import { borrarImportadas, borrarOperacion, guardarCapital, guardarOperacion, crearCuenta, eliminarCuenta, renombrarCuenta } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +32,7 @@ function Tabla({ titulo, g, mp }: { titulo: string; g: Grupo[]; mp: (n: number) 
   );
 }
 
-export default async function Journal({ searchParams }: { searchParams: { alumno?: string; error?: string; p?: string; d?: string; h?: string; m?: string } }) {
+export default async function Journal({ searchParams }: { searchParams: { alumno?: string; c?: string; ok?: string; error?: string; p?: string; d?: string; h?: string; m?: string } }) {
   const perfil = await perfilActual();
   const perm = await permisos(perfil);
   // El administrador puede VER (solo lectura) el journal de un alumno: /journal?alumno=<id> (desde Accesos → Ver journal).
@@ -58,17 +58,76 @@ export default async function Journal({ searchParams }: { searchParams: { alumno
       </>
     );
   }
-  // Se leen todas las operaciones (de a 1000) para calcular las métricas con todo el historial.
+  // Cuentas del journal: primero se elige (o se crea) una cuenta y recién ahí se abre su journal.
+  // Si todavía no se corrió la migración 0059 (no existe la tabla), se muestra el journal único de antes.
   const sb = createClient();
+  const rC = await sb.from("journal_cuentas").select("id, nombre, capital_inicial").eq("user_id", uid).order("created_at");
+  const migrado = !rC.error;
+  const cuentas = (rC.data ?? []) as { id: string; nombre: string; capital_inicial: number }[];
+  const cuenta = migrado ? cuentas.find((x) => x.id === (searchParams.c ?? "")) : undefined;
+  const baseRuta = "/journal" + (ver ? "?alumno=" + alumnoId : "");
+  if (migrado && !cuenta) {
+    const cont = await Promise.all(cuentas.map((x) => sb.from("operaciones").select("id", { count: "exact", head: true }).eq("cuenta_id", x.id)));
+    const cuentaUrl = (id: string) => "/journal?" + (ver ? "alumno=" + alumnoId + "&" : "") + "c=" + id;
+    return (
+      <>
+        {ver && <Link href={"/accesos/" + alumnoId} className="back">← Volver a {duenio}</Link>}
+        <h1>{ver ? "Journal de " + duenio : "Journal"}</h1>
+        {ver
+          ? <p className="alerta">Vista de administrador, solo lectura. Cada consulta queda registrada.</p>
+          : <p className="sub">Crea una cuenta por cada cuenta de trading que uses (por ejemplo: FTMO, Capital propio, Demo). Cada una tiene sus propias operaciones y estadísticas. Es personal; solo tú y el equipo de ELITE FX (para el seguimiento de tu mentoría) pueden verlo.</p>}
+        {searchParams.ok && <p className="okmsg">{searchParams.ok}</p>}
+        {searchParams.error && <p className="alerta">{searchParams.error}</p>}
+        <section className="box">
+          <h2>{ver ? "Cuentas del alumno" : "Tus cuentas"} ({cuentas.length})</h2>
+          {cuentas.length === 0 && <p className="mu">{ver ? "Este alumno todavía no creó ninguna cuenta." : "Todavía no tienes ninguna cuenta. Crea la primera abajo."}</p>}
+          {cuentas.map((x, i) => (
+            <div key={x.id} className="ses" style={{ flexWrap: "wrap", gap: 10 }}>
+              <div style={{ flex: 1, minWidth: 200 }}>
+                <b>{x.nombre}</b>
+                <small className="mu" style={{ display: "block" }}>{cont[i].count ?? 0} operaciones{!ver && Number(x.capital_inicial) > 0 ? " · capital inicial " + dineroBase(Number(x.capital_inicial)) : ""}</small>
+              </div>
+              <Link className="btn s" href={cuentaUrl(x.id)}>Abrir journal</Link>
+              {!ver && (
+                <form action={eliminarCuenta}>
+                  <input type="hidden" name="cuenta" value={x.id} />
+                  <ConfirmarEnvio mensaje={"¿Eliminar la cuenta \"" + x.nombre + "\" con sus " + (cont[i].count ?? 0) + " operaciones? No se puede deshacer."} className="btn g s">Eliminar</ConfirmarEnvio>
+                </form>
+              )}
+            </div>
+          ))}
+        </section>
+        {!ver && (
+          <section className="box">
+            <h2>Agregar nueva cuenta</h2>
+            <form action={crearCuenta} className="fm" style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, alignItems: "flex-end" }}>
+              <label style={{ flex: 1, minWidth: 200 }}>Nombre de la cuenta
+                <input name="nombre" maxLength={40} placeholder="Ej.: FTMO 10k, Capital propio, Demo" required />
+              </label>
+              <label style={{ width: 200 }}>Capital inicial ($, opcional)
+                <input name="capital" inputMode="decimal" placeholder="Ej.: 10000" />
+              </label>
+              <button className="btn" style={{ marginBottom: 14 }}>Crear cuenta</button>
+            </form>
+            <p className="mu" style={{ marginTop: 0 }}>El capital inicial es la base de todos los porcentajes de esa cuenta; también puedes definirlo después.</p>
+          </section>
+        )}
+      </>
+    );
+  }
+
+  // Se leen todas las operaciones (de a 1000) para calcular las métricas con todo el historial.
   const todas: Op[] = [];
   for (let pg = 0; pg < 20; pg++) {
-    const { data } = await sb.from("operaciones").select("*").eq("user_id", uid).order("fecha", { ascending: false }).order("created_at", { ascending: false }).range(pg * 1000, pg * 1000 + 999);
+    let qOps = sb.from("operaciones").select("*").eq("user_id", uid);
+    if (cuenta) qOps = qOps.eq("cuenta_id", cuenta.id);
+    const { data } = await qOps.order("fecha", { ascending: false }).order("created_at", { ascending: false }).range(pg * 1000, pg * 1000 + 999);
     const lote = (data ?? []) as Op[];
     todas.push(...lote);
     if (lote.length < 1000) break;
   }
-  const { data: cfg } = await sb.from("journal_config").select("capital_inicial").eq("user_id", uid).maybeSingle();
-  const capital = Number((cfg as { capital_inicial: number } | null)?.capital_inicial ?? 0) || 0;
+  const { data: cfg } = cuenta ? { data: null } : await sb.from("journal_config").select("capital_inicial").eq("user_id", uid).maybeSingle();
+  const capital = cuenta ? Number(cuenta.capital_inicial) || 0 : Number((cfg as { capital_inicial: number } | null)?.capital_inicial ?? 0) || 0;
   // Porcentaje de un monto sobre el capital inicial (vacío si todavía no se definió el capital).
   const pc = (x: number) => (capital > 0 ? (x > 0 ? "+" : "") + ((x / capital) * 100).toLocaleString("es-PY", { maximumFractionDigits: 2 }) + "%" : "");
   // Vista del administrador: nunca montos en dinero, solo porcentajes sobre el capital inicial del alumno.
@@ -154,15 +213,25 @@ export default async function Journal({ searchParams }: { searchParams: { alumno
   const diasPer = Array.from(porDiaMes.values()).filter((v) => v.neto < 0).length;
   const maxAbs = Math.max(1, ...Array.from(porDiaMes.values()).map((v) => Math.abs(v.neto)));
   const desplazar = (d: number) => { const t = cy * 12 + (cm - 1) + d; return Math.floor(t / 12) + "-" + String((t % 12) + 1).padStart(2, "0"); };
-  const qsMes = (mes: string) => { const q = new URLSearchParams(); if (searchParams.p) q.set("p", searchParams.p); if (searchParams.d) q.set("d", searchParams.d); if (searchParams.h) q.set("h", searchParams.h); q.set("m", mes); if (ver) q.set("alumno", alumnoId); return "/journal?" + q.toString(); };
+  const qsMes = (mes: string) => { const q = new URLSearchParams(); if (searchParams.p) q.set("p", searchParams.p); if (searchParams.d) q.set("d", searchParams.d); if (searchParams.h) q.set("h", searchParams.h); q.set("m", mes); if (cuenta) q.set("c", cuenta.id); if (ver) q.set("alumno", alumnoId); return "/journal?" + q.toString(); };
   const NOMBRES_MES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
   const corto = (x: number) => ver ? (pc(x) || "—") : (x < 0 ? "-" : "") + "$" + Math.abs(x).toLocaleString("es-PY", { maximumFractionDigits: Math.abs(x) >= 100 ? 0 : 2 });
   const colorDia = (x: number) => (x > 0 ? "rgba(34,197,94," : "rgba(239,68,68,") + (0.12 + 0.4 * (Math.abs(x) / maxAbs)).toFixed(2) + ")";
 
   return (
     <>
-      {ver && <Link href={"/accesos/" + alumnoId} className="back">← Volver a {duenio}</Link>}
-      <h1>{ver ? "Journal de " + duenio : "Journal"}</h1>
+      {cuenta ? <Link href={baseRuta} className="back">← {ver ? "Cuentas de " + duenio : "Mis cuentas"}</Link> : ver && <Link href={"/accesos/" + alumnoId} className="back">← Volver a {duenio}</Link>}
+      <h1>{(ver ? "Journal de " + duenio : "Journal") + (cuenta ? " · " + cuenta.nombre : "")}</h1>
+      {cuenta && !ver && (
+        <details className="no-print" style={{ margin: "0 0 12px" }}>
+          <summary className="mu">Cambiar el nombre de esta cuenta</summary>
+          <form action={renombrarCuenta} className="fm" style={{ flexDirection: "row", gap: 8, alignItems: "flex-end", marginTop: 8 }}>
+            <input type="hidden" name="cuenta" value={cuenta.id} />
+            <input name="nombre" defaultValue={cuenta.nombre} maxLength={40} required />
+            <button className="btn g s" style={{ marginBottom: 14 }}>Guardar nombre</button>
+          </form>
+        </details>
+      )}
       {ver && <p style={{ margin: "0 0 12px" }}><AnclarJournal alumnoId={alumnoId} anclado={anclado} volver={"/journal?alumno=" + alumnoId} /></p>}
       {ver
         ? <p className="alerta">Vista de administrador, solo lectura: los resultados se muestran solo en porcentaje sobre el capital inicial del alumno (sin montos en dinero) y no se puede cargar, importar ni borrar nada. Cada consulta queda registrada.</p>
@@ -179,6 +248,7 @@ export default async function Journal({ searchParams }: { searchParams: { alumno
 
       {!ver && <section className="box no-print">
         <form action={guardarCapital} className="fm" style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, alignItems: "flex-end" }}>
+          {cuenta && <input type="hidden" name="cuenta" value={cuenta.id} />}
           <label style={{ flex: 1, minWidth: 220 }}>Capital inicial de tu cuenta ($): es la base de todos los porcentajes
             <input name="capital" inputMode="decimal" defaultValue={capital > 0 ? String(capital) : ""} placeholder="Ej.: 10000" required />
           </label>
@@ -200,9 +270,10 @@ export default async function Journal({ searchParams }: { searchParams: { alumno
             <li>Guarda el archivo y súbelo aquí (puedes subirlo desde el celular si el archivo está guardado en él). El reporte que genera la app de MT5 en el celular sale en PDF, y por ahora no se puede importar: para HTML o Excel usa MT5 en una computadora.</li>
           </ol>
         </details>
-        <ImportarMT5 />
+        <ImportarMT5 cuentaId={cuenta?.id} />
         {importadas > 0 && (
           <form action={borrarImportadas} style={{ marginTop: 12 }}>
+            {cuenta && <input type="hidden" name="cuenta" value={cuenta.id} />}
             <ConfirmarEnvio mensaje={"¿Borrar las " + importadas + " operaciones importadas de MT5? Tus operaciones anotadas a mano no se tocan."} className="btn g s">Borrar las {importadas} operaciones importadas</ConfirmarEnvio>
           </form>
         )}
@@ -251,6 +322,7 @@ export default async function Journal({ searchParams }: { searchParams: { alumno
       {total > 0 && (
         <form method="get" className="box fm no-print" style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, alignItems: "flex-end" }}>
           {ver && <input type="hidden" name="alumno" value={alumnoId} />}
+          {cuenta && <input type="hidden" name="c" value={cuenta.id} />}
           <label>Período del reporte
             <select name="p" defaultValue={per}>
               <option value="todo">Todo el historial</option><option value="mes">Este mes</option><option value="30">Últimos 30 días</option>
@@ -361,6 +433,7 @@ export default async function Journal({ searchParams }: { searchParams: { alumno
         {!ver && <section className="box">
           <h2>Nueva operación</h2>
           <form action={guardarOperacion} className="fm">
+            {cuenta && <input type="hidden" name="cuenta" value={cuenta.id} />}
             <div className="f2">
               <label>Fecha<input type="date" name="fecha" defaultValue={hoyPY()} required /></label>
               <label>Resultado ($, negativo si perdiste)<input name="resultado" inputMode="decimal" placeholder="Ej.: 120 o -45" required /></label>
@@ -410,6 +483,7 @@ export default async function Journal({ searchParams }: { searchParams: { alumno
               </div>
               <span className={o.resultado < 0 ? "neg" : "pos"}>{mp(o.resultado)}</span>
               {!ver && <form action={borrarOperacion}>
+                {cuenta && <input type="hidden" name="cuenta" value={cuenta.id} />}
                 <input type="hidden" name="id" value={o.id} />
                 <button className="btn g s">Eliminar</button>
               </form>}
