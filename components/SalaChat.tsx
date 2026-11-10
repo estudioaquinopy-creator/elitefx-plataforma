@@ -9,6 +9,7 @@ export type MsgSala = { id: string; user_id: string; autor_nombre: string; autor
 const TIPOS = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const hora = (iso: string) => new Date(iso).toLocaleTimeString("es-PY", { timeZone: "America/Asuncion", hour: "2-digit", minute: "2-digit", hour12: false });
 const dia = (iso: string) => new Date(iso).toLocaleDateString("es-PY", { timeZone: "America/Asuncion", day: "2-digit", month: "2-digit" });
+const EMOJIS = ["😀", "😂", "😅", "😎", "🤔", "😬", "😡", "😢", "👍", "👎", "👏", "🙌", "💪", "🙏", "🤝", "🔥", "🚀", "🎯", "💰", "💵", "📈", "📉", "✅", "❌", "⚠️", "🟢", "🔴", "🟡", "⏰", "👀", "💚", "❤️", "🏆", "🎉", "😴", "🤑", "😱", "🧠", "📊", "🥇"];
 const iniciales = (n: string) => (n || "?").split(/\s+/).map((x) => x[0]).slice(0, 2).join("").toUpperCase();
 
 export default function SalaChat({ yo, esAdmin, inicial, bloqueado }: { yo: string; esAdmin: boolean; inicial: MsgSala[]; bloqueado: boolean }) {
@@ -23,6 +24,17 @@ export default function SalaChat({ yo, esAdmin, inicial, bloqueado }: { yo: stri
   const cerca = useRef(true);
   const vivoRef = useRef(false);
   const archivo = useRef<HTMLInputElement>(null);
+  const area = useRef<HTMLTextAreaElement>(null);
+  const [emojis, setEmojis] = useState(false);
+
+  // Inserta el emoji donde está el cursor.
+  function poner(e: string) {
+    const a = area.current;
+    const ini = a?.selectionStart ?? texto.length, fin = a?.selectionEnd ?? texto.length;
+    const nuevo = (texto.slice(0, ini) + e + texto.slice(fin)).slice(0, 500);
+    setTexto(nuevo);
+    requestAnimationFrame(() => { if (a) { a.focus(); const pos = Math.min(ini + e.length, nuevo.length); a.setSelectionRange(pos, pos); } });
+  }
 
   // Mensajes en tiempo real (y, si la conexión en vivo no está disponible, se vuelve a pedir la lista cada pocos segundos).
   useEffect(() => {
@@ -142,16 +154,23 @@ export default function SalaChat({ yo, esAdmin, inicial, bloqueado }: { yo: stri
         {bloqueado && <p className="alerta" style={{ margin: "0 0 8px" }}>Un administrador te bloqueó en la sala de trading. Puedes leer, pero no escribir.</p>}
         {!bloqueado && !abierta && <p className="mu" style={{ margin: "0 0 8px" }}>La sala está cerrada. Abre todos los días a las {SALA_DESDE} y cierra a las {SALA_HASTA} (hora de Paraguay).</p>}
         {foto && <p className="mu" style={{ margin: "0 0 8px" }}>📎 {foto.name} <button type="button" className="btn g s" style={{ fontSize: 11, padding: "2px 8px", minHeight: 0 }} onClick={() => { setFoto(null); if (archivo.current) archivo.current.value = ""; }}>Quitar</button></p>}
+        {emojis && !deshabilitado && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, padding: 8, marginBottom: 8, border: "1px solid var(--bd)", borderRadius: 12, background: "var(--sf2)" }}>
+            {EMOJIS.map((e) => <button key={e} type="button" onClick={() => poner(e)} style={{ fontSize: 22, lineHeight: 1, padding: 6, border: 0, background: "transparent", cursor: "pointer" }} aria-label={e}>{e}</button>)}
+          </div>
+        )}
         <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
           <label className="btn g s" style={{ cursor: deshabilitado ? "not-allowed" : "pointer", opacity: deshabilitado ? 0.5 : 1, margin: 0 }} title="Enviar una imagen o un gráfico">
             📷
-            <input ref={archivo} type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden disabled={deshabilitado} onChange={(e) => setFoto(e.target.files?.[0] ?? null)} />
+            <input ref={archivo} type="file" accept="image/jpeg,image/png,image/webp,image/gif" style={{ display: "none" }} disabled={deshabilitado} onChange={(e) => setFoto(e.target.files?.[0] ?? null)} />
           </label>
+          <button type="button" className="btn g s" style={{ margin: 0 }} disabled={deshabilitado} onClick={() => setEmojis((v) => !v)} title="Emojis" aria-label="Emojis">😀</button>
           <textarea
+            ref={area}
             value={texto} onChange={(e) => setTexto(e.target.value)} rows={1} maxLength={500} disabled={deshabilitado}
             placeholder={deshabilitado ? "No puedes escribir ahora" : "Escribe un mensaje…"}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); enviar(); } }}
-            style={{ flex: 1, resize: "none", minHeight: 40, maxHeight: 120, margin: 0 }}
+            style={{ flex: 1, minWidth: 0, width: "auto", resize: "none", minHeight: 40, maxHeight: 120, margin: 0 }}
           />
           <button type="button" className="btn" onClick={enviar} disabled={deshabilitado || enviando} style={{ margin: 0 }}>{enviando ? "…" : "Enviar"}</button>
         </div>
