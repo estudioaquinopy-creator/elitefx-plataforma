@@ -18,7 +18,7 @@ export default function SalaChat({ yo, esAdmin, inicial, reaccionesIni, bloquead
   const [msgs, setMsgs] = useState<MsgSala[]>(inicial);
   const [reacs, setReacs] = useState<ReaccionSala[]>(reaccionesIni);
   const [respondiendo, setRespondiendo] = useState<MsgSala | null>(null);
-  const [abrirReac, setAbrirReac] = useState("");
+  const [menu, setMenu] = useState("");
   const [editando, setEditando] = useState<{ id: string; texto: string } | null>(null);
   const [ahoraMs, setAhoraMs] = useState(() => Date.now());
   const [texto, setTexto] = useState("");
@@ -187,10 +187,11 @@ export default function SalaChat({ yo, esAdmin, inicial, reaccionesIni, bloquead
                   ? <img src={m.autor_avatar} alt="" width={34} height={34} style={{ borderRadius: "50%", objectFit: "cover", flex: "none" }} />
                   : <span style={{ width: 34, height: 34, borderRadius: "50%", background: "var(--sf2)", display: "grid", placeItems: "center", fontSize: 12, fontWeight: 700, flex: "none" }}>{iniciales(m.autor_nombre)}</span>}
                 <div style={{ maxWidth: "78%", background: mio ? "rgba(0,212,122,.16)" : "var(--sf2)", borderRadius: 12, padding: "8px 12px" }}>
-                  <div style={{ fontSize: 12, marginBottom: 2 }}>
+                  <div style={{ fontSize: 12, marginBottom: 2, display: "flex", alignItems: "center", gap: 6 }}>
                     <b>{m.autor_nombre || "Miembro"}</b>
                     {m.autor_admin && <span style={{ marginLeft: 6, color: "var(--go)", fontWeight: 700 }}>Educador</span>}
                     <span className="mu" style={{ marginLeft: 8 }}>{hora(m.created_at)}{m.editado_at ? " · editado" : ""}</span>
+                    <button type="button" className="mu" aria-label="Opciones" onClick={() => setMenu(menu === m.id ? "" : m.id)} style={{ marginLeft: "auto", border: 0, background: "transparent", cursor: "pointer", fontSize: 16, lineHeight: 1, padding: "0 4px", opacity: .6 }}>⋯</button>
                   </div>
                   {m.resp_nombre && (
                     <div
@@ -215,51 +216,50 @@ export default function SalaChat({ yo, esAdmin, inicial, reaccionesIni, bloquead
                   {m.imagen_url && <a href={m.imagen_url} target="_blank" rel="noopener noreferrer"><img src={m.imagen_url} alt="Imagen enviada" style={{ maxWidth: "100%", maxHeight: 260, borderRadius: 8, marginTop: 6, display: "block" }} /></a>}
                   {(() => {
                     const grupos = REACCIONES.map((e) => ({ e, n: reacs.filter((x) => x.mensaje_id === m.id && x.emoji === e).length, yo: reacs.some((x) => x.mensaje_id === m.id && x.emoji === e && x.user_id === yo) })).filter((g) => g.n > 0);
+                    const puedeEditar = mio && ahoraMs - new Date(m.created_at).getTime() < 5 * 60000 && (m.texto || !m.imagen_url) && editando?.id !== m.id;
+                    const puedeBorrarMio = mio && ahoraMs - new Date(m.created_at).getTime() < 60000;
+                    const itemSt = { display: "block", width: "100%", textAlign: "left" as const, fontSize: 13, border: 0, background: "transparent", color: "var(--tx)", cursor: "pointer", padding: "6px 10px", borderRadius: 6, margin: 0 };
                     return (
-                      <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap", alignItems: "center" }}>
-                        {grupos.map((g) => (
-                          <button key={g.e} type="button" onClick={() => reaccionar(m.id, g.e)} disabled={deshabilitado}
-                            style={{ fontSize: 13, padding: "1px 8px", borderRadius: 999, border: "1px solid " + (g.yo ? "var(--ac)" : "var(--bd)"), background: g.yo ? "rgba(0,212,122,.18)" : "transparent", color: "var(--tx)", cursor: "pointer" }}>
-                            {g.e} {g.n}
-                          </button>
-                        ))}
-                        {!deshabilitado && (
-                          <>
-                            <button type="button" className="mu" onClick={() => setAbrirReac(abrirReac === m.id ? "" : m.id)} style={{ fontSize: 12, border: 0, background: "transparent", cursor: "pointer", padding: "1px 4px" }} aria-label="Reaccionar">☺ Reaccionar</button>
-                            <button type="button" className="mu" onClick={() => { setRespondiendo(m); area.current?.focus(); }} style={{ fontSize: 12, border: 0, background: "transparent", cursor: "pointer", padding: "1px 4px" }}>↩ Responder</button>
-                            {mio && ahoraMs - new Date(m.created_at).getTime() < 5 * 60000 && (m.texto || !m.imagen_url) && editando?.id !== m.id && (
-                              <button type="button" className="mu" onClick={() => setEditando({ id: m.id, texto: m.texto })} style={{ fontSize: 12, border: 0, background: "transparent", cursor: "pointer", padding: "1px 4px" }}>✎ Editar</button>
-                            )}
-                            {mio && ahoraMs - new Date(m.created_at).getTime() < 60000 && (
-                              <button type="button" className="mu" onClick={() => eliminarMio(m)} style={{ fontSize: 12, border: 0, background: "transparent", cursor: "pointer", padding: "1px 4px" }}>🗑 Eliminar</button>
-                            )}
-                          </>
+                      <>
+                        {grupos.length > 0 && (
+                          <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
+                            {grupos.map((g) => (
+                              <button key={g.e} type="button" onClick={() => reaccionar(m.id, g.e)} disabled={deshabilitado}
+                                style={{ fontSize: 13, padding: "1px 8px", borderRadius: 999, border: "1px solid " + (g.yo ? "var(--ac)" : "var(--bd)"), background: g.yo ? "rgba(0,212,122,.18)" : "transparent", color: "var(--tx)", cursor: "pointer" }}>
+                                {g.e} {g.n}
+                              </button>
+                            ))}
+                          </div>
                         )}
-                        {abrirReac === m.id && (
-                          <span style={{ display: "inline-flex", gap: 2, padding: "2px 6px", border: "1px solid var(--bd)", borderRadius: 999, background: "var(--sf)" }}>
-                            {REACCIONES.map((e) => <button key={e} type="button" onClick={() => reaccionar(m.id, e)} style={{ fontSize: 18, border: 0, background: "transparent", cursor: "pointer", padding: 2 }} aria-label={e}>{e}</button>)}
-                          </span>
+                        {menu === m.id && (
+                          <div style={{ marginTop: 6, padding: 4, border: "1px solid var(--bd)", borderRadius: 10, background: "var(--sf)", minWidth: 180 }}>
+                            {!deshabilitado && (
+                              <div style={{ display: "flex", gap: 2, padding: "2px 4px", flexWrap: "wrap" }}>
+                                {REACCIONES.map((e) => <button key={e} type="button" onClick={() => { reaccionar(m.id, e); setMenu(""); }} style={{ fontSize: 18, border: 0, background: "transparent", cursor: "pointer", padding: 2 }} aria-label={e}>{e}</button>)}
+                              </div>
+                            )}
+                            {!deshabilitado && <button type="button" style={itemSt} onClick={() => { setRespondiendo(m); setMenu(""); area.current?.focus(); }}>Responder</button>}
+                            {puedeEditar && <button type="button" style={itemSt} onClick={() => { setEditando({ id: m.id, texto: m.texto }); setMenu(""); }}>Editar</button>}
+                            {esAdmin ? (
+                              <form action={async (f) => { await borrarMensajeSala(f); setMsgs((x) => x.filter((y) => y.id !== m.id)); setMenu(""); }}>
+                                <input type="hidden" name="id" value={m.id} />
+                                <button style={itemSt}>Eliminar</button>
+                              </form>
+                            ) : (puedeBorrarMio && <button type="button" style={itemSt} onClick={() => { setMenu(""); eliminarMio(m); }}>Eliminar</button>)}
+                            {esAdmin && !mio && (
+                              <form action={bloquearEnSala} style={{ display: "flex", gap: 4, alignItems: "center", padding: "4px 10px" }} onSubmit={(e) => { if (!window.confirm("¿Bloquear a " + (m.autor_nombre || "esta persona") + " en el chat?")) e.preventDefault(); }}>
+                                <input type="hidden" name="user" value={m.user_id} />
+                                <select name="horas" defaultValue="24" style={{ fontSize: 12, padding: "2px 4px", minHeight: 0, width: "auto", margin: 0 }}>
+                                  <option value="1">1 hora</option><option value="24">24 horas</option><option value="168">7 días</option><option value="0">Permanente</option>
+                                </select>
+                                <button className="btn g s" style={{ fontSize: 12, padding: "2px 8px", minHeight: 0, width: "auto", margin: 0 }}>Bloquear</button>
+                              </form>
+                            )}
+                          </div>
                         )}
-                      </div>
+                      </>
                     );
                   })()}
-                  {esAdmin && (
-                    <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap", alignItems: "center" }}>
-                      <form action={async (f) => { await borrarMensajeSala(f); setMsgs((x) => x.filter((y) => y.id !== m.id)); }}>
-                        <input type="hidden" name="id" value={m.id} />
-                        <button className="btn g s" style={{ fontSize: 11, padding: "2px 8px", minHeight: 0 }}>Eliminar</button>
-                      </form>
-                      {!mio && (
-                        <form action={bloquearEnSala} style={{ display: "flex", gap: 4 }} onSubmit={(e) => { if (!window.confirm("¿Bloquear a " + (m.autor_nombre || "esta persona") + " en la sala?")) e.preventDefault(); }}>
-                          <input type="hidden" name="user" value={m.user_id} />
-                          <select name="horas" defaultValue="24" style={{ fontSize: 11, padding: "2px 4px", minHeight: 0 }}>
-                            <option value="1">1 hora</option><option value="24">24 horas</option><option value="168">7 días</option><option value="0">Permanente</option>
-                          </select>
-                          <button className="btn g s" style={{ fontSize: 11, padding: "2px 8px", minHeight: 0 }}>Bloquear</button>
-                        </form>
-                      )}
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -268,7 +268,7 @@ export default function SalaChat({ yo, esAdmin, inicial, reaccionesIni, bloquead
       </div>
       <div style={{ borderTop: "1px solid var(--bd)", padding: 12 }}>
         {err && <p className="alerta" style={{ margin: "0 0 8px" }}>{err}</p>}
-        {bloqueado && <p className="alerta" style={{ margin: "0 0 8px" }}>Un administrador te bloqueó en la sala de trading. Puedes leer, pero no escribir.</p>}
+        {bloqueado && <p className="alerta" style={{ margin: "0 0 8px" }}>Un administrador te bloqueó en el chat en vivo. Puedes leer, pero no escribir.</p>}
         {!bloqueado && !abierta && <p className="mu" style={{ margin: "0 0 8px" }}>La sala está cerrada. Abre todos los días a las {SALA_DESDE} y cierra a las {SALA_HASTA} (hora de Paraguay).</p>}
         {respondiendo && (
           <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center", borderLeft: "3px solid var(--ac)", background: "var(--sf2)", borderRadius: 8, padding: "6px 10px", margin: "0 0 8px", fontSize: 13 }}>

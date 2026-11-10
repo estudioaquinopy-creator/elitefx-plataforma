@@ -15,8 +15,8 @@ export default async function Sala() {
     return (
       <>
         <Link href="/comunidad" className="back">← Comunidad</Link>
-        <h1>Sala de trading en vivo</h1>
-        <section className="box"><div className="tag">Solo miembros VIP</div><p className="mu">La sala de trading es un chat en vivo para los miembros VIP: comparte tus gráficos y opera acompañado.</p><Link className="btn sd" href="/ayuda">Quiero ser VIP</Link></section>
+        <h1>Chat en vivo</h1>
+        <section className="box"><div className="tag">Solo miembros VIP</div><p className="mu">El chat en vivo es para los miembros VIP: comparte tus gráficos y opera acompañado.</p><Link className="btn sd" href="/ayuda">Quiero ser VIP</Link></section>
       </>
     );
   }
@@ -53,7 +53,7 @@ export default async function Sala() {
   return (
     <>
       <Link href="/comunidad" className="back">← Comunidad</Link>
-      <h1>Sala de trading en vivo</h1>
+      <h1>Chat en vivo</h1>
       <p className="sub">Chat en tiempo real para los miembros VIP: escribe, comparte tus gráficos y mira lo que opera la comunidad. Abre todos los días de {SALA_DESDE} a {SALA_HASTA} (hora de Paraguay) y los mensajes se borran a las {SALA_HORAS_HISTORIAL} horas. Contenido educativo, no es recomendación de inversión.</p>
       {faltaMigracion
         ? <section className="box"><p className="mu">La sala todavía no está activada.</p></section>
