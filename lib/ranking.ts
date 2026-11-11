@@ -54,3 +54,9 @@ export function puntosFoto(texto: string | undefined | null): number {
 export function puntosCertificado(texto: string | undefined | null): number {
   return /^\s*\d{1,3}\s*$/.test(texto ?? "") ? Number((texto as string).trim()) : 10;
 }
+
+// Chat en vivo: puntos por mensaje, reacción recibida o imagen (por defecto 1) y tope por día (por defecto 5).
+export function puntosChat(pts: string | undefined | null, tope: string | undefined | null): { pts: number; tope: number } {
+  const n = (t: string | undefined | null, d: number) => (/^\s*\d{1,3}\s*$/.test(t ?? "") ? Number((t as string).trim()) : d);
+  return { pts: n(pts, 1), tope: n(tope, 5) };
+}
