@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Tema from "@/components/Tema";
 import { createClient } from "@/lib/supabase/client";
+import { validarClave, traducirErrorClave } from "@/lib/clave";
 
 // Aquí llega la persona desde el enlace del correo (recuperar contraseña o invitación).
 export default function NuevaClave() {
@@ -37,12 +38,13 @@ export default function NuevaClave() {
   async function guardar(e: React.FormEvent) {
     e.preventDefault();
     setErr("");
-    if (a.length < 8) return setErr("La contraseña debe tener al menos 8 caracteres.");
+    const vc = validarClave(a);
+    if (vc) return setErr(vc);
     if (a !== b) return setErr("Las contraseñas no coinciden.");
     setBusy(true);
     const { error } = await createClient().auth.updateUser({ password: a });
     setBusy(false);
-    if (error) return setErr("No se pudo guardar: " + error.message);
+    if (error) return setErr(traducirErrorClave(error.message) || "No se pudo guardar: " + error.message);
     router.replace("/inicio"); router.refresh();
   }
 
@@ -62,7 +64,7 @@ export default function NuevaClave() {
         {estado === "listo" && (
           <>
             <p className="sub">Elige la contraseña con la que entrarás a la plataforma.</p>
-            <label>Nueva contraseña (mínimo 8 caracteres)<input type="password" autoComplete="new-password" minLength={8} required value={a} onChange={(e) => setA(e.target.value)} /></label>
+            <label>Nueva contraseña (mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo)<input type="password" autoComplete="new-password" minLength={8} required value={a} onChange={(e) => setA(e.target.value)} /></label>
             <label>Repite la contraseña<input type="password" autoComplete="new-password" minLength={8} required value={b} onChange={(e) => setB(e.target.value)} /></label>
             {err && <p className="err">{err}</p>}
             <button className="btn" disabled={busy}>{busy ? "Guardando…" : "Guardar contraseña"}</button>

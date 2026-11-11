@@ -115,7 +115,7 @@ export default async function Gestionar({ params, searchParams }: { params: { id
           </form>
           <form action={nuevaClave} className="fm" style={{ flexDirection: "row", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
             <input type="hidden" name="id" value={p.id} />
-            <label>Nueva contraseña<input name="password" minLength={8} required placeholder="Mínimo 8 caracteres" /></label>
+            <label>Nueva contraseña<input name="password" minLength={8} required placeholder="Mín. 8, con mayúscula, minúscula, número y símbolo" /></label>
             <button className="btn g s" style={{ marginBottom: 14 }}>Cambiar contraseña</button>
           </form>
         </section>

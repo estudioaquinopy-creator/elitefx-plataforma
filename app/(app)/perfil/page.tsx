@@ -39,7 +39,7 @@ export default async function PerfilPage({ searchParams }: { searchParams: { t?:
       )}
       {t === "clave" && (
         <form action={cambiarClave} className="box fm" style={{ maxWidth: 520 }}>
-          <label>Nueva contraseña<input type="password" name="clave" minLength={8} required autoComplete="new-password" /></label>
+          <label>Nueva contraseña (mínimo 8, con mayúscula, minúscula, número y símbolo)<input type="password" name="clave" minLength={8} required autoComplete="new-password" /></label>
           <label>Repite la contraseña<input type="password" name="clave2" minLength={8} required autoComplete="new-password" /></label>
           <button className="btn s">Cambiar contraseña</button>
         </form>

@@ -8,6 +8,7 @@ import { clienteAdmin } from "@/lib/supabase/admin";
 import { hoyPY, perfilActual } from "@/lib/sesion";
 import { aviso, fallo } from "@/lib/subida";
 import { registrar } from "@/lib/auditoria";
+import { validarClave, traducirErrorClave } from "@/lib/clave";
 
 async function soloAdmin() {
   const p = await perfilActual();
@@ -202,11 +203,12 @@ export async function nuevaClave(f: FormData) {
   const id = String(f.get("id") ?? "");
   const ruta = "/accesos/" + id;
   const password = String(f.get("password") ?? "");
-  if (password.length < 8) fallo(ruta, "La contraseña debe tener al menos 8 caracteres.");
+  const vc = validarClave(password);
+  if (vc) fallo(ruta, vc);
   const admin = clienteAdmin();
   if (!admin) fallo(ruta, FALTA_CLAVE);
   const { error } = await admin.auth.admin.updateUserById(id, { password });
-  if (error) fallo(ruta, "No se pudo cambiar la contraseña: " + error.message);
+  if (error) fallo(ruta, traducirErrorClave(error.message) || "No se pudo cambiar la contraseña: " + error.message);
   await registrar("contraseña", id, "El administrador cambió la contraseña");
   aviso(ruta, "Contraseña actualizada. Pásasela a la persona.");
 }

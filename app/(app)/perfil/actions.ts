@@ -2,6 +2,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual } from "@/lib/sesion";
+import { validarClave, traducirErrorClave } from "@/lib/clave";
 
 function msg(t: string, tipo: "ok" | "error", texto: string): never {
   redirect("/perfil?t=" + t + "&" + tipo + "=" + encodeURIComponent(texto));
@@ -23,9 +24,10 @@ export async function cambiarClave(f: FormData) {
   await perfilActual();
   const a = String(f.get("clave") ?? "");
   const b = String(f.get("clave2") ?? "");
-  if (a.length < 8) msg("clave", "error", "La contraseña debe tener al menos 8 caracteres.");
+  const vc = validarClave(a);
+  if (vc) msg("clave", "error", vc);
   if (a !== b) msg("clave", "error", "Las contraseñas no coinciden.");
   const { error } = await createClient().auth.updateUser({ password: a });
-  if (error) msg("clave", "error", "No se pudo cambiar: " + error.message);
+  if (error) msg("clave", "error", traducirErrorClave(error.message) || "No se pudo cambiar: " + error.message);
   msg("clave", "ok", "Contraseña actualizada.");
 }
