@@ -31,6 +31,19 @@ export default async function Gestionar({ params, searchParams }: { params: { id
   const fmt = (d: string) => new Date(d + "T00:00:00").toLocaleDateString("es-PY");
   const nombre = p.nombre || p.email;
 
+  // Progreso en los cursos: lecciones que la persona marcó como vistas (tabla progreso; el administrador puede leerla).
+  const [{ data: cursosP }, { data: lecsP }, { data: progP }] = await Promise.all([
+    supabase.from("cursos").select("id, nombre, grupo, orden"),
+    supabase.from("lecciones").select("id, curso_id, orden, titulo"),
+    supabase.from("progreso").select("leccion_id, completada_at").eq("user_id", params.id),
+  ]);
+  const hechasP = new Map<string, string>(((progP ?? []) as { leccion_id: string; completada_at: string }[]).map((x) => [x.leccion_id, x.completada_at]));
+  const fechaP = (d: string) => new Date(d).toLocaleString("es-PY", { timeZone: "America/Asuncion", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  const cursosOrd = ((cursosP ?? []) as { id: string; nombre: string; grupo: string; orden: number }[]).slice().sort((x, y) => (x.grupo === y.grupo ? x.orden - y.orden : x.grupo === "ruta" ? -1 : 1));
+  const lecsPor = new Map<string, { id: string; orden: number; titulo: string }[]>();
+  for (const l of (lecsP ?? []) as { id: string; curso_id: string; orden: number; titulo: string }[]) lecsPor.set(l.curso_id, [...(lecsPor.get(l.curso_id) ?? []), l]);
+  const ultimaVista = Array.from(hechasP.values()).sort().pop();
+
   // Aviso por WhatsApp según el estado de la membresía.
   const tel = String(p.telefono ?? "").replace(/\D/g, "");
   const texto = st.clave === "vencido"
@@ -120,6 +133,30 @@ export default async function Gestionar({ params, searchParams }: { params: { id
           </form>
         </section>
       </div>
+
+      <section className="box" style={{ marginTop: 18 }}>
+        <h2>Progreso en los cursos</h2>
+        <p className="mu">Clases que {nombre} marcó como vistas ({hechasP.size} en total{ultimaVista ? " · última el " + fechaP(ultimaVista) : ""}). Solo aparecen las que la persona marca; si ve una clase y no la marca, no figura aquí.</p>
+        {cursosOrd.map((c) => {
+          const ls = (lecsPor.get(c.id) ?? []).slice().sort((x, y) => x.orden - y.orden);
+          if (ls.length === 0) return null;
+          const n = ls.filter((l) => hechasP.has(l.id)).length;
+          return (
+            <details key={c.id} className="adm" style={{ marginTop: 8 }}>
+              <summary>{c.nombre} · <b>{n} de {ls.length}</b>{n === ls.length ? " ✓" : ""}</summary>
+              <div style={{ marginTop: 6 }}>
+                {ls.map((l) => (
+                  <div key={l.id} className="ses" style={{ padding: "6px 0" }}>
+                    <div style={{ width: 22, flex: "none", color: hechasP.has(l.id) ? "var(--ac)" : "var(--mu)" }}>{hechasP.has(l.id) ? "✓" : "○"}</div>
+                    <div style={{ flex: 1 }}>{l.titulo}</div>
+                    <small className="mu">{hechasP.has(l.id) ? fechaP(hechasP.get(l.id) as string) : "Sin marcar"}</small>
+                  </div>
+                ))}
+              </div>
+            </details>
+          );
+        })}
+      </section>
 
       {p.id !== yo.id && (
         <section className="box" style={{ marginTop: 18 }}>
