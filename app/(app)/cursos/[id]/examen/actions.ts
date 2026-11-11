@@ -18,6 +18,10 @@ export async function enviarExamen(f: FormData) {
   for (const [k, v] of f.entries()) {
     if (k.startsWith("p_")) { const n = Number(v); if (Number.isInteger(n) && n >= 0) resp[k.slice(2)] = n; }
   }
+  // Las preguntas que le tocaron y dejó sin responder se envían con -1 (cuentan como falladas y salen en la revisión).
+  for (const k of Array.from(f.keys())) {
+    if (k.startsWith("q_") && resp[k.slice(2)] === undefined) resp[k.slice(2)] = -1;
+  }
   const { data, error } = await createClient().rpc("calificar_examen", { p_curso: curso, p_resp: resp });
   if (error) fallo(ruta(curso), "No se pudo calificar: " + error.message);
   const r = (Array.isArray(data) ? data[0] : data) as { aciertos: number; total: number; minimo: number; aprobado: boolean };

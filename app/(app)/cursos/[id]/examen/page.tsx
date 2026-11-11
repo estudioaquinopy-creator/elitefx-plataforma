@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic";
 
 type Banco = { id: string; texto: string; opciones: string[]; correcta: number };
 type Preg = { id: string; texto: string; opciones: string[] };
+type Rev = { t: string; o: string[]; e: number; c: number };
 const EJEMPLO = `1. ¿Qué es un pip?
 a) La unidad mínima de movimiento de un par
 *b) Una comisión del broker
@@ -54,6 +55,11 @@ export default async function Examen({ params, searchParams }: { params: { id: s
     const pasa = searchParams.ok === "1";
     // Al aprobar se emite el certificado (suma puntos en el ranking); si ya existía, no cambia nada.
     if (pasa) { try { await sb.rpc("emitir_certificado", { p_curso: params.id }); } catch { /* el certificado se emite al abrirlo */ } }
+    // Revisión del intento recién rendido: en qué se equivocó y cuál era la correcta (migración 0064; sin ella no se muestra).
+    const { data: ult } = await sb.from("examen_intentos").select("revision").eq("user_id", perfil.id).eq("curso_id", params.id).order("created_at", { ascending: false }).limit(1);
+    const revision = (((ult ?? [])[0] as { revision?: Rev[] | null } | undefined)?.revision ?? []) as Rev[];
+    const falladas = revision.filter((r) => r.e !== r.c);
+    const acertadas = revision.filter((r) => r.e === r.c);
     return (
       <>
         {cabeza}
@@ -66,6 +72,34 @@ export default async function Examen({ params, searchParams }: { params: { id: s
             ? <Link className="btn bl" href={"/cursos/" + siguiente.id}>Ir a {siguiente.nombre}</Link>
             : <Link className="btn sd" href={pasa ? "/cursos" : "/cursos/" + params.id + "/examen"}>{pasa ? "Ver cursos" : "Intentar de nuevo"}</Link>}
         </section>
+        {falladas.length > 0 && (
+          <section className="box">
+            <h2>En qué te equivocaste ({falladas.length})</h2>
+            <p className="mu">Repasa estas preguntas para aprender la respuesta correcta.</p>
+            {falladas.map((r, i) => (
+              <div key={i} className="ses" style={{ display: "block", padding: "12px 0" }}>
+                <b>{i + 1}. {r.t}</b>
+                <div style={{ marginTop: 6 }}>
+                  {r.e >= 0
+                    ? <small style={{ display: "block", color: "var(--co)" }}>✗ Tu respuesta: {r.o[r.e]}</small>
+                    : <small style={{ display: "block", color: "var(--co)" }}>✗ No respondiste esta pregunta</small>}
+                  <small style={{ display: "block", color: "var(--ac)" }}>✓ Respuesta correcta: {r.o[r.c]}</small>
+                </div>
+              </div>
+            ))}
+          </section>
+        )}
+        {acertadas.length > 0 && (
+          <details className="box">
+            <summary>Ver lo que respondiste bien ({acertadas.length})</summary>
+            {acertadas.map((r, i) => (
+              <div key={i} className="ses" style={{ display: "block", padding: "10px 0" }}>
+                <b>{r.t}</b>
+                <small style={{ display: "block", color: "var(--ac)", marginTop: 4 }}>✓ {r.o[r.c]}</small>
+              </div>
+            ))}
+          </details>
+        )}
       </>
     );
   }
@@ -153,6 +187,7 @@ export default async function Examen({ params, searchParams }: { params: { id: s
         <input type="hidden" name="curso_id" value={params.id} />
         {preguntas.map((q, i) => (
           <section key={q.id} className="box">
+            <input type="hidden" name={"q_" + q.id} value="1" />
             <b>{i + 1}. {q.texto}</b>
             {q.opciones.map((o, j) => (
               <label key={j} className="ck" style={{ marginTop: 8 }}><input type="radio" name={"p_" + q.id} value={j} /> {o}</label>
