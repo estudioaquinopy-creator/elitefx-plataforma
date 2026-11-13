@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { REFERIDOS_DESDE } from "@/lib/referidos";
 import Captcha, { CAPTCHA_ACTIVO } from "@/components/Captcha";
 import { validarClave, traducirErrorClave } from "@/lib/clave";
+import { enviarEventoMeta } from "@/lib/metaPixel";
 
 export default function Registro() {
   const router = useRouter();
@@ -81,6 +82,7 @@ export default function Registro() {
       if (m.includes("rate") || m.includes("limit")) return setErr("Demasiados intentos. Espera unos minutos e inténtalo otra vez.");
       return setErr(traducirErrorClave(error.message) || "No se pudo crear la cuenta: " + error.message);
     }
+    enviarEventoMeta("CompleteRegistration", {}, { email: email.trim(), telefono: t, nombre: n });
     // Si el proyecto no pide confirmar el correo, la sesión ya está activa: guardamos el teléfono.
     if (data.session && data.user) {
       await sb.from("perfiles").update({ nombre: n, telefono: t }).eq("id", data.user.id);
