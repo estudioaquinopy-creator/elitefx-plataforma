@@ -108,7 +108,7 @@ export const permisos = cache(async (p: Perfil): Promise<Permisos> => {
     soloMiercolesNY: nuevo && !calCompleto,
     tutoriales: true, // libre también para el plan gratuito
     comunidad: vip || ov.has("comunidad"),
-    journal: vip || ov.has("journal") || nuevo,
+    journal: vip || ov.has("journal"),
     noticias: vip || ov.has("noticias") || nuevo,
   };
 });
