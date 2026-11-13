@@ -1,5 +1,6 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import PixelMeta from "@/components/PixelMeta";
 
 export const metadata: Metadata = {
   title: "ELITE FX · Plataforma",
@@ -16,7 +17,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <PixelMeta />
+      </body>
     </html>
   );
 }

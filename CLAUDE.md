@@ -65,6 +65,7 @@ Plataforma propia de la academia ELITE FX (+900 alumnos, migrando desde Skool). 
 - Bienvenida: quien aún no marcó como visto el video "Bienvenido…" de Primeros pasos es llevado a él al entrar a `/inicio` (`lib/bienvenida.ts`); se busca por nombre del curso y título de la lección.
 - Modo alumno: en el menú de la foto, un solo desplegable "Ver la plataforma como": Administrador / Gratuito (nuevo) / Gratuito alumno / VIP (cookie `ver_como` = `gratis` | `alumno` | `miembro`, ver `lib/sesion.ts` y `modoAlumno`).
 - Logo del menú lateral: `.slogo img` mide 136 px de ancho máximo (bloque final de `globals.css`).
+- Píxel de Meta (ID 962315523601341): `components/PixelMeta.tsx`, cargado en `app/layout.tsx` (todas las páginas, públicas y con sesión); envía PageView en la primera carga y en cada cambio de ruta. Si se agrega una CSP con `script-src`/`img-src`/`connect-src`, permitir `connect.facebook.net` y `www.facebook.com`.
 - Diseño: tema oscuro verde por defecto (+ modo claro). Mantener el menú lateral en tono neutro. No agregar marcas de agua.
 
 ## Seguridad
