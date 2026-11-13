@@ -8,6 +8,12 @@ export const COLORES: Record<TipoSesion, { color: string; nombre: string }> = {
   otra: { color: "#00d47a", nombre: "Otras sesiones" },
 };
 
+// Gratuito nuevo: solo ve la sesión de Nueva York de los miércoles (hora de Paraguay).
+export function esMiercolesNY(inicioIso: string, titulo: string): boolean {
+  if (tipoSesion(titulo) !== "ny") return false;
+  return new Date(inicioIso).toLocaleDateString("en-US", { timeZone: "America/Asuncion", weekday: "short" }) === "Wed";
+}
+
 export function tipoSesion(titulo: string): TipoSesion {
   const t = (titulo || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
   if (/londres|london/.test(t)) return "londres";

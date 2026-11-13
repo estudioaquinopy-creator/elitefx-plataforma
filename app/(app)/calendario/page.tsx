@@ -6,7 +6,8 @@ import Portada from "@/components/Portada";
 import { crearClase, eliminarClase, terminarSesion, reabrirSesion, crearFijo, guardarFijo, eliminarFijo } from "./actions";
 import { ocurrencias, type Fijo, type Ocurrencia } from "@/lib/horario";
 import SesionCard from "@/components/SesionCard";
-import { COLORES, tipoSesion } from "@/lib/sesiones";
+import { COLORES, tipoSesion, esMiercolesNY } from "@/lib/sesiones";
+import { clienteAdmin } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -47,12 +48,14 @@ export default async function Calendario({ searchParams }: { searchParams: { s?:
 
   const desde = new Date(lunes + "T00:00:00-03:00").toISOString();
   const hasta = new Date(mas(7) + "T00:00:00-03:00").toISOString();
-  const { data } = await createClient().from("clases").select("*").gte("inicio", desde).lt("inicio", hasta).order("inicio");
-  const sb = createClient();
+  // Gratuito nuevo: la base solo deja leer el calendario a miembros, así que se lee con la clave de servicio y se entrega ÚNICAMENTE la sesión de Nueva York de los miércoles (los demás enlaces nunca salen).
+  const restringido = perm.soloMiercolesNY;
+  const sb = restringido ? (clienteAdmin() ?? createClient()) : createClient();
+  const { data } = await sb.from("clases").select("*").gte("inicio", desde).lt("inicio", hasta).order("inicio");
   const { data: fx } = await sb.from("horario_fijo").select("*").order("hora");
   const fijos = ((fx ?? []) as Fijo[]).map((f) => ({ ...f, hora: String(f.hora) }));
   const sueltas = ((data ?? []) as Omit<Clase, "fijo">[]).map((c) => ({ ...c, fijo: false }));
-  const clases = [...sueltas, ...ocurrencias(fijos, lunes, 7)].sort((a, b) => a.inicio.localeCompare(b.inicio));
+  const clases = [...sueltas, ...ocurrencias(fijos, lunes, 7)].filter((c) => !restringido || esMiercolesNY(c.inicio, c.titulo)).sort((a, b) => a.inicio.localeCompare(b.inicio));
   // Sesiones que el administrador marcó como terminadas (si la migración 0042 aún no se corrió, no hay ninguna).
   let terminadas = new Set<string>();
   try {
@@ -68,6 +71,7 @@ export default async function Calendario({ searchParams }: { searchParams: { s?:
     <>
       <h1>Calendario</h1>
       <p className="sub">Semana del {fmtCorto(lunes)} al {fmtCorto(domingo)} · horario de Paraguay · recordatorio 30 minutos antes de cada sesión.</p>
+      {restringido && <p className="okmsg">Tu acceso gratuito incluye la sesión de Nueva York de los miércoles. Para ver y conectarte a todas las sesiones en vivo, hazte miembro VIP.</p>}
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
       {portada}
 

@@ -1,5 +1,7 @@
 import EnVivo, { type SesionVivo } from "@/components/EnVivo";
 import { ocurrencias, type Fijo } from "@/lib/horario";
+import { esMiercolesNY } from "@/lib/sesiones";
+import { clienteAdmin } from "@/lib/supabase/admin";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { bienvenidaPendiente } from "@/lib/bienvenida";
@@ -61,16 +63,19 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
   let vivo: SesionVivo[] = [];
   if (perm.calendario) {
     const t0 = Date.now() - 12 * 3600000, t1 = Date.now() + 8 * 86400000;
-    const { data: cl } = await supabase.from("clases").select("*").gte("inicio", new Date(t0).toISOString()).lte("inicio", new Date(t1).toISOString()).order("inicio").limit(30);
-    const { data: fx } = await supabase.from("horario_fijo").select("*");
+    // Gratuito nuevo: se lee con la clave de servicio y solo se entrega la sesión de Nueva York de los miércoles.
+    const lector = perm.soloMiercolesNY ? (clienteAdmin() ?? supabase) : supabase;
+    const { data: cl } = await lector.from("clases").select("*").gte("inicio", new Date(t0).toISOString()).lte("inicio", new Date(t1).toISOString()).order("inicio").limit(30);
+    const { data: fx } = await lector.from("horario_fijo").select("*");
     const fijos = ((fx ?? []) as Fijo[]).map((f) => ({ ...f, hora: String(f.hora) }));
     const ayer = new Date(new Date(hoyPY() + "T12:00:00Z").getTime() - 86400000).toISOString().slice(0, 10);
     vivo = [...((cl ?? []) as { id: string; titulo: string; inicio: string; zoom_url: string; duracion_min?: number }[]), ...ocurrencias(fijos, ayer, 10)]
       .filter((o) => { const t = new Date(o.inicio).getTime(); return t >= t0 && t <= t1; })
+      .filter((o) => !perm.soloMiercolesNY || esMiercolesNY(o.inicio, o.titulo))
       .map((o) => ({ id: o.id, titulo: o.titulo, inicio: o.inicio, zoom: o.zoom_url || "", duracion: o.duracion_min ?? 90 }));
     // Sesiones que el administrador marcó como terminadas dejan de mostrarse como "en vivo".
     try {
-      const { data: tm } = await supabase.from("sesiones_terminadas").select("sesion_id");
+      const { data: tm } = await lector.from("sesiones_terminadas").select("sesion_id");
       const fin = new Set(((tm ?? []) as { sesion_id: string }[]).map((x) => x.sesion_id));
       if (fin.size) vivo = vivo.filter((s) => !fin.has(s.id));
     } catch { /* migración 0042 pendiente */ }
