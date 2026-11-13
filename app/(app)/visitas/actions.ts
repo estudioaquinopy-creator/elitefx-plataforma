@@ -107,3 +107,42 @@ export async function responderPropuesta(f: FormData) {
   revalidatePath("/visitas");
   aviso("/visitas", acepta ? "¡Listo! Aceptaste el nuevo horario: tu visita quedó aprobada." : "Rechazaste el nuevo horario. Puedes pedir otra visita cuando quieras.");
 }
+
+// Solo el administrador: marca si la visita fue atendida o no asistió, con nota interna (solo el equipo) y seguimiento pendiente.
+export async function marcarResultado(f: FormData) {
+  const yo = await perfilActual();
+  if (yo.rol !== "admin") throw new Error("Solo el administrador puede hacer esto.");
+  const id = String(f.get("id") ?? "");
+  const resultado = String(f.get("resultado") ?? "");
+  const nota = String(f.get("nota") ?? "").trim().slice(0, 600);
+  if (!/^[0-9a-f-]{36}$/i.test(id) || !["atendida", "no_asistio"].includes(resultado)) fallo("/visitas", "Datos no válidos.");
+  const sb = createClient();
+  const { data: v } = await sb.from("visitas").select("user_id, fecha, hora, estado").eq("id", id).maybeSingle();
+  const vis = v as { user_id: string; fecha: string; hora: string; estado: string } | null;
+  if (!vis || vis.estado !== "aprobada") fallo("/visitas", "Solo se puede marcar una visita aprobada.");
+  const { data: prev } = await sb.from("visitas_seguimiento").select("visita_id").eq("visita_id", id).maybeSingle();
+  // Si no vino y es la primera vez, queda con seguimiento pendiente (para contactarla y reagendar), salvo que se desmarque.
+  let pendiente = f.get("pendiente") === "on";
+  if (resultado === "no_asistio" && !prev && f.get("pendiente_visto") !== "1") pendiente = true;
+  const { error } = await sb.from("visitas").update({ resultado, resultado_at: new Date().toISOString(), resultado_por: yo.id }).eq("id", id);
+  if (error) fallo("/visitas", error.message.includes("resultado") ? "Falta correr la migración 0065 en Supabase." : "No se pudo guardar: " + error.message);
+  const { error: e2 } = await sb.from("visitas_seguimiento").upsert({ visita_id: id, nota, pendiente, updated_by: yo.id, updated_at: new Date().toISOString() });
+  if (e2) fallo("/visitas", "No se pudo guardar la nota: " + e2.message);
+  await registrar("visita", vis!.user_id, (resultado === "atendida" ? "Marcó como atendida" : "Marcó que no asistió") + " la visita del " + vis!.fecha + " a las " + vis!.hora.slice(0, 5) + (pendiente ? " · seguimiento pendiente" : ""));
+  revalidatePath("/visitas");
+  aviso("/visitas", resultado === "atendida" ? "Visita marcada como atendida." : "Visita marcada como no asistió.");
+}
+
+// La persona deja su reseña de una visita en la que fue atendida.
+export async function resenarVisita(f: FormData) {
+  await perfilActual();
+  const id = String(f.get("id") ?? "");
+  const estrellas = Number(f.get("estrellas"));
+  const texto = String(f.get("texto") ?? "").trim().slice(0, 500);
+  if (!/^[0-9a-f-]{36}$/i.test(id)) fallo("/visitas", "Visita no válida.");
+  if (!Number.isInteger(estrellas) || estrellas < 1 || estrellas > 5) fallo("/visitas", "Elige de 1 a 5 estrellas.");
+  const { error } = await createClient().rpc("visitas_resenar", { p_id: id, p_estrellas: estrellas, p_texto: texto });
+  if (error) fallo("/visitas", error.message.includes("function") ? "Falta correr la migración 0065 en Supabase." : error.message.replace(/^.*?:\s*/, ""));
+  revalidatePath("/visitas");
+  aviso("/visitas", "¡Gracias por tu opinión!");
+}

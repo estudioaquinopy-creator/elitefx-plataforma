@@ -1,13 +1,15 @@
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual, hoyPY, vipVigente } from "@/lib/sesion";
 import { HORAS, TEMAS, proximosMiercoles, visitaVigente, fechaLarga, horaCorta, whatsapp } from "@/lib/visitas";
-import { agendarVisita, cancelarVisita, revisarVisita, proponerHorario, responderPropuesta } from "./actions";
+import { agendarVisita, cancelarVisita, revisarVisita, proponerHorario, responderPropuesta, marcarResultado, resenarVisita } from "./actions";
 import { leerAjustes } from "@/lib/ajustes";
 import FormVisita from "@/components/FormVisita";
 
 export const dynamic = "force-dynamic";
 
-type Visita = { id: string; user_id: string; fecha: string; hora: string; tema: string; detalle: string; estado: string; nota: string; created_at: string; revisado_at?: string | null; encargado_id?: string | null; encargado_nombre?: string; propuesta_fecha?: string | null; propuesta_hora?: string | null };
+type Visita = { id: string; user_id: string; fecha: string; hora: string; tema: string; detalle: string; estado: string; nota: string; created_at: string; revisado_at?: string | null; encargado_id?: string | null; encargado_nombre?: string; propuesta_fecha?: string | null; propuesta_hora?: string | null; resultado?: string | null; resena_estrellas?: number | null; resena_texto?: string; resena_at?: string | null };
+type Seg = { visita_id: string; nota: string; pendiente: boolean };
+const estrellas = (n: number) => "★".repeat(n) + "☆".repeat(5 - n);
 const ETIQ: Record<string, string> = { pendiente: "Pendiente de aprobación", aprobada: "Aprobada", propuesta: "Nuevo horario propuesto", rechazada: "Rechazada", cancelada: "Cancelada" };
 const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 
@@ -40,13 +42,17 @@ export default async function Visitas({ searchParams }: { searchParams: { ok?: s
     const admins = (adm ?? []) as { id: string; nombre: string }[];
     const { data } = await sb.from("visitas").select("*").order("fecha").order("hora").limit(300);
     const todas = (data ?? []) as Visita[];
+    const { data: segRaw } = await sb.from("visitas_seguimiento").select("visita_id, nota, pendiente"); // sin la migración 0065 viene vacío
+    const seg = new Map(((segRaw ?? []) as Seg[]).map((x) => [x.visita_id, x]));
     const ids = Array.from(new Set(todas.map((v) => v.user_id)));
     const { data: ps } = await sb.from("perfiles").select("id, nombre, email, telefono").in("id", ids.concat(["00000000-0000-0000-0000-000000000000"]));
     const quien = new Map(((ps ?? []) as { id: string; nombre: string; email: string; telefono: string | null }[]).map((p) => [p.id, p]));
     const pend = todas.filter((v) => v.estado === "pendiente" && visitaVigente(v.fecha, v.hora));
-    const prox = todas.filter((v) => v.estado === "aprobada" && visitaVigente(v.fecha, v.hora));
+    const prox = todas.filter((v) => v.estado === "aprobada" && !v.resultado && visitaVigente(v.fecha, v.hora));
+    const porMarcar = todas.filter((v) => v.estado === "aprobada" && !v.resultado && !visitaVigente(v.fecha, v.hora));
+    const conSeguimiento = todas.filter((v) => seg.get(v.id)?.pendiente);
     const prop = todas.filter((v) => v.estado === "propuesta");
-    const resto = todas.filter((v) => !pend.includes(v) && !prox.includes(v) && !prop.includes(v)).reverse().slice(0, 30);
+    const resto = todas.filter((v) => !pend.includes(v) && !prox.includes(v) && !prop.includes(v) && !porMarcar.includes(v) && !conSeguimiento.includes(v)).reverse().slice(0, 30);
     const Tarjeta = ({ v }: { v: Visita }) => {
       const p = quien.get(v.user_id);
       const lleno = todas.filter((x) => x.estado === "aprobada" && x.fecha === v.fecha && x.hora === v.hora).length;
@@ -63,8 +69,21 @@ export default async function Visitas({ searchParams }: { searchParams: { ok?: s
             {v.estado === "aprobada" && <small style={{ display: "block" }}>Recibe: <b>{v.encargado_nombre || "sin asignar"}</b></small>}
             {v.detalle && <small className="mu" style={{ display: "block", whiteSpace: "pre-wrap" }}>{v.detalle}</small>}
             {v.estado !== "pendiente" && <small className="mu" style={{ display: "block" }}>{ETIQ[v.estado]}{v.nota ? " · " + v.nota : ""}</small>}
+            {v.resultado && <small style={{ display: "block", color: v.resultado === "atendida" ? "var(--ac)" : "var(--co)" }}><b>{v.resultado === "atendida" ? "✓ Atendida" : "✕ No asistió"}</b>{seg.get(v.id)?.pendiente ? " · seguimiento pendiente" : ""}</small>}
+            {seg.get(v.id)?.nota && <small style={{ display: "block", whiteSpace: "pre-wrap" }}><span className="mu">Nota del equipo (la persona no la ve):</span> {seg.get(v.id)?.nota}</small>}
+            {v.resena_estrellas && <small style={{ display: "block" }}><span style={{ color: "var(--go)" }}>{estrellas(v.resena_estrellas)}</span>{v.resena_texto ? " “" + v.resena_texto + "”" : ""}</small>}
           </div>
-          {(v.estado === "pendiente" || v.estado === "aprobada" || v.estado === "propuesta") && (
+          {v.estado === "aprobada" && v.fecha <= hoy && (
+            <form action={marcarResultado} style={{ flexBasis: "100%", display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              <input type="hidden" name="id" value={v.id} />
+              {seg.has(v.id) && <input type="hidden" name="pendiente_visto" value="1" />}
+              <input name="nota" placeholder="Nota de la visita (solo el equipo)" maxLength={600} defaultValue={seg.get(v.id)?.nota ?? ""} style={{ flex: 1, minWidth: 220 }} />
+              <label className="ck" style={{ margin: 0 }}><input type="checkbox" name="pendiente" defaultChecked={!!seg.get(v.id)?.pendiente} /> Dar seguimiento</label>
+              <button className={v.resultado === "atendida" ? "btn s" : "btn g s"} name="resultado" value="atendida">✓ Atendida</button>
+              <button className={v.resultado === "no_asistio" ? "btn s" : "btn g s"} name="resultado" value="no_asistio">✕ No asistió</button>
+            </form>
+          )}
+          {(v.estado === "pendiente" || (v.estado === "aprobada" && v.fecha > hoy) || v.estado === "propuesta") && (
             <form action={revisarVisita} style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
               <input type="hidden" name="id" value={v.id} />
               <input name="nota" placeholder="Nota para la persona (opcional)" maxLength={200} style={{ width: 200 }} defaultValue={v.nota} />
@@ -119,6 +138,20 @@ export default async function Visitas({ searchParams }: { searchParams: { ok?: s
           <section className="box">
             <h2>Esperando respuesta de la persona ({prop.length})</h2>
             {prop.map((v) => <Tarjeta key={v.id} v={v} />)}
+          </section>
+        )}
+        {porMarcar.length > 0 && (
+          <section className="box" style={{ borderColor: "var(--go)" }}>
+            <h2>Por marcar: ¿vino la persona? ({porMarcar.length})</h2>
+            <p className="mu">Visitas que ya pasaron. Marca si fue atendida o no asistió, y deja una nota si hace falta.</p>
+            {porMarcar.map((v) => <Tarjeta key={v.id} v={v} />)}
+          </section>
+        )}
+        {conSeguimiento.length > 0 && (
+          <section className="box" style={{ borderColor: "var(--co)" }}>
+            <h2>Seguimiento pendiente ({conSeguimiento.length})</h2>
+            <p className="mu">Quita la marca “Dar seguimiento” cuando ya lo hayas resuelto y guarda.</p>
+            {conSeguimiento.map((v) => <Tarjeta key={v.id} v={v} />)}
           </section>
         )}
         <section className="box">
@@ -187,7 +220,23 @@ export default async function Visitas({ searchParams }: { searchParams: { ok?: s
         <section className="box">
           <h2>Tus visitas anteriores</h2>
           {mis.filter((v) => v !== activa).map((v) => (
-            <div key={v.id} className="ses"><div><b>{cap(fechaLarga(v.fecha))} · {horaCorta(v.hora)}</b><small className="mu" style={{ display: "block" }}>{v.tema} · {ETIQ[v.estado]}{v.nota ? " · " + v.nota : ""}</small></div></div>
+            <div key={v.id} className="ses" style={{ display: "block", padding: "10px 0" }}>
+              <b>{cap(fechaLarga(v.fecha))} · {horaCorta(v.hora)}</b>
+              <small className="mu" style={{ display: "block" }}>{v.tema} · {v.resultado === "atendida" ? "Atendida" : v.resultado === "no_asistio" ? "No asististe" : ETIQ[v.estado]}{v.nota ? " · " + v.nota : ""}</small>
+              {v.resultado === "atendida" && v.resena_estrellas && <small style={{ display: "block", marginTop: 4 }}><span style={{ color: "var(--go)" }}>{estrellas(v.resena_estrellas)}</span> Tu opinión{v.resena_texto ? ": “" + v.resena_texto + "”" : ""}</small>}
+              {v.resultado === "atendida" && !v.resena_estrellas && (
+                <form action={resenarVisita} style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginTop: 8 }}>
+                  <input type="hidden" name="id" value={v.id} />
+                  <span className="mu" style={{ width: "100%" }}>¿Te ayudó la visita? Cuéntanos brevemente.</span>
+                  <select name="estrellas" defaultValue="" required style={{ width: "auto" }} aria-label="Calificación">
+                    <option value="" disabled>Calificación…</option>
+                    <option value="5">★★★★★ Excelente</option><option value="4">★★★★☆ Muy buena</option><option value="3">★★★☆☆ Buena</option><option value="2">★★☆☆☆ Regular</option><option value="1">★☆☆☆☆ No me ayudó</option>
+                  </select>
+                  <input name="texto" placeholder="¿Qué te pareció? (opcional)" maxLength={500} style={{ flex: 1, minWidth: 200 }} />
+                  <button className="btn s">Enviar opinión</button>
+                </form>
+              )}
+            </div>
           ))}
         </section>
       )}
