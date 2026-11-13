@@ -7,7 +7,7 @@ import { useEffect, useRef } from "react";
 // Píxel de Meta (Facebook/Instagram). El código oficial registra el PageView de la
 // primera carga; como Next.js cambia de página sin recargar, aquí se envía un
 // PageView extra en cada cambio de ruta.
-const PIXEL_ID = "962315523601341";
+const PIXEL_ID = "1042503102192540";
 
 export default function PixelMeta() {
   const ruta = usePathname();
