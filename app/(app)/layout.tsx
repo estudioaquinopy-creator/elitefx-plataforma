@@ -9,6 +9,7 @@ import RastroActividad from "@/components/RastroActividad";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual, permisos, vipVigente } from "@/lib/sesion";
 import { modoAlumno } from "./actions";
+import { sesionesGratis } from "@/lib/sesionesGratis";
 import { ocurrencias, type Fijo } from "@/lib/horario";
 import { hoyPY } from "@/lib/sesion";
 import { visitaVigente } from "@/lib/visitas";
@@ -32,7 +33,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const items: { href: string; label: string; lock: boolean; icon: string; soon?: string; aviso?: { texto: string; tipo: "ok" | "no" } }[] = [
     { href: "/inicio", label: "Inicio", lock: false, icon: "M3 11l9-8 9 8M5 10v10h14V10" },
     { href: "/cursos", label: "Cursos", lock: false, icon: "M4 5h7a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H4zM20 5h-3a3 3 0 0 0-3 3" },
-    { href: "/calendario", label: "Calendario", lock: !perm.calendario, icon: "M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v13H3zM3 11h18M8 3v4M16 3v4" },
+    { href: "/calendario", label: "Calendario", lock: !perm.calendario && !perm.calendarioNY, icon: "M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v13H3zM3 11h18M8 3v4M16 3v4" },
     { href: "/aliados", label: "Broker", lock: false, icon: "M3 12a5 5 0 1 0 10 0a5 5 0 1 0-10 0M11 12a5 5 0 1 0 10 0a5 5 0 1 0-10 0" },
     { href: "/comunidad", label: "Comunidad", lock: !perm.comunidad, icon: "M21 12a8 8 0 0 1-11.5 7.2L4 20l1-4.6A8 8 0 1 1 21 12z" },
     { href: "/journal", label: "Journal", lock: !perm.journal, icon: "M5 4h12a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2zM9 4v16M12 9h4M12 13h4" },
@@ -151,6 +152,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     const prox = [...ocurrencias(fijos, hoyPY(), 2), ...((rCl.data ?? []) as { id: string; titulo: string; inicio: string }[])]
       .filter((o) => { const t = new Date(o.inicio).getTime() - ahora; return t >= 0 && t <= 60 * 60000; });
     for (const o of prox) {
+      const min = Math.max(1, Math.round((new Date(o.inicio).getTime() - ahora) / 60000));
+      notifs.unshift({ id: "r-" + o.id, titulo: "Empieza en " + min + " min", cuerpo: o.titulo, enlace: "/calendario", fecha: "", nueva: true });
+    }
+  } else if (perm.calendarioNY && new Date(ahora).toLocaleDateString("en-US", { timeZone: "America/Asuncion", weekday: "short" }) === "Wed") {
+    // Acceso gratuito: recordatorio solo de la sesión de Nueva York de los miércoles (solo se consulta los miércoles).
+    const r = await sesionesGratis(hoyPY(), 2, new Date(ahora).toISOString(), new Date(ahora + 61 * 60000).toISOString());
+    for (const o of r.sesiones) {
+      if (r.terminadas.has(o.id)) continue;
       const min = Math.max(1, Math.round((new Date(o.inicio).getTime() - ahora) / 60000));
       notifs.unshift({ id: "r-" + o.id, titulo: "Empieza en " + min + " min", cuerpo: o.titulo, enlace: "/calendario", fecha: "", nueva: true });
     }

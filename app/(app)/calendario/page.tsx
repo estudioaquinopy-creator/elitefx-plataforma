@@ -7,6 +7,7 @@ import { crearClase, eliminarClase, terminarSesion, reabrirSesion, crearFijo, gu
 import { ocurrencias, type Fijo, type Ocurrencia } from "@/lib/horario";
 import SesionCard from "@/components/SesionCard";
 import { COLORES, tipoSesion } from "@/lib/sesiones";
+import { sesionesGratis } from "@/lib/sesionesGratis";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +33,7 @@ export default async function Calendario({ searchParams }: { searchParams: { s?:
 
   const portada = <Portada url={aj.portada_calendario} clave="portada_calendario" ruta="/calendario" admin={perm.admin} titulo="Calendario" />;
 
-  if (!perm.calendario) {
+  if (!perm.calendario && !perm.calendarioNY) {
     return (
       <>
         <h1>Calendario</h1>
@@ -47,18 +48,28 @@ export default async function Calendario({ searchParams }: { searchParams: { s?:
 
   const desde = new Date(lunes + "T00:00:00-03:00").toISOString();
   const hasta = new Date(mas(7) + "T00:00:00-03:00").toISOString();
-  const { data } = await createClient().from("clases").select("*").gte("inicio", desde).lt("inicio", hasta).order("inicio");
-  const sb = createClient();
-  const { data: fx } = await sb.from("horario_fijo").select("*").order("hora");
-  const fijos = ((fx ?? []) as Fijo[]).map((f) => ({ ...f, hora: String(f.hora) }));
-  const sueltas = ((data ?? []) as Omit<Clase, "fijo">[]).map((c) => ({ ...c, fijo: false }));
-  const clases = [...sueltas, ...ocurrencias(fijos, lunes, 7)].sort((a, b) => a.inicio.localeCompare(b.inicio));
-  // Sesiones que el administrador marcó como terminadas (si la migración 0042 aún no se corrió, no hay ninguna).
+  // Acceso gratuito: solo la sesión de Nueva York de los miércoles (filtrada en el servidor).
+  const limitado = !perm.calendario;
+  let clases: Clase[] = [];
+  let fijos: Fijo[] = [];
   let terminadas = new Set<string>();
-  try {
-    const { data: tm } = await sb.from("sesiones_terminadas").select("sesion_id");
-    terminadas = new Set(((tm ?? []) as { sesion_id: string }[]).map((x) => x.sesion_id));
-  } catch { /* sin migración */ }
+  if (limitado) {
+    const r = await sesionesGratis(lunes, 7, desde, hasta);
+    clases = r.sesiones;
+    terminadas = r.terminadas;
+  } else {
+    const sb = createClient();
+    const { data } = await sb.from("clases").select("*").gte("inicio", desde).lt("inicio", hasta).order("inicio");
+    const { data: fx } = await sb.from("horario_fijo").select("*").order("hora");
+    fijos = ((fx ?? []) as Fijo[]).map((f) => ({ ...f, hora: String(f.hora) }));
+    const sueltas = ((data ?? []) as Omit<Clase, "fijo">[]).map((c) => ({ ...c, fijo: false }));
+    clases = [...sueltas, ...ocurrencias(fijos, lunes, 7)].sort((a, b) => a.inicio.localeCompare(b.inicio));
+    // Sesiones que el administrador marcó como terminadas (si la migración 0042 aún no se corrió, no hay ninguna).
+    try {
+      const { data: tm } = await sb.from("sesiones_terminadas").select("sesion_id");
+      terminadas = new Set(((tm ?? []) as { sesion_id: string }[]).map((x) => x.sesion_id));
+    } catch { /* sin migración */ }
+  }
   const porDia = new Map<string, Clase[]>();
   for (const c of clases) porDia.set(diaPY(c.inicio), [...(porDia.get(diaPY(c.inicio)) ?? []), c]);
   const NOMBRES = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
@@ -70,6 +81,14 @@ export default async function Calendario({ searchParams }: { searchParams: { s?:
       <p className="sub">Semana del {fmtCorto(lunes)} al {fmtCorto(domingo)} · horario de Paraguay · recordatorio 30 minutos antes de cada sesión.</p>
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
       {portada}
+
+      {limitado && (
+        <section className="box">
+          <div className="tag">Acceso gratuito</div>
+          <p className="mu">Con tu acceso gratuito puedes ver y entrar a la sesión de Nueva York de los miércoles. El calendario completo (Londres, Nueva York y Asia de lunes a viernes) es para miembros VIP.</p>
+          <Link className="btn sd" href="/ayuda">Quiero ser VIP</Link>
+        </section>
+      )}
 
       {perm.admin && (
         <>
@@ -128,7 +147,7 @@ export default async function Calendario({ searchParams }: { searchParams: { s?:
           <Link href={"/calendario?s=" + mas(7)} aria-label="Semana siguiente">→</Link>
         </div>
         {!(hoy >= lunes && hoy <= domingo) && <p style={{ textAlign: "center", margin: "0 0 12px" }}><Link href="/calendario" className="lk">Volver a esta semana</Link></p>}
-        <div className="leyenda">{Object.values(COLORES).map((t) => <span key={t.nombre}><i style={{ background: t.color }} />{t.nombre}</span>)}</div>
+        <div className="leyenda">{(limitado ? [COLORES.ny] : Object.values(COLORES)).map((t) => <span key={t.nombre}><i style={{ background: t.color }} />{t.nombre}</span>)}</div>
         <div className="sem">
           {dias7.map((f, i) => {
             const lista = porDia.get(f) ?? [];

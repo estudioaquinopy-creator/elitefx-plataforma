@@ -1,5 +1,6 @@
 import EnVivo, { type SesionVivo } from "@/components/EnVivo";
 import { ocurrencias, type Fijo } from "@/lib/horario";
+import { sesionesGratis } from "@/lib/sesionesGratis";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { bienvenidaPendiente } from "@/lib/bienvenida";
@@ -74,6 +75,12 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
       const fin = new Set(((tm ?? []) as { sesion_id: string }[]).map((x) => x.sesion_id));
       if (fin.size) vivo = vivo.filter((s) => !fin.has(s.id));
     } catch { /* migración 0042 pendiente */ }
+  } else if (perm.calendarioNY) {
+    // Acceso gratuito: solo la sesión de Nueva York de los miércoles.
+    const t0 = Date.now() - 12 * 3600000, t1 = Date.now() + 8 * 86400000;
+    const ayer = new Date(new Date(hoyPY() + "T12:00:00Z").getTime() - 86400000).toISOString().slice(0, 10);
+    const r = await sesionesGratis(ayer, 10, new Date(t0).toISOString(), new Date(t1).toISOString());
+    vivo = r.sesiones.filter((o) => !r.terminadas.has(o.id)).map((o) => ({ id: o.id, titulo: o.titulo, inicio: o.inicio, zoom: o.zoom_url || "", duracion: o.duracion_min ?? 90 }));
   }
 
   // Simulación de prueba (solo administrador / modo alumno): /inicio?sim=25 → una sesión que empieza en 25 minutos.
@@ -172,9 +179,10 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
         </div>
 
         <div>
-          {perm.calendario && (
+          {(perm.calendario || perm.calendarioNY) && (
             <section className="box">
               <h2>Próximas sesiones</h2>
+              {!perm.calendario && <p className="mu">Con tu acceso gratuito: sesión de Nueva York de los miércoles.</p>}
               <EnVivo sesiones={vivo} ahoraServidor={Date.now()} admin={perm.admin} />
               <Link className="btn bl s" href="/calendario" style={{ marginTop: 10 }}>Ver calendario</Link>
             </section>

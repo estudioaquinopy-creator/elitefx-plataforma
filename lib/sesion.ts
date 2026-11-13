@@ -80,7 +80,8 @@ export type Permisos = {
   admin: boolean;
   miembro: boolean;
   cursos: boolean;
-  calendario: boolean;
+  calendario: boolean; // calendario completo
+  calendarioNY: boolean; // sin calendario completo: solo la sesión de Nueva York de los miércoles (acceso gratuito)
   tutoriales: boolean;
   comunidad: boolean;
   journal: boolean;
@@ -96,15 +97,19 @@ export const permisos = cache(async (p: Perfil): Promise<Permisos> => {
   const vip = vipVigente(p); // VIP vigente: calendario, comunidad, journal y noticias
   const vigente = !!p.vence && p.vence >= hoyPY();
   const bono = p.plan === "gratis" && !!p.calendario_bono_hasta && p.calendario_bono_hasta >= hoyPY();
+  const calendario = admin || (p.plan !== "gratis" && vigente) || bono || ov.has("calendario");
+  // Acceso gratuito (nov 2026): cursos básicos, tutoriales, broker, journal, noticias y, del calendario, solo la
+  // sesión de Nueva York de los miércoles. Sin comunidad, visitas ni referidos (eso sigue siendo VIP).
   return {
     admin,
     miembro: vip,
     cursos: miembro || ov.has("cursos"),
-    calendario: admin || (p.plan !== "gratis" && vigente) || bono || ov.has("calendario"),
+    calendario,
+    calendarioNY: !calendario,
     tutoriales: true, // libre también para el plan gratuito
     comunidad: vip || ov.has("comunidad"),
-    journal: vip || ov.has("journal"),
-    noticias: vip || ov.has("noticias"),
+    journal: true, // libre también para el plan gratuito (el journal es de cada persona)
+    noticias: true, // libre también para el plan gratuito
   };
 });
 
