@@ -22,10 +22,12 @@ export default function SesionCard({ titulo, inicio, duracion = 90, zoom, color,
   const pasada = !!terminada || (ahora !== null && ahora >= t0 + duracion * 60000);
   const hora = d.toLocaleTimeString("es-PY", { timeZone: "America/Asuncion", hour: "2-digit", minute: "2-digit", hour12: false });
   const fecha = d.toLocaleDateString("es-PY", { timeZone: "America/Asuncion", weekday: "long", day: "numeric", month: "long", year: "numeric" });
-  const abrir = () => { const x = ref.current; if (x && !x.open) x.showModal(); };
+  // Una sesión que ya se dio no se puede abrir (solo el administrador, que puede reabrirla o eliminarla).
+  const bloqueada = pasada && !extra;
+  const abrir = () => { if (bloqueada) return; const x = ref.current; if (x && !x.open) x.showModal(); };
   return (
     <>
-      <div className={"sc" + (pasada ? " fin" : "")} style={{ ["--c" as string]: color }} role="button" tabIndex={0} onClick={abrir} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); abrir(); } }}>
+      <div className={"sc" + (pasada ? " fin" : "") + (bloqueada ? " bloq" : "")} style={{ ["--c" as string]: color }} role={bloqueada ? undefined : "button"} tabIndex={bloqueada ? -1 : 0} aria-disabled={bloqueada || undefined} onClick={abrir} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); abrir(); } }}>
         <span className="sh">{hora}</span>
         <b>{corto || titulo}</b>
         {puedeUnirse && <span className="svivo">En vivo</span>}
