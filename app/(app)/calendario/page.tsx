@@ -8,6 +8,7 @@ import { ocurrencias, type Fijo, type Ocurrencia } from "@/lib/horario";
 import SesionCard from "@/components/SesionCard";
 import { COLORES, tipoSesion, esMiercolesNY } from "@/lib/sesiones";
 import { clienteAdmin } from "@/lib/supabase/admin";
+import { CSS_CALENDARIO } from "@/lib/calendarioCss";
 
 export const dynamic = "force-dynamic";
 
@@ -69,8 +70,9 @@ export default async function Calendario({ searchParams }: { searchParams: { s?:
 
   return (
     <>
+      <style dangerouslySetInnerHTML={{ __html: CSS_CALENDARIO }} />
       <h1>Calendario</h1>
-      <p className="sub">Semana del {fmtCorto(lunes)} al {fmtCorto(domingo)} · horario de Paraguay · recordatorio 30 minutos antes de cada sesión.</p>
+      <p className="sub">Horario de Paraguay · toca una sesión para ver los detalles.</p>
       {restringido && <p className="okmsg">Tu acceso gratuito incluye la sesión de Nueva York de los miércoles. Para ver y conectarte a todas las sesiones en vivo, hazte miembro VIP.</p>}
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
       {portada}
@@ -125,7 +127,7 @@ export default async function Calendario({ searchParams }: { searchParams: { s?:
         </>
       )}
 
-      <section className="box">
+      <section className="box calmin">
         <div className="calnav">
           <Link href={"/calendario?s=" + mas(-7)} aria-label="Semana anterior">←</Link>
           <b>{fmtCorto(lunes)} – {fmtCorto(domingo)} {domingo.slice(0, 4)}</b>
@@ -139,7 +141,7 @@ export default async function Calendario({ searchParams }: { searchParams: { s?:
             return (
               <div key={f} className={"sdia" + (f === hoy ? " hoy" : "")}>
                 <div className="sdh"><span>{NOMBRES[i]}</span><b>{Number(f.slice(8, 10))}</b></div>
-                {lista.length === 0 && <p className="mu sv">Sin sesiones</p>}
+                {lista.length === 0 && <p className="mu sv">—</p>}
                 {lista.map((c) => {
                   const t = COLORES[tipoSesion(c.titulo)];
                   return (

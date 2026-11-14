@@ -23,18 +23,17 @@ export default function SesionCard({ titulo, inicio, duracion = 90, zoom, color,
   const abrir = () => { const x = ref.current; if (x && !x.open) x.showModal(); };
   return (
     <>
-      <div className="sc" style={{ ["--c" as string]: color }} role="button" tabIndex={0} onClick={abrir} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); abrir(); } }}>
-        <div className="sh">{hora}</div>
+      <div className={"sc" + (terminada ? " fin" : "")} style={{ ["--c" as string]: color }} role="button" tabIndex={0} onClick={abrir} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); abrir(); } }}>
+        <span className="sh">{hora}</span>
         <b>{titulo}</b>
-        {terminada && <small className="mu" style={{ display: "block" }}>Terminada</small>}
-        {puedeUnirse && <a className="btn sd" href={zoom} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>Unirme</a>}
+        {puedeUnirse && <span className="svivo">En vivo</span>}
       </div>
       <dialog ref={ref} className="pm sesm" style={{ ["--c" as string]: color }} onClick={(e) => { if (e.target === ref.current) ref.current?.close(); }}>
         <button type="button" className="pm-x" onClick={() => ref.current?.close()} aria-label="Cerrar">✕</button>
         <span className="stipo">{tipo}</span>
         <h2 style={{ margin: "10px 0 14px" }}>{titulo}</h2>
         <p className="sdet"><b>Fecha</b><span style={{ textTransform: "capitalize" }}>{fecha}</span></p>
-        <p className="sdet"><b>Hora</b><span>{hora} · horario de Paraguay</span></p>
+        <p className="sdet"><b>Hora</b><span>{hora} · horario de Paraguay · {duracion} min</span></p>
         <p className="sdet"><b>Enlace</b>{terminada ? <span className="mu">La sesión ya terminó</span> : !zoom ? <span className="mu">Se publicará antes de la sesión</span> : puedeUnirse ? <a className="btn sd s" href={zoom} target="_blank" rel="noopener noreferrer">Unirme</a> : ahora !== null && ahora >= t0 + duracion * 60000 ? <span className="mu">La sesión ya terminó</span> : <span className="mu">El botón para unirte aparece 5 minutos antes de la sesión</span>}</p>
         {extra}
       </dialog>
