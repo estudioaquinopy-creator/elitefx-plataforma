@@ -18,12 +18,14 @@ export default function SesionCard({ titulo, inicio, duracion = 90, zoom, color,
   }, []);
   const t0 = d.getTime();
   const puedeUnirse = !terminada && !!zoom && ahora !== null && ahora >= t0 - ANTES_MS && ahora < t0 + duracion * 60000;
+  // Ya se dio (terminó por horario o la marcó terminada el admin): se muestra apagada.
+  const pasada = !!terminada || (ahora !== null && ahora >= t0 + duracion * 60000);
   const hora = d.toLocaleTimeString("es-PY", { timeZone: "America/Asuncion", hour: "2-digit", minute: "2-digit", hour12: false });
   const fecha = d.toLocaleDateString("es-PY", { timeZone: "America/Asuncion", weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const abrir = () => { const x = ref.current; if (x && !x.open) x.showModal(); };
   return (
     <>
-      <div className={"sc" + (terminada ? " fin" : "")} style={{ ["--c" as string]: color }} role="button" tabIndex={0} onClick={abrir} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); abrir(); } }}>
+      <div className={"sc" + (pasada ? " fin" : "")} style={{ ["--c" as string]: color }} role="button" tabIndex={0} onClick={abrir} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); abrir(); } }}>
         <span className="sh">{hora}</span>
         <b>{corto || titulo}</b>
         {puedeUnirse && <span className="svivo">En vivo</span>}

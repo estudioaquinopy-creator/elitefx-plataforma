@@ -17,7 +17,8 @@ export const CSS_CALENDARIO = `/* Calendario minimalista: sin cajas ni botones; 
 .calmin .sc:hover{background:var(--sf2);transform:none;box-shadow:none}
 .calmin .sc .sh{font:600 12px 'Sora',sans-serif;color:var(--mu)}
 .calmin .sc b{font-size:13px;font-weight:500;line-height:1.25}
-.calmin .sc.fin{opacity:.45}
+.calmin .sc.fin{opacity:.28;filter:grayscale(.7)}
+.calmin .sc.fin:hover{opacity:.6}
 .calmin .svivo{font-size:10px;font-weight:700;color:#fff;background:#e5484d;border-radius:999px;padding:1px 7px;align-self:flex-start;margin-top:3px;animation:vivop 1.6s ease-in-out infinite}
 @keyframes vivop{50%{opacity:.55}}
 @media (max-width:760px){
