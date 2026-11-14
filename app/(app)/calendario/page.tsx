@@ -148,6 +148,7 @@ export default async function Calendario({ searchParams }: { searchParams: { s?:
                     <SesionCard
                       key={c.id}
                       titulo={c.titulo}
+                      corto={tipoSesion(c.titulo) !== "otra" ? t.nombre : undefined}
                       inicio={c.inicio}
                       duracion={c.duracion_min}
                       zoom={c.zoom_url}

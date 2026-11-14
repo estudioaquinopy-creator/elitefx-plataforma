@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 const ANTES_MS = 5 * 60 * 1000; // el botón de unirse aparece 5 minutos antes de la sesión
 
 // Tarjeta de sesión del calendario: de color según el tipo; al tocarla se abre un flotante con los detalles.
-export default function SesionCard({ titulo, inicio, duracion = 90, zoom, color, tipo, extra, terminada }: {
-  titulo: string; inicio: string; duracion?: number; zoom: string; color: string; tipo: string; extra?: React.ReactNode; terminada?: boolean;
+export default function SesionCard({ titulo, inicio, duracion = 90, zoom, color, tipo, extra, terminada, corto }: {
+  corto?: string; titulo: string; inicio: string; duracion?: number; zoom: string; color: string; tipo: string; extra?: React.ReactNode; terminada?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const d = new Date(inicio);
@@ -25,7 +25,7 @@ export default function SesionCard({ titulo, inicio, duracion = 90, zoom, color,
     <>
       <div className={"sc" + (terminada ? " fin" : "")} style={{ ["--c" as string]: color }} role="button" tabIndex={0} onClick={abrir} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); abrir(); } }}>
         <span className="sh">{hora}</span>
-        <b>{titulo}</b>
+        <b>{corto || titulo}</b>
         {puedeUnirse && <span className="svivo">En vivo</span>}
       </div>
       <dialog ref={ref} className="pm sesm" style={{ ["--c" as string]: color }} onClick={(e) => { if (e.target === ref.current) ref.current?.close(); }}>
