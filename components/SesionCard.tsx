@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 const ANTES_MS = 5 * 60 * 1000; // el botón de unirse aparece 5 minutos antes de la sesión
 
 // Tarjeta de sesión del calendario: de color según el tipo; al tocarla se abre un flotante con los detalles.
-export default function SesionCard({ titulo, inicio, duracion = 90, zoom, color, tipo, extra, terminada, corto }: {
-  corto?: string; titulo: string; inicio: string; duracion?: number; zoom: string; color: string; tipo: string; extra?: React.ReactNode; terminada?: boolean;
+export default function SesionCard({ titulo, inicio, duracion = 90, zoom, color, tipo, extra, terminada, corto, apagada }: {
+  apagada?: boolean; corto?: string; titulo: string; inicio: string; duracion?: number; zoom: string; color: string; tipo: string; extra?: React.ReactNode; terminada?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const d = new Date(inicio);
@@ -18,8 +18,8 @@ export default function SesionCard({ titulo, inicio, duracion = 90, zoom, color,
   }, []);
   const t0 = d.getTime();
   const puedeUnirse = !terminada && !!zoom && ahora !== null && ahora >= t0 - ANTES_MS && ahora < t0 + duracion * 60000;
-  // Ya se dio (terminó por horario o la marcó terminada el admin): se muestra apagada.
-  const pasada = !!terminada || (ahora !== null && ahora >= t0 + duracion * 60000);
+  // Apagada solo si es de un día anterior a hoy o el administrador la marcó como terminada (lo decide el servidor, no la hora).
+  const pasada = !!apagada;
   const hora = d.toLocaleTimeString("es-PY", { timeZone: "America/Asuncion", hour: "2-digit", minute: "2-digit", hour12: false });
   const fecha = d.toLocaleDateString("es-PY", { timeZone: "America/Asuncion", weekday: "long", day: "numeric", month: "long", year: "numeric" });
   // Una sesión que ya se dio no se puede abrir (solo el administrador, que puede reabrirla o eliminarla).

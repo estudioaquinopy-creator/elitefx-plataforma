@@ -155,6 +155,7 @@ export default async function Calendario({ searchParams }: { searchParams: { s?:
                       color={t.color}
                       tipo={t.nombre}
                       terminada={terminadas.has(c.id)}
+                      apagada={terminadas.has(c.id) || diaPY(c.inicio) < hoy}
                       extra={perm.admin ? (
                         <div className="acts" style={{ marginTop: 12 }}>
                           <form action={terminadas.has(c.id) ? reabrirSesion : terminarSesion}>
