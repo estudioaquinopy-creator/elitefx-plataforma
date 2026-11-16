@@ -5,7 +5,7 @@ import { leerAjustes } from "@/lib/ajustes";
 import { guardarTextos } from "../../ajustes-actions";
 import { ajustarPuntos } from "../actions";
 import { referidosActivos, puntosReferidos, fechaReferidos, REFERIDOS_DESDE } from "@/lib/referidos";
-import { mesDeRanking, ultimoViernes, cierreISO, textoFecha, premiosRanking, puntosCertificado, puntosFoto, puntosLiquid, puntosLiquidReal, puntosChat } from "@/lib/ranking";
+import { mesDeRanking, ultimoViernes, cierreISO, textoFecha, premiosRanking, puntosCertificado, puntosFoto, puntosLiquid, puntosLiquidReal, puntosChat, penalTop3, PENAL_DESDE } from "@/lib/ranking";
 import CuentaRanking from "@/components/CuentaRanking";
 import { clienteAdmin } from "@/lib/supabase/admin";
 
@@ -39,7 +39,14 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
   const pch = puntosChat(aj.ranking_pts_chat, aj.ranking_chat_tope_dia);
   const fr = fechaReferidos(aj);
 
-  const [r1, r2] = await Promise.all([sb.rpc("ranking_mes", { p_mes: mes }), sb.rpc("ranking_mes", { p_mes: previo })]);
+  const penal = penalTop3(aj.ranking_penal_top3);
+  const hayPenal = penal > 0 && mes >= PENAL_DESDE;
+  const [r1, r2, r3] = await Promise.all([
+    sb.rpc("ranking_mes", { p_mes: mes }),
+    sb.rpc("ranking_mes", { p_mes: previo }),
+    hayPenal ? sb.rpc("ranking_penalizados", { p_mes: mes }) : Promise.resolve({ data: [] as { user_id: string }[] }),
+  ]);
+  const penalizados = new Set(((r3.data ?? []) as { user_id: string }[]).map((x) => x.user_id));
   const falta = !!r1.error;
   const filas = (r1.data ?? []) as Fila[];
   const ganadoresPrevio = ((r2.data ?? []) as Fila[]).slice(0, 3);
@@ -133,6 +140,7 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
               <label>Referidos · máximo de activaciones puntuables por mes<input name="ranking_ref_tope" type="number" min={0} max={999} step={1} defaultValue={pr.tope} /></label>
               <label>Chat en vivo · puntos por mensaje, reacción recibida o imagen<input name="ranking_pts_chat" type="number" min={0} max={999} step={1} defaultValue={pch.pts} /></label>
               <label>Chat en vivo · máximo de puntos por día<input name="ranking_chat_tope_dia" type="number" min={0} max={999} step={1} defaultValue={pch.tope} /></label>
+              <label>Penalización a quienes fueron Top 3 el mes anterior: % de puntos que se descuenta (0 = sin penalización; rige desde diciembre de 2026)<input name="ranking_penal_top3" type="number" min={0} max={100} step={1} defaultValue={penal} /></label>
               <label>Referidos · fecha de inicio (la base de datos usa esta fecha; por defecto {REFERIDOS_DESDE})<input name="referidos_desde" type="date" defaultValue={(aj.referidos_desde ?? "").trim() || REFERIDOS_DESDE} /></label>
               <button className="btn s">Guardar</button>
             </form>
@@ -143,6 +151,7 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
       <div className="chips">
         <Link href={"/comunidad/ranking?m=" + previo} className="chip">← {nombreMes(previo)}</Link>
         <span className="chip on">{nombreMes(mes)}</span>
+        <Link href="/comunidad/ranking/anual" className="chip">🏅 Ranking anual y sorteo</Link>
         {!esActual && <Link href={"/comunidad/ranking?m=" + sumaMes(mes, 1)} className="chip">{nombreMes(sumaMes(mes, 1))} →</Link>}
       </div>
 
@@ -150,12 +159,13 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
         <section className="box">
           <h2>Top 10</h2>
           {perm.admin && <p className="mu" style={{ margin: "0 0 8px" }}>Toca un nombre para revisar sus publicaciones y respuestas.</p>}
+          {hayPenal && <p className="mu" style={{ margin: "0 0 8px" }}>Quienes terminaron en el Top 3 del mes anterior arrancan este mes con un descuento del {penal} % en sus puntos (se marca con −{penal} %).</p>}
           {top.length === 0 && !falta && <p className="mu">Todavía nadie sumó puntos este mes.{gratis ? "" : " ¡Sé el primero!"}</p>}
           {top.map((f, i) => (
             <div key={f.user_id} className="ses" style={f.user_id === perfil.id ? { background: "var(--sf2)", borderRadius: 12, padding: "12px", borderBottom: 0 } : undefined}>
               <div className="dt" style={{ minWidth: 46 }}>{MEDALLA[i] ?? "#" + (i + 1)}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                {perm.admin ? <Link href={"/comunidad/ranking/revisar?u=" + f.user_id + "&m=" + mes} title="Revisar sus publicaciones y respuestas"><b>{f.nombre}</b> 🔍</Link> : <b>{f.nombre}{f.user_id === perfil.id ? " (tú)" : ""}</b>}{flecha(f.user_id)}
+                {perm.admin ? <Link href={"/comunidad/ranking/revisar?u=" + f.user_id + "&m=" + mes} title="Revisar sus publicaciones y respuestas"><b>{f.nombre}</b> 🔍</Link> : <b>{f.nombre}{f.user_id === perfil.id ? " (tú)" : ""}</b>}{flecha(f.user_id)}{penalizados.has(f.user_id) && <span className="rkc dn" title={"Fue Top 3 el mes anterior: −" + penal + " % de sus puntos"}>−{penal} %</span>}
                 <small className="mu" style={{ display: "block" }}>{f.resultados} resultados · {f.preguntas} preguntas · {f.respuestas} respuestas · {f.utiles} útiles · {f.likes} me gusta{f.certificados ? " · " + f.certificados + (f.certificados === 1 ? " certificado" : " certificados") : ""}{f.referidos ? " · " + f.referidos + (f.referidos === 1 ? " referido" : " referidos") : ""}</small>
               </div>
               <span style={{ textAlign: "right" }}><b style={{ fontSize: 18 }}>{f.puntos} pts</b>{i < 3 && <small className="mu" style={{ display: "block" }}>{premios[i]} USDT</small>}</span>

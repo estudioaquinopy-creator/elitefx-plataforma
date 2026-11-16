@@ -60,3 +60,16 @@ export function puntosChat(pts: string | undefined | null, tope: string | undefi
   const n = (t: string | undefined | null, d: number) => (/^\s*\d{1,3}\s*$/.test(t ?? "") ? Number((t as string).trim()) : d);
   return { pts: n(pts, 1), tope: n(tope, 5) };
 }
+
+// Penalización a quienes terminaron en el Top 3 del mes anterior: % de puntos que se descuenta (por defecto 20; 0 = sin penalización). Rige desde el ranking de diciembre de 2026.
+export const PENAL_DESDE = "2026-12";
+export function penalTop3(texto: string | undefined | null): number {
+  const n = /^\s*\d{1,3}\s*$/.test(texto ?? "") ? Number((texto as string).trim()) : 20;
+  return Math.min(100, n);
+}
+
+// Sorteo anual: puntos por boleto (por defecto 50), meses mínimos con puntos (por defecto 6) y premio.
+export function sorteoCfg(aj: Record<string, string>): { ptsBoleto: number; minMeses: number; premio: string } {
+  const n = (t: string | undefined, d: number, min: number) => (/^\s*\d{1,3}\s*$/.test(t ?? "") ? Math.max(min, Number((t as string).trim())) : d);
+  return { ptsBoleto: n(aj.sorteo_pts_boleto, 50, 1), minMeses: n(aj.sorteo_min_meses, 6, 1), premio: (aj.sorteo_premio ?? "").trim() || "Notebook para trading" };
+}
