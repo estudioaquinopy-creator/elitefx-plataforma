@@ -39,12 +39,45 @@ function Barras({ datos, etiqueta, alto = 120 }: { datos: { k: string; v: number
 }
 const Kpi = ({ t, v, s }: { t: string; v: string | number; s?: string }) => <div className="box"><span className="mu">{t}</span><b>{v}</b>{s && <small className="mu">{s}</small>}</div>;
 
-export default async function Metricas() {
+type R = {
+  desde: string; hasta: string; registros: number; registros_dia: { dia: string; n: number }[]; pruebas: number; nuevos_vip: number;
+  renovaciones: number; renovaron_personas: number; renovaciones_desde: string | null; vencieron: number; por_vencer: number;
+  activos: number; actividad_desde: string | null; lecciones: number; alumnos_estudian: number; examenes: number; examenes_aprobados: number;
+  certificados: number; publicaciones: number; respuestas: number; dudas: number;
+};
+const ISO = /^\d{4}-\d{2}-\d{2}$/;
+const sumaDias = (iso: string, n: number) => new Date(new Date(iso + "T00:00:00Z").getTime() + n * 86400000).toISOString().slice(0, 10);
+const larga = (iso: string) => { const [a, m, d] = iso.split("-"); return d + "/" + m + "/" + a; };
+
+export default async function Metricas({ searchParams }: { searchParams?: { desde?: string; hasta?: string } }) {
   const perfil = await perfilActual();
   if (perfil.rol !== "admin") notFound();
   const sb = createClient();
   const { data, error } = await sb.rpc("metricas_accesos");
   const m = data as M | null;
+
+  // Rango de fechas elegido por el administrador (opcional).
+  const hoyIso = hoyPY();
+  const qd = searchParams?.desde ?? "";
+  const qh = searchParams?.hasta ?? "";
+  const hayRango = ISO.test(qd) && ISO.test(qh);
+  let rg: R | null = null;
+  let errRango: string | null = null;
+  if (hayRango) {
+    const { data: rd, error: re } = await sb.rpc("metricas_rango", { p_desde: qd, p_hasta: qh });
+    rg = (rd as R | null) ?? null;
+    if (re) errRango = re.message;
+  }
+  const mesIni = hoyIso.slice(0, 8) + "01";
+  const mesPasadoFin = sumaDias(mesIni, -1);
+  const mesPasadoIni = mesPasadoFin.slice(0, 8) + "01";
+  const atajos = [
+    { t: "Hoy", d: hoyIso, h: hoyIso },
+    { t: "Últimos 7 días", d: sumaDias(hoyIso, -6), h: hoyIso },
+    { t: "Últimos 30 días", d: sumaDias(hoyIso, -29), h: hoyIso },
+    { t: "Este mes", d: mesIni, h: hoyIso },
+    { t: "Mes pasado", d: mesPasadoIni, h: mesPasadoFin },
+  ];
 
   // Inicios de sesión (último ingreso de cada persona) desde el sistema de acceso: sirve desde el primer día.
   let ing = { hoy: 0, d7: 0, d30: 0, nunca: 0, total: 0 };
@@ -92,6 +125,51 @@ export default async function Metricas() {
           <Kpi t="Nunca ingresaron" v={ing.nunca} s={pct(ing.nunca, ing.total)} />
         </div>
       </section>
+
+      <section className="box">
+        <h2>Ver un período</h2>
+        <p className="mu" style={{ margin: "0 0 10px" }}>Elige de qué fecha a qué fecha quieres ver los números (horario de Paraguay, ambas fechas incluidas).</p>
+        <form method="get" style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 10 }}>
+          <label>Desde<br /><input type="date" name="desde" defaultValue={hayRango ? qd : mesIni} max={hoyIso} required /></label>
+          <label>Hasta<br /><input type="date" name="hasta" defaultValue={hayRango ? qh : hoyIso} max={hoyIso} required /></label>
+          <button className="btn s" type="submit">Ver</button>
+          {hayRango && <Link href="/accesos/metricas" className="mu">Quitar período</Link>}
+        </form>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {atajos.map((a) => <Link key={a.t} href={"/accesos/metricas?desde=" + a.d + "&hasta=" + a.h} className="btn g s">{a.t}</Link>)}
+        </div>
+        {errRango && <p className="alerta">No se pudo calcular el período ({errRango}). Si dice que la función no existe, corre la migración 0066_metricas_rango_renovaciones.sql en Supabase.</p>}
+        {rg && (
+          <>
+            <h3>Del {larga(rg.desde)} al {larga(rg.hasta)}</h3>
+            <div className="kp">
+              <Kpi t="Registros nuevos" v={rg.registros} s="entraron al registro gratuito" />
+              <Kpi t="Pruebas VIP canjeadas" v={rg.pruebas} />
+              <Kpi t="Pasaron a VIP" v={rg.nuevos_vip} s="por primera vez" />
+              <Kpi t="Renovaciones VIP" v={rg.renovaciones} s={rg.renovaron_personas + " personas"} />
+              <Kpi t="Vencieron" v={rg.vencieron} s={rg.por_vencer ? rg.por_vencer + " vencen en este período (aún no)" : undefined} />
+            </div>
+            {rg.renovaciones_desde
+              ? <p className="mu" style={{ margin: "0 0 10px" }}>Las renovaciones se registran desde el {larga(new Date(new Date(rg.renovaciones_desde).getTime() - 3 * 3600000).toISOString().slice(0, 10))}; antes de esa fecha no hay dato.</p>
+              : <p className="mu" style={{ margin: "0 0 10px" }}>Las renovaciones empiezan a contarse desde que se corrió la migración 0066 (aún no hay ninguna).</p>}
+            <div className="kp">
+              <Kpi t="Personas activas" v={rg.actividad_desde ? rg.activos : "—"} s={rg.actividad_desde ? "datos desde el " + larga(rg.actividad_desde) : "sin datos de actividad"} />
+              <Kpi t="Lecciones completadas" v={rg.lecciones} s={rg.alumnos_estudian + " personas estudiando"} />
+              <Kpi t="Exámenes" v={rg.examenes} s={pct(rg.examenes_aprobados, rg.examenes) + " aprobados"} />
+              <Kpi t="Certificados emitidos" v={rg.certificados} />
+              <Kpi t="Comunidad" v={rg.publicaciones} s={rg.respuestas + " respuestas · " + rg.dudas + " dudas en lecciones"} />
+            </div>
+            {rg.registros_dia.length > 1 && (
+              <>
+                <h3>Registros nuevos por día</h3>
+                <Barras alto={90} datos={rg.registros_dia.map((d) => ({ k: corto(d.dia), v: d.n }))} etiqueta={(d, i) => (i % Math.max(1, Math.round(rg!.registros_dia.length / 8)) === 0 ? d.k : null)} />
+              </>
+            )}
+          </>
+        )}
+      </section>
+
+      <h2 style={{ marginTop: 24 }}>Resumen general (últimos 30 días)</h2>
 
       {m && (
         <>
