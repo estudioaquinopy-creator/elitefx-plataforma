@@ -49,7 +49,7 @@ const ISO = /^\d{4}-\d{2}-\d{2}$/;
 const sumaDias = (iso: string, n: number) => new Date(new Date(iso + "T00:00:00Z").getTime() + n * 86400000).toISOString().slice(0, 10);
 const larga = (iso: string) => { const [a, m, d] = iso.split("-"); return d + "/" + m + "/" + a; };
 
-export default async function Metricas({ searchParams }: { searchParams?: { desde?: string; hasta?: string } }) {
+export default async function Metricas({ searchParams }: { searchParams?: { desde?: string; hasta?: string; ver?: string } }) {
   const perfil = await perfilActual();
   if (perfil.rol !== "admin") notFound();
   const sb = createClient();
@@ -67,6 +67,48 @@ export default async function Metricas({ searchParams }: { searchParams?: { desd
     const { data: rd, error: re } = await sb.rpc("metricas_rango", { p_desde: qd, p_hasta: qh });
     rg = (rd as R | null) ?? null;
     if (re) errRango = re.message;
+  }
+  // Lista de personas detrás de un número (al tocarlo).
+  type Fila = { id: string; nombre: string; email: string; telefono: string | null; fecha: string; nota?: string };
+  const ver = ["registros", "vip", "pruebas", "renovaciones", "vencieron"].includes(searchParams?.ver ?? "") ? (searchParams!.ver as string) : "";
+  let filas: Fila[] = [];
+  let tituloLista = "";
+  if (hayRango && rg && ver) {
+    const t0 = qd + "T00:00:00-03:00";
+    const t1 = sumaDias(qh, 1) + "T00:00:00-03:00";
+    const COLS = "id, nombre, email, telefono, created_at, vip_desde, vence";
+    type P = { id: string; nombre: string | null; email: string | null; telefono: string | null; created_at: string; vip_desde: string | null; vence: string | null };
+    const fila = (x: P, fecha: string, nota?: string): Fila => ({ id: x.id, nombre: (x.nombre ?? "").trim() || (x.email ?? "").split("@")[0], email: x.email ?? "", telefono: x.telefono, fecha, nota });
+    const porIds = async (ids: string[]) => {
+      if (!ids.length) return new Map<string, P>();
+      const { data: ps } = await sb.from("perfiles").select(COLS).in("id", ids).neq("rol", "admin");
+      return new Map(((ps ?? []) as P[]).map((x) => [x.id, x]));
+    };
+    if (ver === "registros") {
+      tituloLista = "Registros nuevos";
+      const { data: ps } = await sb.from("perfiles").select(COLS).neq("rol", "admin").gte("created_at", t0).lt("created_at", t1).order("created_at", { ascending: false }).limit(500);
+      filas = ((ps ?? []) as P[]).map((x) => fila(x, x.created_at));
+    } else if (ver === "vip") {
+      tituloLista = "Pasaron a VIP por primera vez";
+      const { data: ps } = await sb.from("perfiles").select(COLS).neq("rol", "admin").gte("vip_desde", t0).lt("vip_desde", t1).order("vip_desde", { ascending: false }).limit(500);
+      filas = ((ps ?? []) as P[]).map((x) => fila(x, x.vip_desde ?? x.created_at, x.vence ? "vence " + larga(x.vence) : undefined));
+    } else if (ver === "pruebas") {
+      tituloLista = "Pruebas VIP canjeadas";
+      const { data: cs } = await sb.from("pruebas_canjeadas").select("user_id, canjeado_at").gte("canjeado_at", t0).lt("canjeado_at", t1).order("canjeado_at", { ascending: false }).limit(500);
+      const rows = (cs ?? []) as { user_id: string; canjeado_at: string }[];
+      const mp = await porIds(rows.map((r) => r.user_id));
+      filas = rows.filter((r) => mp.has(r.user_id)).map((r) => fila(mp.get(r.user_id)!, r.canjeado_at));
+    } else if (ver === "renovaciones") {
+      tituloLista = "Renovaciones VIP";
+      const { data: rs } = await sb.from("renovaciones").select("user_id, created_at, vence_antes, vence_despues").gte("created_at", t0).lt("created_at", t1).order("created_at", { ascending: false }).limit(500);
+      const rows = (rs ?? []) as { user_id: string; created_at: string; vence_antes: string | null; vence_despues: string | null }[];
+      const mp = await porIds(rows.map((r) => r.user_id));
+      filas = rows.filter((r) => mp.has(r.user_id)).map((r) => fila(mp.get(r.user_id)!, r.created_at, (r.vence_antes ? larga(r.vence_antes) : "sin fecha") + " → " + (r.vence_despues ? larga(r.vence_despues) : "—")));
+    } else if (ver === "vencieron") {
+      tituloLista = "Vencieron en el período";
+      const { data: ps } = await sb.from("perfiles").select(COLS).neq("rol", "admin").gte("vence", qd).lte("vence", qh).lt("vence", hoyIso).is("prueba_hasta", null).or("plan.neq.gratis,es_alumno.eq.true").order("vence", { ascending: false }).limit(500);
+      filas = ((ps ?? []) as P[]).map((x) => fila(x, (x.vence ?? "") + "T12:00:00-03:00"));
+    }
   }
   const mesIni = hoyIso.slice(0, 8) + "01";
   const mesPasadoFin = sumaDias(mesIni, -1);
@@ -103,6 +145,11 @@ export default async function Metricas({ searchParams }: { searchParams?: { desd
     }
   }
 
+  const KpiVer = ({ v, t, n, s: sub }: { v: string; t: string; n: number; s?: string }) => (
+    <Link href={"/accesos/metricas?desde=" + qd + "&hasta=" + qh + "&ver=" + v + "#lista"} className="box" style={{ textDecoration: "none", color: "inherit", outline: ver === v ? "2px solid var(--ac)" : undefined }}>
+      <span className="mu">{t}</span><b>{n}</b>{sub && <small className="mu">{sub}</small>}
+    </Link>
+  );
   const horaTop = m ? [...m.por_hora].sort((a, b) => b.vistas - a.vistas)[0] : null;
   const diaTop = m ? [...m.por_semana].sort((a, b) => b.usuarios - a.usuarios)[0] : null;
   const sinDatos = !m || (m.actividad_desde === null);
@@ -143,12 +190,25 @@ export default async function Metricas({ searchParams }: { searchParams?: { desd
           <>
             <h3>Del {larga(rg.desde)} al {larga(rg.hasta)}</h3>
             <div className="kp">
-              <Kpi t="Registros nuevos" v={rg.registros} s="entraron al registro gratuito" />
-              <Kpi t="Pruebas VIP canjeadas" v={rg.pruebas} />
-              <Kpi t="Pasaron a VIP" v={rg.nuevos_vip} s="por primera vez" />
-              <Kpi t="Renovaciones VIP" v={rg.renovaciones} s={rg.renovaron_personas + " personas"} />
-              <Kpi t="Vencieron" v={rg.vencieron} s={rg.por_vencer ? rg.por_vencer + " vencen en este período (aún no)" : undefined} />
+              <KpiVer v="registros" t="Registros nuevos" n={rg.registros} s="entraron al registro gratuito" />
+              <KpiVer v="pruebas" t="Pruebas VIP canjeadas" n={rg.pruebas} />
+              <KpiVer v="vip" t="Pasaron a VIP" n={rg.nuevos_vip} s="por primera vez" />
+              <KpiVer v="renovaciones" t="Renovaciones VIP" n={rg.renovaciones} s={rg.renovaron_personas + " personas"} />
+              <KpiVer v="vencieron" t="Vencieron" n={rg.vencieron} s={rg.por_vencer ? rg.por_vencer + " vencen en este período (aún no)" : undefined} />
             </div>
+            <p className="mu" style={{ margin: "-4px 0 10px" }}>Toca un número para ver quiénes son.</p>
+            {ver && (
+              <div id="lista" className="box" style={{ marginBottom: 12 }}>
+                <h3 style={{ marginTop: 0 }}>{tituloLista} · {filas.length}{filas.length >= 500 ? " (se muestran las primeras 500)" : ""}</h3>
+                {filas.length === 0 && <p className="mu">Nadie en este período.</p>}
+                {filas.map((f, i) => (
+                  <div key={f.id + i} className="ses" style={{ padding: "6px 0", flexWrap: "wrap", gap: 8 }}>
+                    <Link href={"/accesos?q=" + encodeURIComponent(f.email)} style={{ flex: 1, minWidth: 180 }}><b>{f.nombre}</b><br /><small className="mu">{f.email}{f.telefono ? " · " + f.telefono : ""}</small></Link>
+                    <small className="mu" style={{ textAlign: "right" }}>{larga(new Date(new Date(f.fecha).getTime() - 3 * 3600000).toISOString().slice(0, 10))}{f.nota ? <><br />{f.nota}</> : null}</small>
+                  </div>
+                ))}
+              </div>
+            )}
             {rg.renovaciones_desde
               ? <p className="mu" style={{ margin: "0 0 10px" }}>Las renovaciones se registran desde el {larga(new Date(new Date(rg.renovaciones_desde).getTime() - 3 * 3600000).toISOString().slice(0, 10))}; antes de esa fecha no hay dato.</p>
               : <p className="mu" style={{ margin: "0 0 10px" }}>Las renovaciones empiezan a contarse desde que se corrió la migración 0066 (aún no hay ninguna).</p>}
