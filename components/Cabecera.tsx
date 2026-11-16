@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Tema from "@/components/Tema";
-import { marcarLeidas, modoAlumno } from "@/app/(app)/actions";
+import { marcarLeidas, modoAlumno, cambiarEstilo } from "@/app/(app)/actions";
 
 export type Notif = { id: string; titulo: string; cuerpo: string; enlace: string; fecha: string; nueva: boolean };
 
@@ -15,11 +15,12 @@ type Props = {
   noLeidas: number;
   real: boolean;
   vista: string;
+  estilo?: string;
   enLinea?: React.ReactNode;
   onMenu: () => void;
 };
 
-export default function Cabecera({ nombre, email, iniciales, avatar, notifs, noLeidas, real, vista, enLinea, onMenu }: Props) {
+export default function Cabecera({ nombre, email, iniciales, avatar, notifs, noLeidas, real, vista, estilo, enLinea, onMenu }: Props) {
   const [abierto, setAbierto] = useState<"" | "n" | "p">("");
   const cerrar = () => setAbierto("");
   return (
@@ -85,6 +86,13 @@ export default function Cabecera({ nombre, email, iniciales, avatar, notifs, noL
           <Link href="/perfil?t=clave" onClick={cerrar} className="mi">Cambiar contraseña</Link>
           <Link href="/perfil?t=notif" onClick={cerrar} className="mi">Notificaciones</Link>
           <Link href="/ayuda" onClick={cerrar} className="mi">Ayuda y soporte</Link>
+          <form action={cambiarEstilo} className="mi" style={{ display: "flex", flexDirection: "column", gap: 4, cursor: "default" }}>
+            <label htmlFor="estilo-vis" style={{ fontSize: 12, opacity: 0.7 }}>Estilo de la plataforma</label>
+            <select id="estilo-vis" name="estilo" defaultValue={estilo === "clasico" ? "clasico" : "nuevo"} onChange={(e) => e.currentTarget.form?.requestSubmit()} style={{ width: "100%" }}>
+              <option value="nuevo">Nuevo</option>
+              <option value="clasico">Clásico</option>
+            </select>
+          </form>
           {real && (
             <form action={modoAlumno} className="mi" style={{ display: "flex", flexDirection: "column", gap: 4, cursor: "default" }}>
               <label htmlFor="ver-como" style={{ fontSize: 12, opacity: 0.7 }}>Ver la plataforma como</label>
