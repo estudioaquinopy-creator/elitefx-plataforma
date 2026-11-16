@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import Link from "next/link";
 import { tieneAyuda, recibeAyuda } from "@/lib/ayuda";
 import { redirect } from "next/navigation";
@@ -14,7 +13,6 @@ import { ocurrencias, type Fijo } from "@/lib/horario";
 import { hoyPY } from "@/lib/sesion";
 import { visitaVigente } from "@/lib/visitas";
 import { leerAjustes } from "@/lib/ajustes";
-import { CSS_ESTILO_NUEVO } from "@/lib/estiloNuevoCss";
 import { armarRedes } from "@/lib/redes";
 import { referidosActivos, fechaReferidos } from "@/lib/referidos";
 import { TERMINOS_VERSION } from "@/lib/terminos";
@@ -190,14 +188,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
   if (dudasSin > 5) notifs.unshift({ id: "dudas-mas", titulo: "Hay " + dudasSin + " preguntas de lecciones sin responder", cuerpo: "Se muestran las 5 más recientes", enlace: dudasLista[0]?.enlace ?? "/cursos", fecha: "", nueva: true });
   notifs.unshift(...dudasLista);
-  const estiloNuevo = aj.estilo_nuevo !== "0" && cookies().get("estilo")?.value !== "clasico";
   const noLeidas = notifs.filter((n) => n.nueva).length;
   const nombre = perfil.nombre || perfil.email;
   const iniciales = nombre.split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((x) => x[0].toUpperCase()).join("");
 
   return (
-    <Shell items={items} nombre={nombre} email={perfil.email} iniciales={iniciales} avatar={perfil.avatar_url ?? ""} notifs={notifs} noLeidas={noLeidas} real={perfil.rol === "admin" || !!perfil.vista} vista={perfil.vista ?? ""} estilo={estiloNuevo ? "nuevo" : "clasico"} redes={redes} editarRedes={perfil.rol === "admin"} enLinea={<EnLinea id={perfil.id} nombre={nombre} />}>
-      {estiloNuevo && <style dangerouslySetInnerHTML={{ __html: CSS_ESTILO_NUEVO }} />}
+    <Shell items={items} nombre={nombre} email={perfil.email} iniciales={iniciales} avatar={perfil.avatar_url ?? ""} notifs={notifs} noLeidas={noLeidas} real={perfil.rol === "admin" || !!perfil.vista} vista={perfil.vista ?? ""} redes={redes} editarRedes={perfil.rol === "admin"} enLinea={<EnLinea id={perfil.id} nombre={nombre} />}>
       {perfil.vista && (
         <form action={modoAlumno} className="vbar">
           <span>Estás viendo la plataforma como <b>{perfil.vista === "gratis" ? "gratuito (nuevo)" : perfil.vista === "alumno" ? "gratuito alumno" : "VIP"}</b>. Los cambios de administrador están ocultos.</span>
