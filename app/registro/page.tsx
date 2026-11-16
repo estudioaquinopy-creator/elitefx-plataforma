@@ -9,6 +9,7 @@ import { REFERIDOS_DESDE } from "@/lib/referidos";
 import Captcha, { CAPTCHA_ACTIVO } from "@/components/Captcha";
 import { validarClave, traducirErrorClave } from "@/lib/clave";
 import { enviarEventoMeta } from "@/lib/metaPixel";
+import { enviarEventoGA } from "@/lib/googleAnalytics";
 
 export default function Registro() {
   const router = useRouter();
@@ -83,6 +84,7 @@ export default function Registro() {
       return setErr(traducirErrorClave(error.message) || "No se pudo crear la cuenta: " + error.message);
     }
     enviarEventoMeta("CompleteRegistration", {}, { email: email.trim(), telefono: t, nombre: n });
+    enviarEventoGA("sign_up", { method: prueba ? "prueba_vip" : alumno ? "alumno" : cod ? "referido" : "gratuito" });
     // Si el proyecto no pide confirmar el correo, la sesión ya está activa: guardamos el teléfono.
     if (data.session && data.user) {
       await sb.from("perfiles").update({ nombre: n, telefono: t }).eq("id", data.user.id);
