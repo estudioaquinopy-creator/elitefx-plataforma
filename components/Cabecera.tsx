@@ -41,21 +41,23 @@ export default function Cabecera({ nombre, email, iniciales, avatar, notifs, noL
 
       <Tema />
 
-      <button className="ico" aria-label="Notificaciones" onClick={() => setAbierto(abierto === "n" ? "" : "n")}>
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M6 9a6 6 0 0 1 12 0c0 6 2 7 2 7H4s2-1 2-7M10 20a2 2 0 0 0 4 0" />
-        </svg>
-        {noLeidas > 0 && <span className="bdg">{noLeidas > 9 ? "9+" : noLeidas}</span>}
-      </button>
+      <div style={{ position: "relative", flex: "none", marginRight: 12 }}>
 
       <button className="av" aria-label="Menú de perfil" aria-haspopup="menu" onClick={() => setAbierto(abierto === "p" ? "" : "p")}>
         {avatar ? <img src={avatar} alt="" /> : iniciales}
       </button>
+      <button className="ico" title="Notificaciones" aria-label="Notificaciones" style={{ position: "absolute", right: -12, bottom: -6, width: 28, height: 28, borderRadius: "50%", zIndex: 2 }} onClick={() => setAbierto(abierto === "n" ? "" : "n")}>
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M6 9a6 6 0 0 1 12 0c0 6 2 7 2 7H4s2-1 2-7M10 20a2 2 0 0 0 4 0" />
+        </svg>
+        {noLeidas > 0 && <span className="bdg" style={{ top: -8, right: -8, minWidth: 16, height: 16, fontSize: 10 }}>{noLeidas > 9 ? "9+" : noLeidas}</span>}
+      </button>
+      </div>
 
       {abierto && <div className="cierra" onClick={cerrar} />}
 
       {abierto === "n" && (
-        <div className="drop nd">
+        <div className="drop nd" style={{ right: 0 }}>
           <div className="drop-h">
             <b>Notificaciones</b>
             {noLeidas > 0 && (
