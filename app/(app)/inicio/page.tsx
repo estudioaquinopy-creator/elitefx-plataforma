@@ -171,7 +171,7 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
 
           <section className="box">
             <div className="hd"><h2>Broker recomendado</h2></div>
-            <p className="mu">Abre tu cuenta con Liquid, nuestro broker recomendado, para desbloquear el Scanner Elite y las sesiones en vivo.</p>
+            <p className="mu">Abre tu cuenta con Liquid, nuestro broker recomendado.</p>
             <Link className="btn bl s" href="/aliados">Abrir mi cuenta</Link>
           </section>
         </div>
