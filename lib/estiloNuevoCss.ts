@@ -10,6 +10,13 @@ html body h1,html body h2,html body h3,html body .tag,html body .btn,html body b
 html body .main h1{background:none!important;-webkit-text-fill-color:currentColor!important;color:var(--tx)!important;font-weight:800;font-size:28px;letter-spacing:-.01em}
 html body .main h2{font-weight:700}
 
+/* Pantallas públicas (inicio de sesión, registro, recuperar…) */
+html body .center .card{padding:32px!important;max-width:440px}
+html body .center h1{font-weight:800;letter-spacing:-.01em}
+html body .center .logo{font-weight:800}
+html body .center input{min-height:48px}
+html body .center a{color:var(--ac)}
+
 /* Tarjetas */
 html body .box,html body .crs,html body .center .card,html body .card,html body .comp,html body .comp-bar,html body .li,html body .step,html body .sdia,html body .acceso-precio,html body .kp .box{background:var(--sf)!important;background-image:none!important;border:0!important;border-radius:20px!important;box-shadow:var(--sombra)!important}
 html body .step,html body .li,html body .sdia{border-radius:14px!important;box-shadow:none!important;background:var(--sf2)!important}

@@ -1,16 +1,23 @@
 import "./globals.css";
+import { leerAjustes } from "@/lib/ajustes";
+import { CSS_ESTILO_NUEVO } from "@/lib/estiloNuevoCss";
 import type { Metadata } from "next";
 import PixelMeta from "@/components/PixelMeta";
 import { SCRIPT_PIXEL } from "@/lib/metaPixel";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import { GA_ACTIVO, GA_ID, SCRIPT_GA } from "@/lib/googleAnalytics";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "ELITE FX · Plataforma",
   description: "Plataforma de estudio de ELITE FX",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Estilo nuevo en TODA la plataforma (también login y registro). Interruptor de emergencia: ajuste estilo_nuevo = 0.
+  let estiloNuevo = true;
+  try { estiloNuevo = (await leerAjustes()).estilo_nuevo !== "0"; } catch { /* sin ajustes: estilo nuevo */ }
   return (
     <html lang="es" data-tema="oscuro" suppressHydrationWarning>
       <head>
@@ -18,6 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: SCRIPT_PIXEL }} />
         {GA_ACTIVO && <script async src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} />}
         {GA_ACTIVO && <script dangerouslySetInnerHTML={{ __html: SCRIPT_GA }} />}
+        {estiloNuevo && <style dangerouslySetInnerHTML={{ __html: CSS_ESTILO_NUEVO }} />}
         <link
           href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap"
           rel="stylesheet"

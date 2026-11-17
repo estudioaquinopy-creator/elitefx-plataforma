@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { CSS_ESTILO_NUEVO } from "@/lib/estiloNuevoCss";
 import { tieneAyuda, recibeAyuda } from "@/lib/ayuda";
 import { redirect } from "next/navigation";
 import EnLinea from "@/components/EnLinea";
@@ -206,7 +205,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <Shell items={items} nombre={nombre} email={perfil.email} iniciales={iniciales} avatar={perfil.avatar_url ?? ""} notifs={notifs} noLeidas={noLeidas} real={perfil.rol === "admin" || !!perfil.vista} vista={perfil.vista ?? ""} redes={redes} editarRedes={perfil.rol === "admin"} enLinea={<EnLinea id={perfil.id} nombre={nombre} />}>
-      {estiloNuevo && <style dangerouslySetInnerHTML={{ __html: CSS_ESTILO_NUEVO }} />}
       {perfil.vista && (
         <form action={modoAlumno} className="vbar">
           <span>Estás viendo la plataforma como <b>{perfil.vista === "gratis" ? "gratuito (nuevo)" : perfil.vista === "alumno" ? "gratuito alumno" : "VIP"}</b>. Los cambios de administrador están ocultos.</span>
