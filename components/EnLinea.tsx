@@ -27,8 +27,9 @@ export default function EnLinea({ id, nombre }: { id: string; nombre: string }) 
   if (lista.length === 0) return null;
   return (
     <div className="enlinea">
+      <style>{"@media(max-width:760px){.el-txt{display:none}}"}</style>
       <button className="pill ok" onClick={() => setAbierto(!abierto)} aria-label="Personas en línea">
-        <span className="punto" /> {lista.length} en línea
+        <span className="punto" /> {lista.length}<span className="el-txt"> en línea</span>
       </button>
       {abierto && <div className="cierra" onClick={() => setAbierto(false)} />}
       {abierto && (

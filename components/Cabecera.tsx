@@ -1,8 +1,20 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import Tema from "@/components/Tema";
 import { marcarLeidas, modoAlumno } from "@/app/(app)/actions";
+
+// Teléfono: el buscador es solo una lupa que al tocarla se abre a todo el ancho; en escritorio no cambia nada.
+const CSS_MOVIL = `
+.search .lupa{background:none;border:0;padding:0;color:inherit;display:flex;cursor:default}
+.search .x-bus{display:none}
+@media(max-width:760px){
+.search:not(.abre){flex:none;width:44px;padding:0;justify-content:center;margin-right:auto}
+.search:not(.abre) .lupa{cursor:pointer;width:44px;height:44px;align-items:center;justify-content:center}
+.search:not(.abre) input{display:none}
+.search.abre{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);z-index:40;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.search.abre .x-bus{display:block;background:none;border:0;color:inherit;font-size:16px;cursor:pointer;padding:0 4px}
+}`;
 
 export type Notif = { id: string; titulo: string; cuerpo: string; enlace: string; fecha: string; nueva: boolean };
 
@@ -22,6 +34,8 @@ type Props = {
 export default function Cabecera({ nombre, email, iniciales, avatar, notifs, noLeidas, real, vista, enLinea, onMenu }: Props) {
   const [abierto, setAbierto] = useState<"" | "n" | "p">("");
   const cerrar = () => setAbierto("");
+  const [buscar, setBuscar] = useState(false);
+  const ref = useRef<HTMLInputElement>(null);
   return (
     <header className="top">
       <button className="hbg" aria-label="Abrir menú" onClick={onMenu}>
@@ -30,34 +44,36 @@ export default function Cabecera({ nombre, email, iniciales, avatar, notifs, noL
         </svg>
       </button>
 
-      <form action="/buscar" method="get" className="search" role="search">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-          <circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" />
-        </svg>
-        <input type="search" name="q" placeholder="Buscar lecciones, tutoriales, sesiones…" aria-label="Buscar" />
+      <style>{CSS_MOVIL}</style>
+      <form action="/buscar" method="get" className={buscar ? "search abre" : "search"} role="search">
+        <button type="button" className="lupa" aria-label="Buscar" onClick={() => { setBuscar(true); setTimeout(() => ref.current?.focus(), 30); }}>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" />
+          </svg>
+        </button>
+        <input ref={ref} type="search" name="q" placeholder="Buscar lecciones, tutoriales, sesiones…" aria-label="Buscar" />
+        <button type="button" className="x-bus" aria-label="Cerrar búsqueda" onClick={() => setBuscar(false)}>✕</button>
       </form>
 
       {enLinea}
 
       <Tema />
 
-      <div style={{ position: "relative", flex: "none", marginRight: 12 }}>
+      <button className="ico" aria-label="Notificaciones" onClick={() => setAbierto(abierto === "n" ? "" : "n")}>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M6 9a6 6 0 0 1 12 0c0 6 2 7 2 7H4s2-1 2-7M10 20a2 2 0 0 0 4 0" />
+        </svg>
+        {noLeidas > 0 && <span className="bdg">{noLeidas > 9 ? "9+" : noLeidas}</span>}
+      </button>
 
       <button className="av" aria-label="Menú de perfil" aria-haspopup="menu" onClick={() => setAbierto(abierto === "p" ? "" : "p")}>
         {avatar ? <img src={avatar} alt="" /> : iniciales}
       </button>
-      <button className="ico" title="Notificaciones" aria-label="Notificaciones" style={{ position: "absolute", right: -12, bottom: -6, width: 28, height: 28, borderRadius: "50%", zIndex: 2 }} onClick={() => setAbierto(abierto === "n" ? "" : "n")}>
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M6 9a6 6 0 0 1 12 0c0 6 2 7 2 7H4s2-1 2-7M10 20a2 2 0 0 0 4 0" />
-        </svg>
-        {noLeidas > 0 && <span className="bdg" style={{ top: -8, right: -8, minWidth: 16, height: 16, fontSize: 10 }}>{noLeidas > 9 ? "9+" : noLeidas}</span>}
-      </button>
-      </div>
 
       {abierto && <div className="cierra" onClick={cerrar} />}
 
       {abierto === "n" && (
-        <div className="drop nd" style={{ right: 0 }}>
+        <div className="drop nd">
           <div className="drop-h">
             <b>Notificaciones</b>
             {noLeidas > 0 && (
