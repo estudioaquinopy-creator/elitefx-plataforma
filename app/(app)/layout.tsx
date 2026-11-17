@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import Link from "next/link";
 import { CSS_ESTILO_NUEVO } from "@/lib/estiloNuevoCss";
 import { tieneAyuda, recibeAyuda } from "@/lib/ayuda";
@@ -190,7 +189,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
   if (dudasSin > 5) notifs.unshift({ id: "dudas-mas", titulo: "Hay " + dudasSin + " preguntas de lecciones sin responder", cuerpo: "Se muestran las 5 más recientes", enlace: dudasLista[0]?.enlace ?? "/cursos", fecha: "", nueva: true });
   notifs.unshift(...dudasLista);
-  const estiloNuevo = aj.estilo_nuevo !== "0" && cookies().get("estilo")?.value !== "clasico";
+  const estiloNuevo = aj.estilo_nuevo !== "0";
   // Iconos de línea del estilo nuevo (solo cambian los trazos, no las rutas ni los permisos).
   const ICONOS_NUEVOS: Record<string, string> = {
     "/inicio": "M3 11l9-7 9 7M5 10v10h14V10M10 20v-6h4v6",
@@ -206,7 +205,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const iniciales = nombre.split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((x) => x[0].toUpperCase()).join("");
 
   return (
-    <Shell items={items} nombre={nombre} email={perfil.email} iniciales={iniciales} avatar={perfil.avatar_url ?? ""} notifs={notifs} noLeidas={noLeidas} real={perfil.rol === "admin" || !!perfil.vista} vista={perfil.vista ?? ""} estilo={estiloNuevo ? "nuevo" : "clasico"} redes={redes} editarRedes={perfil.rol === "admin"} enLinea={<EnLinea id={perfil.id} nombre={nombre} />}>
+    <Shell items={items} nombre={nombre} email={perfil.email} iniciales={iniciales} avatar={perfil.avatar_url ?? ""} notifs={notifs} noLeidas={noLeidas} real={perfil.rol === "admin" || !!perfil.vista} vista={perfil.vista ?? ""} redes={redes} editarRedes={perfil.rol === "admin"} enLinea={<EnLinea id={perfil.id} nombre={nombre} />}>
       {estiloNuevo && <style dangerouslySetInnerHTML={{ __html: CSS_ESTILO_NUEVO }} />}
       {perfil.vista && (
         <form action={modoAlumno} className="vbar">

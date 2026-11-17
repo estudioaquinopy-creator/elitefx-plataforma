@@ -52,38 +52,26 @@ html body .ico{color:var(--mu)}
 html body .av{background:var(--ac)!important;color:#fff!important;border:0!important;box-shadow:var(--sombra)}
 html body .drop{background:var(--sf)!important;border:0!important;border-radius:18px!important;box-shadow:0 14px 40px rgba(0,0,0,.28)!important}
 
-/* Barra lateral estrecha con iconos (pantallas grandes) */
-@media(min-width:761px){
-  html body .app{grid-template-columns:76px minmax(0,1fr)!important}
-  html body .side{background:var(--rail)!important;background-image:none!important;border:0!important;padding:18px 0!important;align-items:center;gap:8px;width:76px;overflow-x:hidden}
-  html body .slogo{font-size:0!important;overflow:hidden;padding:0!important;margin-bottom:12px;width:46px;height:46px;border-radius:50%;background:var(--ac);display:grid;place-items:center;flex:none}
-  html body .slogo img{display:none!important}
-  html body .slogo::before{content:"EFX";font:800 13px 'Montserrat',sans-serif;color:#04130c;letter-spacing:.02em}
-  html body .nav{width:46px;min-height:46px!important;height:46px;padding:0!important;justify-content:center!important;border-radius:14px!important;position:relative;color:var(--rail-ic)!important;background:transparent!important;box-shadow:none!important}
-  html body .nav:hover{background:rgba(255,255,255,.09)!important}
-  html body .nav.on{background:rgba(255,255,255,.15)!important;box-shadow:none!important}
-  html body .nav .ni{margin:0!important;width:auto;height:auto;color:inherit!important}
-  html body .nav.on .ni{color:var(--ac)!important}
-  html body .nav .ni svg{width:23px;height:23px;stroke-width:1.7}
-  html body .nav .nl,html body .nav .pill{display:none!important}
-  html body .nav[aria-disabled]{opacity:.45}
-  html body .redes{position:static!important;margin:auto 0 0!important;padding:0!important}
-  html body .ig{width:46px;height:46px;padding:0!important;justify-content:center;border-radius:14px!important;background:transparent!important;border:0!important}
-  html body .igt{display:none!important}
-  html body .igi svg{stroke:var(--rail-ic)!important}
-  html body .redit{font-size:9px;text-align:center;color:var(--rail-ic)!important;padding:6px 2px;line-height:1.2;max-width:70px}
-  html body .main{padding:0 32px 44px!important}
-}
+/* Barra lateral oscura con iconos de línea, nombres de sección y logo */
+html body .side{background:var(--rail)!important;background-image:none!important;border:0!important}
+html body .slogo img{filter:none}
+html body .nav{color:var(--rail-ic)!important;background:transparent!important;box-shadow:none!important;border-radius:14px!important}
+html body .nav:hover{background:rgba(255,255,255,.09)!important}
+html body .nav.on{background:rgba(255,255,255,.15)!important;box-shadow:none!important;color:#fff!important}
+html body .nav .ni{color:inherit!important}
+html body .nav.on .ni{color:var(--ac)!important}
+html body .nav .ni svg{width:22px;height:22px;stroke-width:1.7}
+html body .nav .pill{background:rgba(255,255,255,.12)!important;color:var(--rail-ic)!important}
+html body .ig{background:rgba(255,255,255,.07)!important;border:0!important;color:#fff!important}
+html body .igt b{color:#fff!important}html body .igt small{color:var(--rail-ic)!important}
+html body .igi svg{stroke:var(--rail-ic)!important}
+html body .redit{color:var(--rail-ic)!important}
 html[data-tema="claro"] body .nav.on{background:rgba(255,255,255,.16)!important}
 html[data-tema="claro"] body .nav.on .ni{color:var(--ac)!important}
+html[data-tema="claro"] body .slogo,html[data-tema="claro"] body .slogo span{background:none!important;-webkit-text-fill-color:initial}
 html[data-tema="claro"] body .nav .ni{color:inherit!important}
 html[data-tema="claro"] body .side{background:var(--rail)!important}
-html[data-tema="claro"] body .slogo{background:var(--ac)!important}
-/* Menú desplegable del celular */
 @media(max-width:760px){
-  html body .side{background:var(--rail)!important;background-image:none!important;border:0!important}
-  html body .nav{color:var(--rail-ic)!important}html body .nav.on{background:rgba(255,255,255,.15)!important;color:#fff!important}
-  html body .nav.on .ni{color:var(--ac)!important}
   html body .hero{padding:20px!important}
 }
 `;
