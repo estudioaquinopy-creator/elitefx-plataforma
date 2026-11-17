@@ -44,6 +44,8 @@ html body .hero .th{background-color:rgba(0,0,0,.25)!important;border-radius:16p
 /* Botones, pestañas y filtros */
 html body .btn,html body button.btn{border-radius:12px;font-weight:700}
 html body .btn.g,html body .btn.s{background:var(--sf2)!important;color:var(--tx)!important;border:0!important}
+html body .btn.bl,html body a.btn.bl,html body button.btn.bl{background:var(--ac)!important;color:#04130c!important;border:0!important}
+html[data-tema="claro"] body .btn.bl{color:#fff!important}
 html body .chip,html body .tab,html body .cd{background:var(--sf)!important;background-image:none!important;border:1px solid var(--bd)!important;color:var(--mu)!important;border-radius:999px;box-shadow:none}
 html body .tab{border-radius:12px}
 html body .chip.on,html body .tab.on,html body .cd.on{background:var(--ac)!important;color:#fff!important;border-color:var(--ac)!important}
