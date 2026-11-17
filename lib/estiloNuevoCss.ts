@@ -32,7 +32,7 @@ html body .hero .tag{opacity:.9}
 html body .hero .bar{background:rgba(255,255,255,.3)!important}html body .hero .bar i{background:#fff!important}
 html body .hero .btn{background:transparent!important;color:#fff!important;border:2px solid #fff!important;border-radius:12px}
 html body .hero .btn:hover{background:rgba(255,255,255,.2)!important}
-html body .hero .th{background:rgba(0,0,0,.25)!important;border-radius:16px;box-shadow:none}
+html body .hero .th{background-color:rgba(0,0,0,.25)!important;border-radius:16px;box-shadow:none}
 
 /* Botones, pestañas y filtros */
 html body .btn,html body button.btn{border-radius:12px;font-weight:700}

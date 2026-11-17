@@ -9,7 +9,7 @@ import { noticiasCercanas } from "@/lib/noticias";
 import AvisoNoticias from "@/components/AvisoNoticias";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual, permisos, primerNombre, ZONA, hoyPY, planRanking, vipVigente } from "@/lib/sesion";
-import { youtubeId } from "@/lib/youtube";
+import { miniaturaVideo } from "@/lib/miniatura";
 import { bloqueosExamen } from "@/lib/examen";
 import { leerAjustes } from "@/lib/ajustes";
 import { mesDeRanking } from "@/lib/ranking";
@@ -55,7 +55,7 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
     }
   }
   const cursoSig = siguiente ? cursos.find((c) => c.id === siguiente!.curso_id) : undefined;
-  const vidSig = siguiente ? youtubeId(siguiente.youtube_url) : null;
+  const miniSig = siguiente ? await miniaturaVideo(siguiente.youtube_url) : null;
   const totalSig = cursoSig ? lecs.filter((l) => l.curso_id === cursoSig.id).length : 0;
   const okSig = cursoSig ? lecs.filter((l) => l.curso_id === cursoSig.id && hechas.has(l.id)).length : 0;
 
@@ -125,12 +125,12 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
       <div className="cols">
         <div>
           <section className="box hero">
-            {siguiente && cursoSig && vidSig ? (
+            {siguiente && cursoSig && miniSig ? (
               <Link
                 href={"/cursos/" + cursoSig.id + "?l=" + siguiente.id}
                 className="th thv"
                 aria-label={"Ver " + siguiente.titulo}
-                style={{ backgroundImage: "url(https://img.youtube.com/vi/" + vidSig + "/hqdefault.jpg)" }}
+                style={{ backgroundImage: "url(" + miniSig + ")" }}
               >
                 <span className="play">
                   <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z" /></svg>
