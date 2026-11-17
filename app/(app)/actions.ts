@@ -12,6 +12,13 @@ export async function marcarLeidas() {
 }
 
 // Solo el administrador real puede entrar o salir del modo alumno.
+// Estilo visual (nuevo / clásico): preferencia de cada persona, en una cookie.
+export async function cambiarEstilo(f: FormData) {
+  const e = String(f.get("estilo") ?? "");
+  cookies().set("estilo", e === "clasico" ? "clasico" : "nuevo", { path: "/", sameSite: "lax", secure: true, maxAge: 60 * 60 * 24 * 365 });
+  revalidatePath("/", "layout");
+}
+
 export async function modoAlumno(f: FormData) {
   const sb = createClient();
   const { data: { user } } = await sb.auth.getUser();

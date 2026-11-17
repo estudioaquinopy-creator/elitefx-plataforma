@@ -1,4 +1,6 @@
+import { cookies } from "next/headers";
 import Link from "next/link";
+import { CSS_ESTILO_NUEVO } from "@/lib/estiloNuevoCss";
 import { tieneAyuda, recibeAyuda } from "@/lib/ayuda";
 import { redirect } from "next/navigation";
 import EnLinea from "@/components/EnLinea";
@@ -188,12 +190,24 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
   if (dudasSin > 5) notifs.unshift({ id: "dudas-mas", titulo: "Hay " + dudasSin + " preguntas de lecciones sin responder", cuerpo: "Se muestran las 5 más recientes", enlace: dudasLista[0]?.enlace ?? "/cursos", fecha: "", nueva: true });
   notifs.unshift(...dudasLista);
+  const estiloNuevo = aj.estilo_nuevo !== "0" && cookies().get("estilo")?.value !== "clasico";
+  // Iconos de línea del estilo nuevo (solo cambian los trazos, no las rutas ni los permisos).
+  const ICONOS_NUEVOS: Record<string, string> = {
+    "/inicio": "M3 11l9-7 9 7M5 10v10h14V10M10 20v-6h4v6",
+    "/cursos": "M4 5.5A2.5 2.5 0 016.5 3H20v15H6.5A2.5 2.5 0 004 20.5zM4 20.5A2.5 2.5 0 006.5 23H20v-5",
+    "/calendario": "M3.5 8a3 3 0 013-3h11a3 3 0 013 3v9.5a3 3 0 01-3 3h-11a3 3 0 01-3-3zM8 3v4M16 3v4M3.5 10h17",
+    "/comunidad": "M4 5h16v11H9l-5 4z",
+    "/journal": "M5 20V5a2 2 0 012-2h11v18H7a2 2 0 01-2-1zM9 8h6M9 12h6",
+    "/noticias": "M6 8a6 6 0 0112 0c0 6 2 7 2 8H4c0-1 2-2 2-8zM10 19a2 2 0 004 0",
+  };
+  if (estiloNuevo) for (const it of items) if (ICONOS_NUEVOS[it.href]) it.icon = ICONOS_NUEVOS[it.href];
   const noLeidas = notifs.filter((n) => n.nueva).length;
   const nombre = perfil.nombre || perfil.email;
   const iniciales = nombre.split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((x) => x[0].toUpperCase()).join("");
 
   return (
-    <Shell items={items} nombre={nombre} email={perfil.email} iniciales={iniciales} avatar={perfil.avatar_url ?? ""} notifs={notifs} noLeidas={noLeidas} real={perfil.rol === "admin" || !!perfil.vista} vista={perfil.vista ?? ""} redes={redes} editarRedes={perfil.rol === "admin"} enLinea={<EnLinea id={perfil.id} nombre={nombre} />}>
+    <Shell items={items} nombre={nombre} email={perfil.email} iniciales={iniciales} avatar={perfil.avatar_url ?? ""} notifs={notifs} noLeidas={noLeidas} real={perfil.rol === "admin" || !!perfil.vista} vista={perfil.vista ?? ""} estilo={estiloNuevo ? "nuevo" : "clasico"} redes={redes} editarRedes={perfil.rol === "admin"} enLinea={<EnLinea id={perfil.id} nombre={nombre} />}>
+      {estiloNuevo && <style dangerouslySetInnerHTML={{ __html: CSS_ESTILO_NUEVO }} />}
       {perfil.vista && (
         <form action={modoAlumno} className="vbar">
           <span>Estás viendo la plataforma como <b>{perfil.vista === "gratis" ? "gratuito (nuevo)" : perfil.vista === "alumno" ? "gratuito alumno" : "VIP"}</b>. Los cambios de administrador están ocultos.</span>
