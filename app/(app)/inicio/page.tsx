@@ -171,7 +171,7 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
 
           <section className="box">
             <div className="hd"><h2>Broker recomendado</h2></div>
-            <p className="mu">Abre tu cuenta con Liquid, nuestro broker recomendado.</p>
+            <p className="mu">Abre tu cuenta con Liquid, nuestro broker recomendado. Es con el que trabajamos y el que usamos en las clases, así que todo lo que aprendes se aplica igual en tu cuenta. Si la abres desde aquí, además te acompañamos con soporte personalizado.</p>
             <Link className="btn bl s" href="/aliados">Abrir mi cuenta</Link>
           </section>
         </div>
