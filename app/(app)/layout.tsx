@@ -1,4 +1,5 @@
 import Link from "next/link";
+import GrupoWhatsApp from "@/components/GrupoWhatsApp";
 import { tieneAyuda, recibeAyuda } from "@/lib/ayuda";
 import { redirect } from "next/navigation";
 import EnLinea from "@/components/EnLinea";
@@ -222,6 +223,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
         </div>
       )}
+      {perfil.plan === "gratis" && !perfil.es_alumno && !perfil.prueba_hasta && (perfil.rol !== "admin" || perfil.vista === "gratis") && !perfil.grupo_wa_at && <GrupoWhatsApp guardar={!perfil.vista} />}
       <ProgresoNav />
       {children}
       <InactividadAuto />

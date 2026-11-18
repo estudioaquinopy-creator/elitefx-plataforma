@@ -12,6 +12,11 @@ export async function marcarLeidas() {
 }
 
 // Solo el administrador real puede entrar o salir del modo alumno.
+// El gratuito nuevo tocó "Unirme al grupo" de WhatsApp: no se le vuelve a mostrar la ventana (migración 0068; sin ella no hace nada).
+export async function marcarGrupoWa() {
+  try { await createClient().rpc("grupo_wa_marcar"); } catch { /* migración aún no corrida */ }
+}
+
 export async function modoAlumno(f: FormData) {
   const sb = createClient();
   const { data: { user } } = await sb.auth.getUser();

@@ -14,6 +14,7 @@ export type Perfil = {
   avatar_url?: string | null;
   terminos_version?: string | null; // versión de los términos aceptada (undefined = migración 0052 sin correr)
   prueba_hasta?: string | null; // prueba VIP por enlace de invitación (vuelve a gratuito al vencer)
+  grupo_wa_at?: string | null; // cuándo tocó "Unirme al grupo" de WhatsApp (migración 0068)
   es_alumno?: boolean; // fue VIP alguna vez: si hoy es gratuito, es "gratuito alumno" (todos los cursos)
   calendario_bono_hasta?: string | null; // calendario gratis por tener cuenta de Liquid (miembros gratuitos)
   notif_leidas_at: string | null;
