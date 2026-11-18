@@ -21,6 +21,9 @@ html body .center a{color:var(--ac)}
 @keyframes salaPulsoSuave{0%{box-shadow:0 0 0 0 rgba(201,88,92,.4)}70%{box-shadow:0 0 0 8px rgba(201,88,92,0)}100%{box-shadow:0 0 0 0 rgba(201,88,92,0)}}
 html body .btn.sala-vivo.on,html body a.btn.sala-vivo.on:hover{background:#c9585c!important;border-color:#c9585c!important;color:#fff!important;animation:salaPulsoSuave 2.2s infinite}
 
+/* Pantallas bajas (celular en horizontal): las redes sociales no se montan sobre el menú, quedan al final de la lista */
+@media(max-height:760px){html body .redes{position:static!important;bottom:auto!important;margin:14px 0 0!important}}
+
 /* Tarjetas */
 html body .box,html body .crs,html body .center .card,html body .card,html body .comp,html body .comp-bar,html body .li,html body .step,html body .sdia,html body .acceso-precio,html body .kp .box{background:var(--sf)!important;background-image:none!important;border:0!important;border-radius:20px!important;box-shadow:var(--sombra)!important}
 html body .step,html body .li,html body .sdia{border-radius:14px!important;box-shadow:none!important;background:var(--sf2)!important}
