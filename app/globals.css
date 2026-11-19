@@ -812,3 +812,13 @@ button.chip{cursor:pointer;font-family:inherit;line-height:1.2}
 .selimg-m{position:relative;width:56px;height:56px;border-radius:10px;overflow:hidden;border:1px solid var(--bd);flex:none}
 .selimg-m img{width:100%;height:100%;object-fit:cover;display:block}
 .selimg-m button{position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;border:0;background:rgba(0,0,0,.7);color:#fff;font-size:11px;line-height:1;cursor:pointer;padding:0}
+
+/* Responder con imagen: versión compacta (solo un icono; miniaturas pequeñas en la misma fila que el botón) */
+.resf-f{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.selimg.compacto .selimg-f{gap:6px;flex-wrap:nowrap}
+.selimg.compacto .selimg-m{width:32px;height:32px;border-radius:8px}
+.selimg.compacto .selimg-m button{width:14px;height:14px;font-size:8px;top:1px;right:1px}
+.selimg-ic{display:inline-flex;align-items:center;gap:4px;height:32px;padding:0 8px;border-radius:8px;cursor:pointer;color:var(--mu);border:1px solid var(--bd);background:transparent}
+.selimg-ic:hover{color:var(--tx);border-color:var(--go)}
+.selimg-ic small{font-size:11px}
+.resf .resf-f .btn{align-self:auto}

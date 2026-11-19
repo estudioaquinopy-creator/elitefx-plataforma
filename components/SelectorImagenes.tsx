@@ -4,7 +4,7 @@ import { achicar, TIPOS_OK, MAX_IMAGENES, MAX_TOTAL } from "@/lib/imagenCliente"
 
 // Elegir hasta 3 imágenes para un formulario (publicar o responder). Las archivos viajan en el campo `imagenes` del formulario.
 // Se agregan de a una (o varias), se ven en miniatura y se pueden quitar. Al reiniciar el formulario se vacía solo.
-export default function SelectorImagenes({ max = MAX_IMAGENES, etiqueta = "Imagen" }: { max?: number; etiqueta?: string }) {
+export default function SelectorImagenes({ max = MAX_IMAGENES, etiqueta = "Imagen", compacto = false }: { max?: number; etiqueta?: string; compacto?: boolean }) {
   const destino = useRef<HTMLInputElement>(null); // el que lleva el nombre `imagenes` (con los archivos ya preparados)
   const [lista, setLista] = useState<{ f: File; url: string }[]>([]);
   const [aviso, setAviso] = useState("");
@@ -53,7 +53,7 @@ export default function SelectorImagenes({ max = MAX_IMAGENES, etiqueta = "Image
   }
 
   return (
-    <div className="selimg">
+    <div className={"selimg" + (compacto ? " compacto" : "")}>
       <input ref={destino} type="file" name="imagenes" multiple hidden tabIndex={-1} aria-hidden="true" />
       <div className="selimg-f">
         {lista.map((x, i) => (
@@ -63,8 +63,10 @@ export default function SelectorImagenes({ max = MAX_IMAGENES, etiqueta = "Image
           </span>
         ))}
         {lista.length < max && (
-          <label className="comp-i selimg-b" title={"Adjuntar imagen (hasta " + max + ")"}>
-            🖼️ <span>{ocupado ? "Preparando…" : etiqueta + (max > 1 ? " (" + lista.length + "/" + max + ")" : "")}</span>
+          <label className={compacto ? "selimg-ic" : "comp-i selimg-b"} title={"Adjuntar imagen (hasta " + max + ")"} aria-label={"Adjuntar imagen (hasta " + max + ")"}>
+            {compacto
+              ? <>{ocupado ? <span className="btn-spin" aria-hidden="true" /> : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3" /><circle cx="9" cy="10" r="1.6" /><path d="M21 16l-5-5-8 8" /></svg>}{lista.length > 0 && <small>{lista.length}/{max}</small>}</>
+              : <>🖼️ <span>{ocupado ? "Preparando…" : etiqueta + (max > 1 ? " (" + lista.length + "/" + max + ")" : "")}</span></>}
             <input type="file" accept="image/*" multiple={max > 1} hidden disabled={ocupado} onChange={elegir} />
           </label>
         )}

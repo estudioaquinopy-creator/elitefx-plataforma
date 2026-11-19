@@ -25,8 +25,10 @@ export default function FormRespuesta({ action, id }: { action: (f: FormData) =>
     <form ref={ref} action={enviar} className="fm resf">
       <input type="hidden" name="id" value={id} />
       <CajaTexto name="cuerpo" rows={1} placeholder="Escribe una respuesta…" maxLength={1000} />
-      <SelectorImagenes />
-      <BotonEnvio className="btn g s" enviando="Enviando…">Responder</BotonEnvio>
+      <div className="resf-f">
+        <SelectorImagenes compacto />
+        <BotonEnvio className="btn g s" enviando="Enviando…">Responder</BotonEnvio>
+      </div>
       {error && <small className="lkerr" role="alert">{error}</small>}
     </form>
   );
