@@ -30,9 +30,10 @@ html body .step,html body .li,html body .sdia{border-radius:14px!important;box-s
 html body .cols>section.box:nth-child(even),html body .cols>div>section.box:nth-child(even){background:var(--sf)!important}
 html body .crs:hover,html body .step:hover{transform:translateY(-2px);transition:transform .15s}
 html body .grid .crs{border-top:0!important}
-html body .grid .crs .cov{background:linear-gradient(135deg,#0b8f58,#064a30)!important;border-radius:0}
-html body .grid .crs:nth-child(3n+2) .cov{background:linear-gradient(135deg,#17a86b,#0a5a3a)!important}
-html body .grid .crs:nth-child(3n) .cov{background:linear-gradient(135deg,#0a7a4c,#053a26)!important}
+html body .grid .crs .cov:not([style]){background:linear-gradient(135deg,#0b8f58,#064a30)!important;border-radius:0}
+html body .grid .crs .cov[style]{border-radius:0;background-color:#064a30!important}
+html body .grid .crs:nth-child(3n+2) .cov:not([style]){background:linear-gradient(135deg,#17a86b,#0a5a3a)!important}
+html body .grid .crs:nth-child(3n) .cov:not([style]){background:linear-gradient(135deg,#0a7a4c,#053a26)!important}
 
 /* Cabecera verde de "Continúa donde lo dejaste" */
 html body .hero{background:linear-gradient(120deg,#00b46a 0%,#008a52 100%)!important;color:#fff!important;border-radius:24px!important;position:relative;overflow:hidden;padding:28px!important}
