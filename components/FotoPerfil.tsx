@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import FotoGrande from "@/components/FotoGrande";
 import { subirAvatar } from "@/lib/avatar";
 
 // Cambiar la foto de perfil (es obligatoria, por eso ya no se puede quitar) desde "Editar perfil".
@@ -22,7 +21,7 @@ export default function FotoPerfil({ uid, url, iniciales }: { uid: string; url: 
   }
   return (
     <div className="fp">
-      <span className="fp-av">{actual ? <FotoGrande src={actual} nombre="" /> : iniciales}</span>
+      <span className="fp-av">{actual ? <img src={actual} alt="Tu foto" /> : iniciales}</span>
       <div>
         <label className="btn g s fp-b">{busy ? <><span className="btn-spin" /> Procesando…</> : "Cambiar foto"}<input type="file" accept="image/*" hidden disabled={busy} onChange={elegir} /></label>
         {estado && <small className="mu" style={{ display: "block", marginTop: 6 }}>{estado}</small>}
