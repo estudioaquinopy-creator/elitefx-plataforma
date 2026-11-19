@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { borrarMensajeSala, bloquearEnSala } from "@/app/(app)/comunidad/sala/actions";
+import FotoGrande from "@/components/FotoGrande";
 import { SALA_DESDE, SALA_HASTA, salaAbierta } from "@/lib/sala";
 
 export type MsgSala = { id: string; user_id: string; autor_nombre: string; autor_avatar: string | null; autor_admin: boolean; texto: string; imagen_url: string | null; created_at: string; responde_a?: string | null; resp_nombre?: string | null; resp_texto?: string | null; imagen_path?: string | null; editado_at?: string | null };
@@ -184,7 +185,7 @@ export default function SalaChat({ yo, esAdmin, inicial, reaccionesIni, bloquead
               {sep && <div className="mu" style={{ textAlign: "center", fontSize: 12, margin: "4px 0 8px" }}>{sep === dia(new Date().toISOString()) ? "Hoy" : sep}</div>}
               <div style={{ display: "flex", gap: 10, alignItems: "flex-start", flexDirection: mio ? "row-reverse" : "row" }}>
                 {m.autor_avatar
-                  ? <img src={m.autor_avatar} alt="" width={34} height={34} style={{ borderRadius: "50%", objectFit: "cover", flex: "none" }} />
+                  ? <FotoGrande src={m.autor_avatar} nombre={m.autor_nombre} style={{ width: 34, height: 34, borderRadius: "50%", objectFit: "cover", flex: "none" }} />
                   : <span style={{ width: 34, height: 34, borderRadius: "50%", background: "var(--sf2)", display: "grid", placeItems: "center", fontSize: 12, fontWeight: 700, flex: "none" }}>{iniciales(m.autor_nombre)}</span>}
                 <div style={{ maxWidth: "78%", background: mio ? "rgba(0,212,122,.16)" : "var(--sf2)", borderRadius: 12, padding: "8px 12px" }}>
                   <div style={{ fontSize: 12, marginBottom: 2, display: "flex", alignItems: "center", gap: 6 }}>

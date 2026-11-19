@@ -11,6 +11,7 @@ import FormEditarPublicacion from "@/components/FormEditarPublicacion";
 import { MOTIVOS_REPORTE } from "@/lib/reportes";
 import BotonReportar from "@/components/BotonReportar";
 import ImagenZoom from "@/components/ImagenZoom";
+import FotoGrande from "@/components/FotoGrande";
 import TextoMenciones from "@/components/TextoMenciones";
 import { reportar, alternarFijada, editarPublicacion, borrarPublicacion, publicar, alternarLike, comentar, borrarComentario, marcarUtil } from "./actions";
 
@@ -67,7 +68,7 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
     const { data: av } = await sb.rpc("avatares_comunidad", { p_ids: quienes });
     for (const a of (av ?? []) as { id: string; avatar_url: string }[]) fotos.set(a.id, a.avatar_url);
   }
-  const avatar = (uid: string, nombre: string) => (fotos.get(uid) ? <img src={fotos.get(uid)} alt="" loading="lazy" /> : ini(nombre));
+  const avatar = (uid: string, nombre: string) => (fotos.get(uid) ? <FotoGrande src={fotos.get(uid)!} nombre={nombre} /> : ini(nombre));
   const opciones = perm.admin ? ["anuncios", "preguntas", "resultados"] : ["preguntas", "resultados"];
   const volver = "/comunidad" + (filtro ? "?canal=" + filtro : "");
 
