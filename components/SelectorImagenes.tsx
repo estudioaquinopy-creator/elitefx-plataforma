@@ -54,7 +54,7 @@ export default function SelectorImagenes({ max = MAX_IMAGENES, etiqueta = "Image
 
   return (
     <div className={"selimg" + (compacto ? " compacto" : "")}>
-      <input ref={destino} type="file" name="imagenes" multiple hidden tabIndex={-1} aria-hidden="true" />
+      <input ref={destino} type="file" name="imagenes" multiple hidden style={{ display: "none" }} tabIndex={-1} aria-hidden="true" />
       <div className="selimg-f">
         {lista.map((x, i) => (
           <span key={x.url} className="selimg-m">
@@ -67,7 +67,7 @@ export default function SelectorImagenes({ max = MAX_IMAGENES, etiqueta = "Image
             {compacto
               ? <>{ocupado ? <span className="btn-spin" aria-hidden="true" /> : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3" /><circle cx="9" cy="10" r="1.6" /><path d="M21 16l-5-5-8 8" /></svg>}{lista.length > 0 && <small>{lista.length}/{max}</small>}</>
               : <>🖼️ <span>{ocupado ? "Preparando…" : etiqueta + (max > 1 ? " (" + lista.length + "/" + max + ")" : "")}</span></>}
-            <input type="file" accept="image/*" multiple={max > 1} hidden disabled={ocupado} onChange={elegir} />
+            <input type="file" accept="image/*" multiple={max > 1} hidden style={{ display: "none" }} disabled={ocupado} onChange={elegir} />
           </label>
         )}
       </div>
