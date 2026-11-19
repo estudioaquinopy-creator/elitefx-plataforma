@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual, permisos } from "@/lib/sesion";
-import { fallo, subirImagen } from "@/lib/subida";
+import { fallo, subirVarias } from "@/lib/subida";
 import { rutaSegura } from "@/lib/seguridad";
 import { registrar } from "@/lib/auditoria";
 import { MOTIVOS_REPORTE } from "@/lib/reportes";
@@ -18,10 +18,11 @@ export async function publicar(f: FormData) {
   if (!["anuncios", "preguntas", "resultados"].includes(canal)) fallo("/comunidad", "Elige una etiqueta.");
   if (canal === "anuncios" && !perm.admin) fallo("/comunidad", "Solo el equipo de ELITE FX publica anuncios.");
   if (!perm.comunidad) fallo("/comunidad", "Tu plan solo permite leer la comunidad.");
-  // Si la subida falla por una excepción (red lenta, almacenamiento caído), se avisa en pantalla en vez de quedar el botón girando.
-  let imagen: string | null = null;
-  try { imagen = await subirImagen(f.get("imagen"), "/comunidad", "comunidad"); }
-  catch (e) { if (String((e as { digest?: string })?.digest ?? "").startsWith("NEXT_REDIRECT")) throw e; fallo("/comunidad", "No se pudo subir la imagen. Prueba con una más liviana o sin imagen."); }
+  // Hasta 3 imágenes. Si la subida falla, se avisa en pantalla en vez de quedar el botón girando.
+  const sub = await subirVarias(f.getAll("imagenes"), "comunidad", 3);
+  if (sub.error) fallo("/comunidad", sub.error);
+  const imagen = sub.urls[0] ?? null;
+  const extras = sub.urls.slice(1);
   if (!cuerpo && !imagen && !titulo) fallo("/comunidad", "Escribe un mensaje o sube una imagen.");
   // Evita duplicados: si se envió exactamente lo mismo hace menos de 2 minutos, no se vuelve a crear.
   const { data: rep } = await createClient().from("publicaciones").select("id").eq("user_id", perfil.id).eq("canal", canal).eq("titulo", titulo).eq("cuerpo", cuerpo).gte("created_at", new Date(Date.now() - 120000).toISOString()).limit(1);
@@ -30,8 +31,9 @@ export async function publicar(f: FormData) {
     user_id: perfil.id,
     autor: perfil.nombre || perfil.email.split("@")[0],
     canal, titulo, cuerpo, imagen_url: imagen,
+    ...(extras.length ? { imagenes_extra: extras } : {}),
   });
-  if (error) fallo("/comunidad", "No se pudo publicar: " + error.message);
+  if (error) fallo("/comunidad", error.message.includes("imagenes_extra") ? "Falta correr la migración 0070 en Supabase para publicar con más de una imagen." : "No se pudo publicar: " + error.message);
   revalidatePath("/comunidad");
   revalidatePath("/", "layout");
   redirect("/comunidad");
@@ -93,14 +95,18 @@ export async function comentar(f: FormData): Promise<{ ok: boolean; error?: stri
     createClient().from("comentarios").select("id").eq("user_id", perfil.id).eq("post_id", String(f.get("id") ?? "")).eq("cuerpo", cuerpo).gte("created_at", new Date(Date.now() - 120000).toISOString()).limit(1),
   ]);
   if (!perm.comunidad) return { ok: false, error: "Tu plan solo permite leer la comunidad." };
-  if (!cuerpo) return { ok: false, error: "Escribe tu respuesta." };
+  const archivos = f.getAll("imagenes").filter((x) => x instanceof File && x.size > 0);
+  if (!cuerpo && !archivos.length) return { ok: false, error: "Escribe tu respuesta o agrega una imagen." };
   if (cuerpo.length > 2000) return { ok: false, error: "La respuesta es demasiado larga (máximo 2.000 caracteres)." };
-  if (rep && rep.length) return { ok: true }; // ya se había publicado la misma respuesta hace un momento
+  if (cuerpo && !archivos.length && rep && rep.length) return { ok: true }; // ya se había publicado la misma respuesta hace un momento
+  const sub = await subirVarias(archivos, "comunidad", 3);
+  if (sub.error) return { ok: false, error: sub.error };
   const { error } = await createClient().from("comentarios").insert({
     post_id: String(f.get("id") ?? ""), user_id: perfil.id,
     autor: perfil.nombre || perfil.email.split("@")[0], cuerpo,
+    ...(sub.urls.length ? { imagen_url: sub.urls[0], ...(sub.urls.length > 1 ? { imagenes_extra: sub.urls.slice(1) } : {}) } : {}),
   });
-  if (error) return { ok: false, error: "No se pudo responder: " + error.message };
+  if (error) return { ok: false, error: error.message.includes("imagen") ? "Falta correr la migración 0070 en Supabase para responder con imágenes." : "No se pudo responder: " + error.message };
   revalidatePath("/comunidad");
   return { ok: true };
 }

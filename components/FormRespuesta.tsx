@@ -2,6 +2,7 @@
 import { useRef, useState } from "react";
 import CajaTexto from "@/components/CajaTexto";
 import BotonEnvio from "@/components/BotonEnvio";
+import SelectorImagenes from "@/components/SelectorImagenes";
 
 type Resultado = { ok: boolean; error?: string };
 
@@ -23,7 +24,8 @@ export default function FormRespuesta({ action, id }: { action: (f: FormData) =>
   return (
     <form ref={ref} action={enviar} className="fm resf">
       <input type="hidden" name="id" value={id} />
-      <CajaTexto name="cuerpo" rows={1} placeholder="Escribe una respuesta…" required maxLength={1000} />
+      <CajaTexto name="cuerpo" rows={1} placeholder="Escribe una respuesta…" maxLength={1000} />
+      <SelectorImagenes />
       <BotonEnvio className="btn g s" enviando="Enviando…">Responder</BotonEnvio>
       {error && <small className="lkerr" role="alert">{error}</small>}
     </form>

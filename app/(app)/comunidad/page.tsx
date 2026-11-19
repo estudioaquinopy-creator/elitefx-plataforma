@@ -16,10 +16,11 @@ import { reportar, alternarFijada, editarPublicacion, borrarPublicacion, publica
 
 export const dynamic = "force-dynamic";
 
-type Pub = { id: string; user_id: string; autor: string; canal: string; titulo: string; cuerpo: string; imagen_url: string | null; created_at: string; editado_at?: string | null; fijada_at?: string | null };
-type Com = { id: string; post_id: string; user_id: string; autor: string; cuerpo: string; created_at: string; util?: boolean };
+type Pub = { id: string; user_id: string; autor: string; canal: string; titulo: string; cuerpo: string; imagen_url: string | null; imagenes_extra?: string[] | null; created_at: string; editado_at?: string | null; fijada_at?: string | null };
+type Com = { id: string; post_id: string; user_id: string; autor: string; cuerpo: string; imagen_url?: string | null; imagenes_extra?: string[] | null; created_at: string; util?: boolean };
 const CANALES: Record<string, string> = { anuncios: "Anuncios", preguntas: "Preguntas generales", resultados: "Resultados" };
 const cuando = (iso: string) => new Date(iso).toLocaleString("es-PY", { timeZone: "America/Asuncion", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
+const imgsDe = (x: { imagen_url?: string | null; imagenes_extra?: string[] | null }) => [x.imagen_url, ...(x.imagenes_extra ?? [])].filter((u): u is string => !!u);
 const ini = (n: string) => (n.trim()[0] || "?").toUpperCase();
 
 export default async function Comunidad({ searchParams }: { searchParams: { canal?: string; error?: string } }) {
@@ -98,6 +99,7 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
         const nl = likes.filter((l) => l.post_id === p.id).length;
         const mio = likes.some((l) => l.post_id === p.id && l.user_id === perfil.id);
         const rs = coms.filter((c) => c.post_id === p.id);
+        const imgs = imgsDe(p);
         const cabecera = (
           <div className="post-h">
             <span className="av2">{avatar(p.user_id, p.autor)}</span>
@@ -114,7 +116,7 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
                 {p.titulo && <b className="pv-ti">{p.titulo}</b>}
                 {p.cuerpo && <p className="pv-tx"><TextoMenciones texto={p.cuerpo} /></p>}
               </div>
-              {p.imagen_url && <img className="pv-img" src={p.imagen_url} alt="" loading="lazy" />}
+              {imgs.length > 0 && <span className="pv-imgw"><img className="pv-img" src={imgs[0]} alt="" loading="lazy" />{imgs.length > 1 && <span className="pv-mas">+{imgs.length - 1}</span>}</span>}
             </div>
           </section>
         );
@@ -126,7 +128,8 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
                 {cabecera}
                 {p.titulo && <h2 style={{ margin: "4px 0 6px" }}>{p.titulo}</h2>}
                 {p.cuerpo && <p style={{ whiteSpace: "pre-wrap", margin: "6px 0 0" }}><TextoMenciones texto={p.cuerpo} /></p>}
-                {p.imagen_url && <ImagenZoom className="pimg" src={p.imagen_url} alt="Imagen de la publicación" />}
+                {imgs.length === 1 && <ImagenZoom className="pimg" src={imgs[0]} alt="Imagen de la publicación" />}
+                {imgs.length > 1 && <div className="pgal">{imgs.map((u, i) => <ImagenZoom key={u} className="pimg" src={u} alt={"Imagen " + (i + 1) + " de la publicación"} />)}</div>}
               </div>
             }
             extras={(perm.admin || p.user_id === perfil.id || perm.comunidad) ? (
@@ -146,7 +149,8 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
                     <span className="av2 s">{avatar(c.user_id, c.autor)}</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <b>{c.autor}</b> <small className="mu">{cuando(c.created_at)}</small>{c.util && <span className="pill pos" style={{ marginLeft: 8 }}>✓ Respuesta útil</span>}
-                      <p style={{ whiteSpace: "pre-wrap", margin: "2px 0 0" }}><TextoMenciones texto={c.cuerpo} /></p>
+                      {c.cuerpo && <p style={{ whiteSpace: "pre-wrap", margin: "2px 0 0" }}><TextoMenciones texto={c.cuerpo} /></p>}
+                      {imgsDe(c).length > 0 && <div className="pgal rgal">{imgsDe(c).map((u, i) => <ImagenZoom key={u} className="pimg" src={u} alt={"Imagen " + (i + 1) + " de la respuesta"} />)}</div>}
                       <div className="resp-acc">
                       {(perm.admin || p.user_id === perfil.id) && c.user_id !== p.user_id && (
                         <form action={marcarUtil}><input type="hidden" name="id" value={c.id} /><input type="hidden" name="post" value={p.id} /><input type="hidden" name="volver" value={volver} /><input type="hidden" name="util" value={c.util ? "0" : "1"} /><button className="lk">{c.util ? "Quitar útil" : "Marcar útil"}</button></form>
