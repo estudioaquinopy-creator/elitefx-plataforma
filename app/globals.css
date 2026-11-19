@@ -822,3 +822,7 @@ button.chip{cursor:pointer;font-family:inherit;line-height:1.2}
 .selimg-ic:hover{color:var(--tx);border-color:var(--go)}
 .selimg-ic small{font-size:11px}
 .resf .resf-f .btn{align-self:auto}
+
+/* Alineación: los <label> globales traen margen inferior de 14 px; en barras de herramientas desalineaban botones y selectores */
+.comp-f label,.selimg label,.resf-f label{margin-bottom:0}
+.comp-f .selimg{align-self:center}

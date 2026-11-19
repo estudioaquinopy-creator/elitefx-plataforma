@@ -177,8 +177,8 @@ export default async function Metricas({ searchParams }: { searchParams?: { desd
         <h2>Ver un período</h2>
         <p className="mu" style={{ margin: "0 0 10px" }}>Elige de qué fecha a qué fecha quieres ver los números (horario de Paraguay, ambas fechas incluidas).</p>
         <form method="get" style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 10 }}>
-          <label>Desde<br /><input type="date" name="desde" defaultValue={hayRango ? qd : mesIni} max={hoyIso} required /></label>
-          <label>Hasta<br /><input type="date" name="hasta" defaultValue={hayRango ? qh : hoyIso} max={hoyIso} required /></label>
+          <label style={{ margin: 0 }}>Desde<br /><input type="date" name="desde" defaultValue={hayRango ? qd : mesIni} max={hoyIso} required /></label>
+          <label style={{ margin: 0 }}>Hasta<br /><input type="date" name="hasta" defaultValue={hayRango ? qh : hoyIso} max={hoyIso} required /></label>
           <button className="btn s" type="submit">Ver</button>
           {hayRango && <Link href="/accesos/metricas" className="mu">Quitar período</Link>}
         </form>
