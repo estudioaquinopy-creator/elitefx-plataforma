@@ -12,7 +12,7 @@ type Com = { id: string; post_id: string; cuerpo: string; created_at: string; ut
 type Ajuste = { id: string; created_at: string; puntos: number; motivo: string };
 type Item = {
   key: string; tipo: "pub" | "resp"; at: string; dia: string; pts: number; nota: string; // pts: lo que suma esa cosa (sin contar el tope diario); nota: por qué no suma
-  post?: Post; com?: Com; likesSuman?: number; likesTotal?: number; util?: boolean;
+  post?: Post; com?: Com; likesSuman?: number; likesTotal?: number; util?: boolean; utilNota?: string;
 };
 const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 const nombreMes = (m: string) => MESES[Number(m.slice(5, 7)) - 1] + " de " + m.slice(0, 4);
@@ -36,7 +36,7 @@ export default async function Revisar({ searchParams }: { searchParams: { u?: st
   const desde = cierreISO(sumaMes(mes, -1));
   const hasta = cierreISO(mes);
 
-  const [pf, ps, cs, aj, cert, liq, rk] = await Promise.all([
+  const [pf, ps, cs, aj, cert, liq, rk, ut] = await Promise.all([
     sb.from("perfiles").select("nombre, email, plan, avatar_desde").eq("id", u).maybeSingle(),
     sb.from("publicaciones").select("*").eq("user_id", u).gte("created_at", desde).lt("created_at", hasta).order("created_at", { ascending: true }).limit(400),
     sb.from("comentarios").select("*").eq("user_id", u).gte("created_at", desde).lt("created_at", hasta).order("created_at", { ascending: true }).limit(600),
@@ -44,7 +44,9 @@ export default async function Revisar({ searchParams }: { searchParams: { u?: st
     sb.from("certificados").select("codigo, emitido_at").eq("user_id", u).gte("emitido_at", desde).lt("emitido_at", hasta),
     sb.from("liquid_cuentas").select("estado, mes").eq("user_id", u).eq("estado", "aprobado"),
     sb.rpc("ranking_mes", { p_mes: mes }),
+    sb.from("comentarios").select("id", { count: "exact", head: true }).eq("user_id", u).eq("util", true),
   ]);
+  const utilTotal = ut.count ?? 0;
   const persona = pf.data as { nombre: string; email: string; plan: string; avatar_desde: string | null } | null;
   const posts = (ps.data ?? []) as Post[];
   const coms = (cs.data ?? []) as Com[];
@@ -108,6 +110,7 @@ export default async function Revisar({ searchParams }: { searchParams: { u?: st
     }
     items.push({ key: "p" + p.id, tipo: "pub", at: p.created_at, dia, pts, nota, post: p, likesSuman: likesPts.get(p.id) ?? 0, likesTotal: likesTot.get(p.id) ?? 0 });
   }
+  const topIds = new Set(tabla.slice(0, 10).map((x) => x.user_id));
   const nResp = new Map<string, number>(); // día -> respuestas puntuables ya vistas
   for (const c of coms) {
     const dia = diaDe(c.created_at);
@@ -122,8 +125,14 @@ export default async function Revisar({ searchParams }: { searchParams: { u?: st
       if (n > 5) nota = "No suma: ya llevaba 5 respuestas puntuables ese día";
       else pts = 1;
     }
-    const util = c.util && !(d && d.user_id === u) && primeraUtil.get(c.post_id) === c.id;
-    items.push({ key: "c" + c.id, tipo: "resp", at: c.created_at, dia, pts, nota, com: c, util });
+    let utilNota = "";
+    if (c.util) {
+      if (d && d.user_id === u) utilNota = "Marcada útil, pero es su propia publicación: no suma";
+      else if (primeraUtil.get(c.post_id) !== c.id) utilNota = "Útil que no suma: solo cuenta 1 útil por publicación y persona";
+      else if (d && topIds.has(d.user_id) && topIds.has(u)) utilNota = "Útil que no suma: quien preguntó también está en el Top 10";
+    }
+    const util = c.util && !utilNota;
+    items.push({ key: "c" + c.id, tipo: "resp", at: c.created_at, dia, pts, nota, com: c, util, utilNota });
   }
 
   // Resumen por día (con el tope de 12 puntos al día; las respuestas útiles van aparte).
@@ -141,6 +150,7 @@ export default async function Revisar({ searchParams }: { searchParams: { u?: st
   const nPubSuman = items.filter((i) => i.tipo === "pub" && i.pts > 0).length;
   const nRespSuman = items.filter((i) => i.tipo === "resp" && i.pts > 0).length;
   const nUtil = items.filter((i) => i.util).length;
+  const nUtilMarcadas = items.filter((i) => i.com?.util).length;
   const nLikes = Array.from(likesPts.values()).reduce((s, x) => s + x, 0);
   const enlacePub = (id: string) => "/comunidad?p=" + id + "#p" + id;
   const enlaceResp = (postId: string, cid: string) => "/comunidad?p=" + postId + "&c=" + cid + "#p" + postId;
@@ -163,7 +173,7 @@ export default async function Revisar({ searchParams }: { searchParams: { u?: st
           <div><b style={{ fontSize: 22 }}>{estimado}</b><small className="mu" style={{ display: "block" }}>por publicaciones, respuestas y me gusta</small></div>
           <div><b style={{ fontSize: 22 }}>{posts.length}</b><small className="mu" style={{ display: "block" }}>publicaciones · suman {nPubSuman}</small></div>
           <div><b style={{ fontSize: 22 }}>{coms.length}</b><small className="mu" style={{ display: "block" }}>respuestas · suman {nRespSuman}</small></div>
-          <div><b style={{ fontSize: 22 }}>{nUtil}</b><small className="mu" style={{ display: "block" }}>marcadas útiles</small></div>
+          <div><b style={{ fontSize: 22 }}>{nUtil}</b><small className="mu" style={{ display: "block" }}>útiles que cuentan · {nUtilMarcadas} marcadas en el período · {utilTotal} en total</small></div>
           <div><b style={{ fontSize: 22 }}>{nLikes}</b><small className="mu" style={{ display: "block" }}>me gusta que suman</small></div>
         </div>
         <small className="mu" style={{ display: "block", marginTop: 8 }}>Los puntos reales incluyen además el chat en vivo, la foto, Liquid, certificados, referidos y ajustes, y descuentan las interacciones entre las personas del Top 10 y la penalización del Top 3. Por eso pueden diferir del cálculo de abajo, que es una guía para revisar.</small>
@@ -195,7 +205,8 @@ export default async function Revisar({ searchParams }: { searchParams: { u?: st
                     : <span className="pill">Respuesta</span>}
                   {i.pts > 0 && <span className="pill ok">+{i.pts} pt{i.pts === 1 ? "" : "s"}</span>}
                   {i.util && <span className="pill ok">Útil · +5 pts</span>}
-                  {i.pts === 0 && !i.util && i.nota && <span className="pill" style={{ color: "#e0a458" }}>{i.nota}</span>}
+                  {i.utilNota && <span className="pill" style={{ color: "#e0a458" }}>{i.utilNota}</span>}
+                  {i.pts === 0 && !i.util && i.nota && !i.com?.util && <span className="pill" style={{ color: "#e0a458" }}>{i.nota}</span>}
                   <small className="mu">{hora(i.at)} · {i.tipo === "pub" ? i.post!.cuerpo.length : i.com!.cuerpo.length} caracteres{i.tipo === "pub" ? " · " + (i.likesTotal ?? 0) + " me gusta de otros" + ((i.likesSuman ?? 0) > 0 ? " (suman " + i.likesSuman + ")" : "") : ""}</small>
                   <Link href={i.tipo === "pub" ? enlacePub(i.post!.id) : enlaceResp(i.com!.post_id, i.com!.id)} style={{ marginLeft: "auto", fontWeight: 600 }}>
                     {i.tipo === "pub" ? "Abrir esta publicación →" : "Ver esta respuesta →"}
