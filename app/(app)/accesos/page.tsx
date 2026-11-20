@@ -1,4 +1,5 @@
 import Link from "next/link";
+import RecordarFiltroAccesos from "@/components/RecordarFiltroAccesos";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { estadoMembresia, perfilActual } from "@/lib/sesion";
@@ -125,6 +126,7 @@ export default async function Accesos({ searchParams }: { searchParams: { q?: st
         </form>
       </details>
 
+      <RecordarFiltroAccesos />
       <form method="get" className="box fm" style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, alignItems: "flex-end" }}>
         <label style={{ flex: 1, minWidth: 200 }}>Buscar por nombre o correo<input name="q" defaultValue={searchParams.q ?? ""} /></label>
         <label>Estado
@@ -136,6 +138,7 @@ export default async function Accesos({ searchParams }: { searchParams: { q?: st
           </label>
         )}
         <button className="btn s" style={{ marginBottom: 14 }}>Filtrar</button>
+        {(q || e || c) && <Link className="btn g s" style={{ marginBottom: 14 }} href="/accesos?limpiar=1">Limpiar filtro</Link>}
       </form>
 
       <section className="box">
