@@ -116,9 +116,9 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
         );
         const vista = (
           <section className="box post2 pvbox">
+            {cabecera}
             <div className="pv-in">
               <div className="pv-t">
-                {cabecera}
                 {p.titulo && <b className="pv-ti">{p.titulo}</b>}
                 {p.cuerpo && <p className="pv-tx"><TextoMenciones texto={p.cuerpo} /></p>}
               </div>
