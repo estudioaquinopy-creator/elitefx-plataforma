@@ -16,7 +16,18 @@ export default function PostModal({ id, vista, detalle, extras, respuestas, nl, 
 
   const abrir = () => { const d = ref.current; if (d && !d.open) { d.showModal(); history.replaceState(null, "", "#p" + id); } };
   const cerrar = () => { ref.current?.close(); };
-  useEffect(() => { if (location.hash === "#p" + id) abrir(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [id]);
+  // Si el enlace trae ?c=ID de una respuesta (revisión del ranking), se baja hasta esa respuesta y se resalta.
+  const destacar = () => {
+    try {
+      const c = new URLSearchParams(location.search).get("c");
+      if (!c || !/^[0-9a-f-]{36}$/i.test(c)) return;
+      setTimeout(() => {
+        const el = ref.current?.querySelector('[id="c' + c + '"]') as HTMLElement | null;
+        if (el) { el.classList.add("resp-dest"); el.scrollIntoView({ block: "center" }); }
+      }, 80);
+    } catch { /* sin resaltado */ }
+  };
+  useEffect(() => { if (location.hash === "#p" + id) { abrir(); destacar(); } /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [id]);
 
   function like(e: React.MouseEvent) {
     e.stopPropagation();

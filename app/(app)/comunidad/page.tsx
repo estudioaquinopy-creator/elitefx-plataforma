@@ -23,7 +23,7 @@ const cuando = (iso: string) => new Date(iso).toLocaleString("es-PY", { timeZone
 const imgsDe = (x: { imagen_url?: string | null; imagenes_extra?: string[] | null }) => [x.imagen_url, ...(x.imagenes_extra ?? [])].filter((u): u is string => !!u);
 const ini = (n: string) => (n.trim()[0] || "?").toUpperCase();
 
-export default async function Comunidad({ searchParams }: { searchParams: { canal?: string; error?: string } }) {
+export default async function Comunidad({ searchParams }: { searchParams: { canal?: string; error?: string; p?: string; c?: string } }) {
   const perfil = await perfilActual();
   const perm = await permisos(perfil);
   if (!perm.comunidad) {
@@ -44,7 +44,13 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
   const [{ data: dRec }, { data: dFij }] = await Promise.all([q, pf]);
   const fijadas = (dFij ?? []) as Pub[];
   const idsFijadas = new Set(fijadas.map((p) => p.id));
-  const pubs = [...fijadas, ...((dRec ?? []) as Pub[]).filter((p) => !idsFijadas.has(p.id))];
+  let pubs = [...fijadas, ...((dRec ?? []) as Pub[]).filter((p) => !idsFijadas.has(p.id))];
+  // Enlace directo a una publicación (?p=ID, lo usa la revisión del ranking): si no está entre las últimas, se pide aparte para que siempre se abra.
+  const pedida = /^[0-9a-f-]{36}$/i.test(searchParams.p ?? "") ? (searchParams.p as string) : "";
+  if (pedida && !pubs.some((x) => x.id === pedida)) {
+    const { data: ex } = await sb.from("publicaciones").select("*").eq("id", pedida).maybeSingle();
+    if (ex) pubs = [ex as Pub, ...pubs];
+  }
   const nFijadas = fijadas.length;
   let nReportes = 0;
   if (perm.admin) {
@@ -145,7 +151,7 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
             respuestas={
               <>
                 {rs.map((c) => (
-                  <div key={c.id} className="resp">
+                  <div key={c.id} id={"c" + c.id} className="resp">
                     <span className="av2 s">{avatar(c.user_id, c.autor)}</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <b>{c.autor}</b> <small className="mu">{cuando(c.created_at)}</small>{c.util && <span className="pill pos" style={{ marginLeft: 8 }}>✓ Respuesta útil</span>}

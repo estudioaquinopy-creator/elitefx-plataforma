@@ -826,3 +826,6 @@ button.chip{cursor:pointer;font-family:inherit;line-height:1.2}
 /* Alineación: los <label> globales traen margen inferior de 14 px; en barras de herramientas desalineaban botones y selectores */
 .comp-f label,.selimg label,.resf-f label{margin-bottom:0}
 .comp-f .selimg{align-self:center}
+
+/* Respuesta señalada desde la revisión del ranking */
+.resp.resp-dest{outline:2px solid #19c97a;outline-offset:2px;box-shadow:0 0 0 6px rgba(25,201,122,.14)}
