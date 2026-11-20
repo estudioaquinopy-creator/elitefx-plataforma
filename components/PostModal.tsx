@@ -64,8 +64,8 @@ export default function PostModal({ id, vista, detalle, extras, respuestas, nl, 
           {boton}
           <span className="mu">💬 {nc} {nc === 1 ? "respuesta" : "respuestas"}</span>
           {err && <small className="lkerr">{err}</small>}
-          {extras}
         </div>
+        <div className="acc-x">{extras}</div>
         {respuestas}
       </dialog>
     </>

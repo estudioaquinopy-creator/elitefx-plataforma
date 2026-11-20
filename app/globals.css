@@ -829,3 +829,10 @@ button.chip{cursor:pointer;font-family:inherit;line-height:1.2}
 
 /* Respuesta señalada desde la revisión del ranking */
 .resp.resp-dest{outline:2px solid #19c97a;outline-offset:2px;box-shadow:0 0 0 6px rgba(25,201,122,.14)}
+
+/* Acciones de la publicación abierta (fijar, editar, reportar, eliminar): en su propia fila, ajustadas al ancho del teléfono */
+.pm .acc{flex-wrap:wrap;gap:8px 16px;margin-bottom:0}
+.pm .acc-x{display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;margin:0 0 12px;padding:6px 0 0}
+.pm .acc-x:empty{display:none}
+.pm .acc-x form{margin:0!important}
+.pm .acc-x .lk{font-size:13px;line-height:1.3;white-space:nowrap;padding:6px 0}
