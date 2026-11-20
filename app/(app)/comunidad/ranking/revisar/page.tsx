@@ -110,7 +110,7 @@ export default async function Revisar({ searchParams }: { searchParams: { u?: st
     }
     items.push({ key: "p" + p.id, tipo: "pub", at: p.created_at, dia, pts, nota, post: p, likesSuman: likesPts.get(p.id) ?? 0, likesTotal: likesTot.get(p.id) ?? 0 });
   }
-  const topIds = new Set(tabla.slice(0, 5).map((x) => x.user_id));
+  const topIds = new Set(tabla.slice(0, 3).map((x) => x.user_id));
   const nResp = new Map<string, number>(); // día -> respuestas puntuables ya vistas
   for (const c of coms) {
     const dia = diaDe(c.created_at);
@@ -129,7 +129,7 @@ export default async function Revisar({ searchParams }: { searchParams: { u?: st
     if (c.util) {
       if (d && d.user_id === u) utilNota = "Marcada útil, pero es su propia publicación: no suma";
       else if (primeraUtil.get(c.post_id) !== c.id) utilNota = "Útil que no suma: solo cuenta 1 útil por publicación y persona";
-      else if (d && topIds.has(d.user_id) && topIds.has(u)) utilNota = "Útil que no suma: quien preguntó también está en el Top 5";
+      else if (d && topIds.has(d.user_id) && topIds.has(u)) utilNota = "Útil que no suma: quien preguntó también está en el Top 3";
     }
     const util = c.util && !utilNota;
     items.push({ key: "c" + c.id, tipo: "resp", at: c.created_at, dia, pts, nota, com: c, util, utilNota });
