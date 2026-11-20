@@ -55,6 +55,7 @@ export default async function Sala() {
       <Link href="/comunidad" className="back">← Comunidad</Link>
       <h1>Chat en vivo</h1>
       <p className="sub">Chat en tiempo real para los miembros VIP: escribe, comparte tus gráficos y mira lo que opera la comunidad. Abre todos los días de {SALA_DESDE} a {SALA_HASTA} (hora de Paraguay) y los mensajes se borran a las {SALA_HORAS_HISTORIAL} horas. Contenido educativo, no es recomendación de inversión.</p>
+      <p className="mu" style={{ margin: "0 0 12px", fontSize: 13 }}>🚫 Regla: está prohibido usar inteligencia artificial para escribir tus mensajes. Escribe tú mismo.</p>
       {faltaMigracion
         ? <section className="box"><p className="mu">La sala todavía no está activada.</p></section>
         : <SalaChat yo={perfil.id} esAdmin={perm.admin} inicial={inicial} reaccionesIni={reacciones} bloqueado={bloqueado} />}
