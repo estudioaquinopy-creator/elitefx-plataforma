@@ -109,8 +109,8 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
         const cabecera = (
           <div className="post-h">
             <span className="av2">{avatar(p.user_id, p.autor)}</span>
-            <div><b>{p.autor}</b><small className="mu" style={{ display: "block" }}>{cuando(p.created_at)}{p.editado_at ? " · editado" : ""}</small></div>
-            {p.fijada_at && <span className="pill fijada" style={{ marginLeft: "auto" }}>📌 Importante</span>}
+            <div className="post-n"><b>{p.autor}</b><small className="mu" style={{ display: "block" }}>{cuando(p.created_at)}{p.editado_at ? " · editado" : ""}</small></div>
+            {p.fijada_at && <span className="pill fijada fijada-i" style={{ marginLeft: "auto" }} title="Importante" aria-label="Importante">📌</span>}
             <span className={"pill c-" + p.canal} style={{ marginLeft: p.fijada_at ? 6 : "auto" }}>{CANALES[p.canal]}</span>
           </div>
         );
