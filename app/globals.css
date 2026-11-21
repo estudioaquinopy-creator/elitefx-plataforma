@@ -850,3 +850,19 @@ button.chip{cursor:pointer;font-family:inherit;line-height:1.2}
 .post-h .pill{flex:none;white-space:nowrap}
 .post-h .pill.fijada-i{padding:4px 8px}
 .pvbox .post-h{flex-wrap:nowrap}
+
+/* Aparición escalonada: al cargar una pantalla, los bloques entran de uno en uno (suave, sin esperar a que todo esté listo) */
+@keyframes efx-in{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.main>*:not(dialog):not(script):not(style){animation:efx-in .5s cubic-bezier(.2,.7,.2,1) backwards}
+.main>*:nth-child(2){animation-delay:.06s}.main>*:nth-child(3){animation-delay:.12s}.main>*:nth-child(4){animation-delay:.18s}
+.main>*:nth-child(5){animation-delay:.24s}.main>*:nth-child(6){animation-delay:.30s}.main>*:nth-child(7){animation-delay:.36s}
+.main>*:nth-child(8){animation-delay:.42s}.main>*:nth-child(n+9){animation-delay:.48s}
+/* Listas: cada tarjeta, fila o curso entra con un pequeño retraso respecto al anterior */
+.pv,.crs,.ses,.step,.tarj,.rk-fila{animation:efx-in .45s cubic-bezier(.2,.7,.2,1) backwards}
+.pv:nth-child(2),.crs:nth-child(2),.ses:nth-child(2),.step:nth-child(2){animation-delay:.05s}
+.pv:nth-child(3),.crs:nth-child(3),.ses:nth-child(3),.step:nth-child(3){animation-delay:.10s}
+.pv:nth-child(4),.crs:nth-child(4),.ses:nth-child(4),.step:nth-child(4){animation-delay:.15s}
+.pv:nth-child(5),.crs:nth-child(5),.ses:nth-child(5),.step:nth-child(5){animation-delay:.20s}
+.pv:nth-child(6),.crs:nth-child(6),.ses:nth-child(6),.step:nth-child(6){animation-delay:.25s}
+.pv:nth-child(n+7),.crs:nth-child(n+7),.ses:nth-child(n+7),.step:nth-child(n+7){animation-delay:.30s}
+@media (prefers-reduced-motion:reduce){.main>*,.pv,.crs,.ses,.step,.tarj,.rk-fila{animation:none!important}}
