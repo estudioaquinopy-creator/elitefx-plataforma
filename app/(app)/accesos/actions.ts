@@ -5,7 +5,7 @@ import { rutaSegura } from "@/lib/seguridad";
 import { createClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
 import { clienteAdmin } from "@/lib/supabase/admin";
-import { hoyPY, perfilActual } from "@/lib/sesion";
+import { estadoMembresia, hoyPY, perfilActual } from "@/lib/sesion";
 import { aviso, fallo } from "@/lib/subida";
 import { registrar } from "@/lib/auditoria";
 import { validarClave, traducirErrorClave } from "@/lib/clave";
@@ -343,4 +343,24 @@ export async function codigoEnlaceAlumno(f: FormData) {
   await registrar("enlace_alumno", null, codigo ? "Nuevo enlace de registro para ex alumnos" : "Enlace de ex alumnos desactivado");
   revalidatePath("/accesos");
   aviso("/accesos", codigo ? "Listo: este es el nuevo enlace para ex alumnos (el anterior ya no sirve)." : "Enlace de ex alumnos desactivado.");
+}
+
+// Deja registrado que este administrador avisó por WhatsApp a la persona (membresía vencida o por vencer).
+// Se llama al tocar "Avisar por WhatsApp"; no redirige (el enlace de WhatsApp se abre aparte). Sin la migración 0075 no hace nada.
+export async function registrarAvisoWhatsApp(id: string): Promise<{ ok: boolean; error?: string }> {
+  const yo = await perfilActual();
+  if (yo.rol !== "admin") return { ok: false, error: "Solo el administrador puede hacer esto." };
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return { ok: false, error: "Persona no válida." };
+  const sb = createClient();
+  const { data: p } = await sb.from("perfiles").select("nombre, email, plan, vence, rol, es_alumno").eq("id", id).maybeSingle();
+  if (!p) return { ok: false, error: "No se encontró la persona." };
+  const st = estadoMembresia(p as Parameters<typeof estadoMembresia>[0]);
+  const { error } = await sb.from("avisos_membresia").insert({
+    user_id: id, admin_id: yo.id, admin_nombre: yo.nombre || yo.email || "", estado: st.clave, vence: p.vence ?? null,
+  });
+  if (error) return { ok: false, error: "No se pudo registrar el aviso (¿falta correr la migración 0075?)." };
+  await registrar("aviso_whatsapp", id, "Aviso por WhatsApp (" + st.clave + ", vence " + (p.vence ?? "sin fecha") + ")");
+  revalidatePath("/accesos");
+  revalidatePath("/accesos/" + id);
+  return { ok: true };
 }

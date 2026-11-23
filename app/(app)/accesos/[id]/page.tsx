@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { estadoMembresia, perfilActual } from "@/lib/sesion";
 import { clienteAdmin } from "@/lib/supabase/admin";
 import AnclarJournal from "@/components/AnclarJournal";
+import AvisarWhatsApp from "@/components/AvisarWhatsApp";
+import { enlaceWhatsApp, textoAvisoMembresia } from "@/lib/avisoMembresia";
 import { cambiarPlan, cambiarRol, eliminarPersona, enviarInvitacion, nuevaClave, fijarFecha, quitarCalendario, sumarCalendario, cambiarCorreo } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -45,11 +47,11 @@ export default async function Gestionar({ params, searchParams }: { params: { id
   const ultimaVista = Array.from(hechasP.values()).sort().pop();
 
   // Aviso por WhatsApp según el estado de la membresía.
-  const tel = String(p.telefono ?? "").replace(/\D/g, "");
-  const texto = st.clave === "vencido"
-    ? "Hola " + nombre + ", tu acceso al calendario de ELITE FX venció el " + (p.vence ? fmt(p.vence) : "") + ". ¿Quieres renovarlo?"
-    : "Hola " + nombre + ", tu acceso al calendario de ELITE FX vence el " + (p.vence ? fmt(p.vence) : "") + ". ¿Quieres renovarlo?";
-  const wa = tel ? "https://wa.me/" + tel + "?text=" + encodeURIComponent(texto) : "";
+  const wa = enlaceWhatsApp(p.telefono, textoAvisoMembresia(nombre, st.clave, p.vence));
+  // Historial de avisos por WhatsApp (migración 0075): quién avisó y cuándo.
+  const { data: avisosData } = await supabase.from("avisos_membresia").select("id, admin_nombre, estado, vence, created_at").eq("user_id", params.id).order("created_at", { ascending: false }).limit(10);
+  const avisos = (avisosData ?? []) as { id: string; admin_nombre: string; estado: string; vence: string | null; created_at: string }[];
+  const fechaAv = (d: string) => new Date(d).toLocaleString("es-PY", { timeZone: "America/Asuncion", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
   return (
     <>
@@ -110,7 +112,17 @@ export default async function Gestionar({ params, searchParams }: { params: { id
             <button className="btn g s" style={{ marginBottom: 14 }}>Fijar fecha</button>
           </form>
 
-          {wa ? <a className="btn g s" href={wa} target="_blank" rel="noopener noreferrer">Avisar por WhatsApp</a> : <p className="mu">Sin teléfono registrado para avisar por WhatsApp.</p>}
+          {wa ? <AvisarWhatsApp id={p.id} href={wa} /> : <p className="mu">Sin teléfono registrado para avisar por WhatsApp.</p>}
+          {avisos.length > 0 && (
+            <div style={{ marginTop: 10 }}>
+              <small className="mu" style={{ display: "block" }}>Avisos por WhatsApp registrados:</small>
+              {avisos.map((a) => (
+                <small key={a.id} className="mu" style={{ display: "block" }}>
+                  ✓ {fechaAv(a.created_at)} · {a.admin_nombre || "administrador"}{a.vence ? " · vencimiento " + fmt(a.vence) + (a.vence === p.vence ? "" : " (anterior)") : ""}
+                </small>
+              ))}
+            </div>
+          )}
         </section>
 
         <section className="box">

@@ -8,23 +8,26 @@ import { crearPersona } from "./actions";
 import { guardarAdminsAyuda } from "../comunidad/actions";
 import { leerAjustes } from "@/lib/ajustes";
 import AnclarJournal from "@/components/AnclarJournal";
+import AvisarWhatsApp from "@/components/AvisarWhatsApp";
+import { enlaceWhatsApp, textoAvisoMembresia } from "@/lib/avisoMembresia";
 
 export const dynamic = "force-dynamic";
 
-type Fila = { id: string; nombre: string; email: string; plan: string; vence: string | null; rol: string; es_alumno?: boolean };
+type Fila = { id: string; nombre: string; email: string; telefono?: string | null; plan: string; vence: string | null; rol: string; es_alumno?: boolean };
 const POR_PAGINA = 40;
 const PLAN_TXT: Record<string, string> = { gratis: "Gratuito", live_trading: "VIP", scanner: "VIP" };
 const CUENTAS = [["", "Todas"], ["pendiente", "Invitación pendiente"], ["sin", "Sin ingresar"], ["activa", "Activadas"]];
 const CUENTA_TXT: Record<string, string> = { activa: "Activada", pendiente: "Invitación pendiente", sin: "Sin ingresar" };
+const AVISOS = [["", "Todos"], ["sin", "Por avisar (vencidos y por vencer)"], ["avisados", "Ya avisados"]];
 const ESTADOS = [["", "Todos"], ["activo", "Activo"], ["porvencer", "Por vencer"], ["vencido", "Vencido"], ["gratis", "Gratis"], ["sin", "Sin calendario"]];
 
-export default async function Accesos({ searchParams }: { searchParams: { q?: string; e?: string; c?: string; p?: string; ok?: string; error?: string } }) {
+export default async function Accesos({ searchParams }: { searchParams: { q?: string; e?: string; c?: string; a?: string; p?: string; ok?: string; error?: string } }) {
   const perfil = await perfilActual();
   if (perfil.rol !== "admin") notFound();
   try { await createClient().rpc("cerrar_pruebas_vencidas"); } catch { /* migración 0039 pendiente */ }
-  let { data } = await createClient().from("perfiles").select("id, nombre, email, plan, vence, rol, es_alumno").order("nombre");
+  let { data } = await createClient().from("perfiles").select("id, nombre, email, telefono, plan, vence, rol, es_alumno").order("nombre");
   // Si aún no se corrió la migración 0041 (columna es_alumno), la lista igual se muestra.
-  if (!data) ({ data } = await createClient().from("perfiles").select("id, nombre, email, plan, vence, rol").order("nombre"));
+  if (!data) ({ data } = await createClient().from("perfiles").select("id, nombre, email, telefono, plan, vence, rol").order("nombre"));
   const todos = (data ?? []) as Fila[];
   // Estado de la cuenta (¿activó o solo tiene la invitación?) desde el sistema de acceso.
   const estadoCuenta: Record<string, string> = {};
@@ -42,17 +45,31 @@ export default async function Accesos({ searchParams }: { searchParams: { q?: st
   const { data: ancData } = await createClient().from("journals_anclados").select("alumno_id, created_at").eq("admin_id", perfil.id).order("created_at", { ascending: false });
   const anclados = ((ancData ?? []) as { alumno_id: string }[]).map((a) => todos.find((f) => f.id === a.alumno_id)).filter(Boolean) as Fila[];
   const cta = (f: Fila) => estadoCuenta[f.id] ?? "";
+  // Avisos por WhatsApp (migración 0075): cuenta el último aviso hecho para el vencimiento ACTUAL de cada persona; si renovó, vuelve a "sin avisar".
+  const { data: avData } = await createClient().from("avisos_membresia").select("user_id, vence, created_at, admin_nombre").order("created_at", { ascending: false }).limit(5000);
+  const porId = new Map(todos.map((x) => [x.id, x]));
+  const ultimoAviso = new Map<string, { created_at: string; admin_nombre: string }>();
+  for (const a of (avData ?? []) as { user_id: string; vence: string | null; created_at: string; admin_nombre: string }[]) {
+    const f = porId.get(a.user_id);
+    if (f && (a.vence ?? null) === (f.vence ?? null) && !ultimoAviso.has(a.user_id)) ultimoAviso.set(a.user_id, a);
+  }
+  const porAvisar = (f: Fila) => ["vencido", "porvencer"].includes(estadoMembresia(f).clave);
+  const fechaAviso = (d: string) => new Date(d).toLocaleString("es-PY", { timeZone: "America/Asuncion", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
   const norm = (s: string) => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
   const q = norm(searchParams.q ?? "");
   const e = searchParams.e ?? "";
   const c = searchParams.c ?? "";
-  const filtrados = todos.filter((f) => (!q || norm(f.nombre + " " + f.email).includes(q)) && (!e || estadoMembresia(f).clave === e) && (!c || cta(f) === c));
+  const av = searchParams.a ?? "";
+  const filtrados = todos.filter((f) => (!q || norm(f.nombre + " " + f.email).includes(q)) && (!e || estadoMembresia(f).clave === e) && (!c || cta(f) === c)
+    && (av === "sin" ? porAvisar(f) && !ultimoAviso.has(f.id) : av === "avisados" ? ultimoAviso.has(f.id) : true));
+  const sinAvisar = todos.filter((f) => porAvisar(f) && !ultimoAviso.has(f.id)).length;
+  const yaAvisados = todos.filter((f) => porAvisar(f) && ultimoAviso.has(f.id)).length;
   const pag = Math.max(1, Number(searchParams.p) || 1);
   const pagina = filtrados.slice((pag - 1) * POR_PAGINA, pag * POR_PAGINA);
   const total = Math.ceil(filtrados.length / POR_PAGINA);
   const cuenta = (k: string) => todos.filter((f) => estadoMembresia(f).clave === k).length;
   const clave = Array.from({ length: 10 }, () => "abcdefghjkmnpqrstuvwxyz23456789"[Math.floor(Math.random() * 31)]).join("");
-  const url = (p: number) => "/accesos?q=" + encodeURIComponent(searchParams.q ?? "") + "&e=" + e + "&c=" + c + "&p=" + p;
+  const url = (p: number) => "/accesos?q=" + encodeURIComponent(searchParams.q ?? "") + "&e=" + e + "&c=" + c + "&a=" + av + "&p=" + p;
 
   return (
     <>
@@ -63,6 +80,7 @@ export default async function Accesos({ searchParams }: { searchParams: { q?: st
         <div className="box"><span className="mu">Activos</span><b>{cuenta("activo")}</b></div>
         <div className="box"><span className="mu">Por vencer (7 días)</span><b>{cuenta("porvencer")}</b></div>
         <div className="box"><span className="mu">Vencidos</span><b>{cuenta("vencido")}</b></div>
+        <div className="box"><span className="mu">Sin avisar por WhatsApp</span><b>{sinAvisar}</b><small className="mu" style={{ display: "block" }}>{yaAvisados} ya avisados</small></div>
         {adm && <div className="box"><span className="mu">Sin activar la cuenta</span><b>{todos.filter((f) => cta(f) === "pendiente" || cta(f) === "sin").length}</b></div>}
       </div>
 
@@ -132,13 +150,16 @@ export default async function Accesos({ searchParams }: { searchParams: { q?: st
         <label>Estado
           <select name="e" defaultValue={e}>{ESTADOS.map(([k, n]) => <option key={k} value={k}>{n}</option>)}</select>
         </label>
+        <label>Aviso por WhatsApp
+          <select name="a" defaultValue={av}>{AVISOS.map(([k, n]) => <option key={k} value={k}>{n}</option>)}</select>
+        </label>
         {adm && (
           <label>Cuenta
             <select name="c" defaultValue={c}>{CUENTAS.map(([k, n]) => <option key={k} value={k}>{n}</option>)}</select>
           </label>
         )}
         <button className="btn s" style={{ marginBottom: 14 }}>Filtrar</button>
-        {(q || e || c) && <Link className="btn g s" style={{ marginBottom: 14 }} href="/accesos?limpiar=1">Limpiar filtro</Link>}
+        {(q || e || c || av) && <Link className="btn g s" style={{ marginBottom: 14 }} href="/accesos?limpiar=1">Limpiar filtro</Link>}
       </form>
 
       <section className="box">
@@ -153,6 +174,10 @@ export default async function Accesos({ searchParams }: { searchParams: { q?: st
               </div>
               {cta(f) && <span className={"pill " + (cta(f) === "activa" ? "st-activo" : "st-porvencer")}>{CUENTA_TXT[cta(f)]}</span>}
               <span className={"pill st-" + st.clave}>{st.texto}</span>
+              {porAvisar(f) && (ultimoAviso.has(f.id)
+                ? <span className="pill st-activo" title={"Avisó " + ultimoAviso.get(f.id)!.admin_nombre}>✓ Avisado {fechaAviso(ultimoAviso.get(f.id)!.created_at)}</span>
+                : <span className="pill st-porvencer">Sin avisar</span>)}
+              {porAvisar(f) && enlaceWhatsApp(f.telefono, "x") && <AvisarWhatsApp id={f.id} href={enlaceWhatsApp(f.telefono, textoAvisoMembresia(f.nombre || f.email, st.clave, f.vence))} texto="WhatsApp" />}
               <Link className="btn g s" href={"/accesos/" + f.id}>Gestionar</Link>
             </div>
           );

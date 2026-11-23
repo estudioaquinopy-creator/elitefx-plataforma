@@ -16,10 +16,10 @@ export default function RecordarFiltroAccesos() {
         router.replace("/accesos");
         return;
       }
-      const hayFiltro = ["q", "e", "c", "p"].some((k) => p.has(k));
+      const hayFiltro = ["q", "e", "c", "a", "p"].some((k) => p.has(k));
       if (hayFiltro) {
         const g = new URLSearchParams();
-        for (const k of ["q", "e", "c", "p"]) { const v = p.get(k); if (v) g.set(k, v); }
+        for (const k of ["q", "e", "c", "a", "p"]) { const v = p.get(k); if (v) g.set(k, v); }
         const s = g.toString();
         if (s) localStorage.setItem(CLAVE, s); else localStorage.removeItem(CLAVE);
         return;
