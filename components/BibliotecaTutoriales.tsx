@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { leerAjustes } from "@/lib/ajustes";
-import { miniatura } from "@/lib/miniatura";
+import { miniaturaVideo } from "@/lib/miniatura";
 import { embedUrl } from "@/lib/video";
 import Portada from "@/components/Portada";
 import { agregarTutorial, eliminarTutorial } from "@/app/(app)/tutoriales/actions";
@@ -15,7 +15,7 @@ export default async function BibliotecaTutoriales({ base, nombre, descripcion, 
   const todos = (data ?? []) as Tut[];
   const cats = Array.from(new Set(todos.map((t) => t.categoria)));
   const lista = c ? todos.filter((t) => t.categoria === c) : todos;
-  const minis = new Map(await Promise.all(lista.map(async (t) => [t.id, await miniatura(t.youtube_url)] as const)));
+  const minis = new Map(await Promise.all(lista.map(async (t) => [t.id, await miniaturaVideo(t.youtube_url)] as const)));
   const actual = todos.find((t) => t.id === v);
   const vid = actual ? embedUrl(actual.youtube_url, "&autoplay=1") : null;
   const lis = vista === "lista";
