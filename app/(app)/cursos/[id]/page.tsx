@@ -1,14 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { perfilActual } from "@/lib/sesion";
+import { perfilActual, permisos } from "@/lib/sesion";
 import { embedUrl } from "@/lib/video";
 import { bloqueosExamen, cursoSinExamen } from "@/lib/examen";
 import { alternarCompletada, completarBienvenida, editarCurso, eliminarCurso, eliminarLeccion, guardarLeccion, reordenarLecciones } from "../actions";
 import ListaLeccionesAdmin from "@/components/ListaLeccionesAdmin";
 import BibliotecaTutoriales from "@/components/BibliotecaTutoriales";
 import { esCursoTutoriales } from "@/lib/tutoriales";
-import DudasLeccion, { type Duda } from "@/components/DudasLeccion";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +25,7 @@ export default async function CursoPage({ params, searchParams }: { params: { id
   const { data: lecsRaw } = await supabase.from("lecciones").select("*").eq("curso_id", params.id).order("orden");
   const lecs = (lecsRaw ?? []) as Leccion[];
   const admin = perfil.rol === "admin";
+  const perm = await permisos(perfil);
   const { data: prog } = await supabase.from("progreso").select("leccion_id").eq("user_id", perfil.id);
   const hechas = new Set((prog ?? []).map((p: { leccion_id: string }) => p.leccion_id));
 
@@ -57,12 +57,6 @@ export default async function CursoPage({ params, searchParams }: { params: { id
 
   const actual = lecs.find((l) => l.id === searchParams.l) ?? lecs[0];
   const vid = actual ? embedUrl(actual.youtube_url) : null;
-  // Preguntas de la lección (aparte, para que la página no falle si aún no se corrió la migración 0050).
-  let dudas: Duda[] = []; let dudasFalta = false;
-  if (actual) {
-    const rd = await supabase.from("lecciones_comentarios").select("id, user_id, autor, cuerpo, parent_id, created_at").eq("leccion_id", actual.id).order("created_at", { ascending: true }).limit(200);
-    if (rd.error) dudasFalta = true; else dudas = (rd.data ?? []) as Duda[];
-  }
   const hecha = actual ? hechas.has(actual.id) : false;
   const editando = admin && searchParams.edit ? lecs.find((l) => l.id === searchParams.edit) : undefined;
   const matTxt = (m: Material[]) => m.map((x) => x.tipo + " | " + x.titulo + " | " + x.url).join("\n");
@@ -137,7 +131,12 @@ export default async function CursoPage({ params, searchParams }: { params: { id
                   <Link href={"?l=" + actual.id + "&edit=" + actual.id}>Editar esta lección</Link>
                 </p>
               )}
-              <DudasLeccion leccionId={actual.id} yo={perfil.id} educador={perfil.rol === "admin" && !perfil.vista} dudas={dudas} falta={dudasFalta && perfil.rol === "admin"} />
+              <div className="box" style={{ marginTop: 14 }}>
+                <b>¿Tienes una duda sobre esta lección?</b>
+                {perm.comunidad
+                  ? <p style={{ margin: "6px 0 0" }}><Link className="btn s" href={"/comunidad?leccion=" + actual.id}>💬 Preguntar en la comunidad</Link><small className="mu" style={{ display: "block", marginTop: 6 }}>Tu pregunta se publica en la Comunidad con la etiqueta de esta lección, para que el equipo y otros alumnos te respondan.</small></p>
+                  : <p className="mu" style={{ margin: "6px 0 0" }}>Las preguntas se hacen en la Comunidad, que es para miembros. <Link href="/ayuda">Quiero ser miembro</Link></p>}
+              </div>
             </>
           ) : (
             <p className="mu">Este curso aún no tiene lecciones.</p>

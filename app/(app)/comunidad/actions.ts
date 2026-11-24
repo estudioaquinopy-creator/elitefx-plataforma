@@ -23,6 +23,13 @@ export async function publicar(f: FormData) {
   if (sub.error) fallo("/comunidad", sub.error);
   const imagen = sub.urls[0] ?? null;
   const extras = sub.urls.slice(1);
+  // Duda sobre una lección: se comprueba que la lección exista (el campo viene del formulario, nunca se confía en él).
+  const idLeccion = String(f.get("leccion_id") ?? "");
+  let leccionId: string | null = null;
+  if (/^[0-9a-f-]{36}$/i.test(idLeccion)) {
+    const { data: lec } = await createClient().from("lecciones").select("id").eq("id", idLeccion).maybeSingle();
+    if (lec) leccionId = lec.id as string;
+  }
   if (!cuerpo && !imagen && !titulo) fallo("/comunidad", "Escribe un mensaje o sube una imagen.");
   // Evita duplicados: si se envió exactamente lo mismo hace menos de 2 minutos, no se vuelve a crear.
   const { data: rep } = await createClient().from("publicaciones").select("id").eq("user_id", perfil.id).eq("canal", canal).eq("titulo", titulo).eq("cuerpo", cuerpo).gte("created_at", new Date(Date.now() - 120000).toISOString()).limit(1);
@@ -32,8 +39,9 @@ export async function publicar(f: FormData) {
     autor: perfil.nombre || perfil.email.split("@")[0],
     canal, titulo, cuerpo, imagen_url: imagen,
     ...(extras.length ? { imagenes_extra: extras } : {}),
+    ...(leccionId ? { leccion_id: leccionId } : {}),
   });
-  if (error) fallo("/comunidad", error.message.includes("imagenes_extra") ? "Falta correr la migración 0070 en Supabase para publicar con más de una imagen." : "No se pudo publicar: " + error.message);
+  if (error) fallo("/comunidad", error.message.includes("imagenes_extra") ? "Falta correr la migración 0070 en Supabase para publicar con más de una imagen." : error.message.includes("leccion_id") ? "Falta correr la migración 0078 en Supabase para publicar una duda sobre una lección." : "No se pudo publicar: " + error.message);
   revalidatePath("/comunidad");
   revalidatePath("/", "layout");
   redirect("/comunidad");

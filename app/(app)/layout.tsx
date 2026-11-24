@@ -48,7 +48,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const ahora = Date.now();
   const limite = new Date(); limite.setDate(limite.getDate() + 7);
   const hace14 = new Date(ahora - 14 * 86400000).toISOString();
-  const hace7 = new Date(ahora - 7 * 86400000).toISOString();
   const [rNot, rVen, rFx, rCl, aj, rVisMias, rVisPend] = await Promise.all([
     supabase.from("notificaciones").select("*").or("user_id.is.null,user_id.eq." + perfil.id).order("created_at", { ascending: false }).limit(15),
     perfil.rol === "admin"
@@ -72,24 +71,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     const r2 = await supabase.from("notificaciones").select("*").order("created_at", { ascending: false }).limit(15);
     (rNot as { data: unknown }).data = r2.data;
   }
-  // Administrador: preguntas de lecciones sin responder (últimos 7 días).
-  let dudasSin = 0;
-  let dudasLista: Notif[] = [];
-  let leccionesSin: Set<string> | null = null; // lecciones con alguna pregunta sin responder (solo se calcula para el administrador)
-  if (perfil.rol === "admin" && !perfil.vista) {
-    const [rq, rr] = await Promise.all([
-      supabase.from("lecciones_comentarios").select("id, curso_id, leccion_id, autor, cuerpo, created_at").is("parent_id", null).gte("created_at", hace7).order("created_at", { ascending: false }).limit(100),
-      supabase.from("lecciones_comentarios").select("parent_id").not("parent_id", "is", null).gte("created_at", hace7).limit(300),
-    ]);
-    if (!rq.error && !rr.error) {
-      const resp = new Set((rr.data ?? []).map((x: { parent_id: string }) => x.parent_id));
-      const sin = (rq.data ?? []).filter((x: { id: string }) => !resp.has(x.id)) as { id: string; curso_id: string; leccion_id: string; autor: string; cuerpo: string; created_at: string }[];
-      dudasSin = sin.length;
-      leccionesSin = new Set(sin.map((x) => x.leccion_id));
-      // Una entrada por pregunta (las 5 más recientes), cada una lleva directo a esa pregunta.
-      dudasLista = sin.slice(0, 5).map((x) => ({ id: "duda-" + x.id, titulo: "Pregunta sin responder: " + (x.autor || "alumno"), cuerpo: x.cuerpo.length > 80 ? x.cuerpo.slice(0, 80) + "…" : x.cuerpo, enlace: "/cursos/" + x.curso_id + "?l=" + x.leccion_id + "#d-" + x.id, fecha: "", nueva: true }));
-    }
-  }
   const vistas = perfil.notif_leidas_at ? new Date(perfil.notif_leidas_at).getTime() : 0;
   const fmt = (d: string) => new Date(d).toLocaleDateString("es-PY");
   const notifs: Notif[] = ((rNot.data ?? []) as { id: string; titulo: string; cuerpo: string; enlace: string | null; created_at: string }[]).map((n) => ({
@@ -100,13 +81,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     fecha: fmt(n.created_at),
     nueva: new Date(n.created_at).getTime() > vistas,
   }));
-  // Administrador: el aviso "te mencionó en «lección»" ya no se muestra cuando la pregunta de esa lección fue respondida.
-  if (leccionesSin) {
-    for (let i = notifs.length - 1; i >= 0; i--) {
-      const m = /\?l=([^#&]+)#dudas/.exec(notifs[i].enlace ?? "");
-      if (m && notifs[i].titulo.includes("te mencionó en") && !leccionesSin.has(m[1])) notifs.splice(i, 1);
-    }
-  }
   const hoyIso = new Date().toISOString().slice(0, 10);
   // Membresías: una sola notificación con el número de vencidas (últimos 30 días) y otra con las que vencen en 7 días; al tocarlas abren la lista en Accesos.
   const venc = ((rVen.data ?? []) as { vence: string }[]);
@@ -187,8 +161,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     const nRep = rp.error ? 0 : rp.count ?? 0;
     if (nRep > 0) notifs.unshift({ id: "reportes", titulo: nRep + (nRep === 1 ? " reporte de la comunidad por revisar" : " reportes de la comunidad por revisar"), cuerpo: "Contenido marcado por los miembros · toca para revisarlo", enlace: "/comunidad/reportes", fecha: "", nueva: true });
   }
-  if (dudasSin > 5) notifs.unshift({ id: "dudas-mas", titulo: "Hay " + dudasSin + " preguntas de lecciones sin responder", cuerpo: "Se muestran las 5 más recientes", enlace: dudasLista[0]?.enlace ?? "/cursos", fecha: "", nueva: true });
-  notifs.unshift(...dudasLista);
   const estiloNuevo = aj.estilo_nuevo !== "0";
   // Iconos de línea del estilo nuevo (solo cambian los trazos, no las rutas ni los permisos).
   const ICONOS_NUEVOS: Record<string, string> = {

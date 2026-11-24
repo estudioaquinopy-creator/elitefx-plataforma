@@ -15,14 +15,14 @@ import { reportar, alternarFijada, editarPublicacion, borrarPublicacion, publica
 
 export const dynamic = "force-dynamic";
 
-type Pub = { id: string; user_id: string; autor: string; canal: string; titulo: string; cuerpo: string; imagen_url: string | null; imagenes_extra?: string[] | null; created_at: string; editado_at?: string | null; fijada_at?: string | null };
+type Pub = { id: string; user_id: string; autor: string; canal: string; titulo: string; cuerpo: string; imagen_url: string | null; imagenes_extra?: string[] | null; created_at: string; editado_at?: string | null; fijada_at?: string | null; leccion_id?: string | null };
 type Com = { id: string; post_id: string; user_id: string; autor: string; cuerpo: string; imagen_url?: string | null; imagenes_extra?: string[] | null; created_at: string; util?: boolean };
 const CANALES: Record<string, string> = { anuncios: "Anuncios", preguntas: "Preguntas generales", resultados: "Resultados" };
 const cuando = (iso: string) => new Date(iso).toLocaleString("es-PY", { timeZone: "America/Asuncion", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
 const imgsDe = (x: { imagen_url?: string | null; imagenes_extra?: string[] | null }) => [x.imagen_url, ...(x.imagenes_extra ?? [])].filter((u): u is string => !!u);
 const ini = (n: string) => (n.trim()[0] || "?").toUpperCase();
 
-export default async function Comunidad({ searchParams }: { searchParams: { canal?: string; error?: string; p?: string; c?: string } }) {
+export default async function Comunidad({ searchParams }: { searchParams: { canal?: string; error?: string; p?: string; c?: string; leccion?: string } }) {
   const perfil = await perfilActual();
   const perm = await permisos(perfil);
   if (!perm.comunidad) {
@@ -74,6 +74,20 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
     for (const a of (av ?? []) as { id: string; avatar_url: string }[]) fotos.set(a.id, a.avatar_url);
   }
   const avatar = (uid: string, nombre: string) => (fotos.get(uid) ? <img src={fotos.get(uid)} alt="" loading="lazy" /> : ini(nombre));
+  // Lecciones a las que se refieren las publicaciones ("sobre la lección") y, si viene ?leccion=ID, la lección de la duda nueva.
+  const pideLec = /^[0-9a-f-]{36}$/i.test(searchParams.leccion ?? "") ? (searchParams.leccion as string) : "";
+  const idsLec = Array.from(new Set([...pubs.map((p) => p.leccion_id).filter((x): x is string => !!x), ...(pideLec ? [pideLec] : [])]));
+  const lecInfo = new Map<string, { titulo: string; curso_id: string; curso: string }>();
+  if (idsLec.length) {
+    const { data: ls } = await sb.from("lecciones").select("id, titulo, curso_id").in("id", idsLec);
+    const lecs = (ls ?? []) as { id: string; titulo: string; curso_id: string }[];
+    const cids = Array.from(new Set(lecs.map((l) => l.curso_id)));
+    const { data: cs } = cids.length ? await sb.from("cursos").select("id, nombre").in("id", cids) : { data: [] };
+    const cn = new Map(((cs ?? []) as { id: string; nombre: string }[]).map((c) => [c.id, c.nombre]));
+    for (const l of lecs) lecInfo.set(l.id, { titulo: l.titulo, curso_id: l.curso_id, curso: cn.get(l.curso_id) ?? "" });
+  }
+  const lecNueva = pideLec ? lecInfo.get(pideLec) : undefined;
+  const inicialDuda = perm.comunidad && lecNueva ? { titulo: ("Duda: " + lecNueva.titulo).slice(0, 140), leccionId: pideLec, etiqueta: (lecNueva.curso ? lecNueva.curso + " › " : "") + lecNueva.titulo } : undefined;
   const opciones = perm.admin ? ["anuncios", "preguntas", "resultados"] : ["preguntas", "resultados"];
   const volver = "/comunidad" + (filtro ? "?canal=" + filtro : "");
 
@@ -85,7 +99,7 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
 
       {perm.comunidad ? (
-        <Compositor action={publicar} iniciales={perfil.avatar_url ? <img src={perfil.avatar_url} alt="" /> : ini(perfil.nombre || perfil.email)} opciones={opciones.map((c) => ({ value: c, label: CANALES[c] }))} />
+        <Compositor action={publicar} iniciales={perfil.avatar_url ? <img src={perfil.avatar_url} alt="" /> : ini(perfil.nombre || perfil.email)} opciones={opciones.map((c) => ({ value: c, label: CANALES[c] }))} inicial={inicialDuda} />
       ) : (
         <section className="box">
           <div className="tag">Modo lectura</div>
@@ -105,6 +119,7 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
         const mio = likes.some((l) => l.post_id === p.id && l.user_id === perfil.id);
         const rs = coms.filter((c) => c.post_id === p.id);
         const imgs = imgsDe(p);
+        const lec = p.leccion_id ? lecInfo.get(p.leccion_id) : undefined;
         const cabecera = (
           <div className="post-h">
             <span className="av2">{avatar(p.user_id, p.autor)}</span>
@@ -119,6 +134,7 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
             <div className="pv-in">
               <div className="pv-t">
                 {p.titulo && <b className="pv-ti">{p.titulo}</b>}
+                {lec && <small className="mu" style={{ display: "block" }}>📚 {lec.curso ? lec.curso + " › " : ""}{lec.titulo}</small>}
                 {p.cuerpo && <p className="pv-tx"><TextoMenciones texto={p.cuerpo} /></p>}
               </div>
               {imgs.length > 0 && <span className="pv-imgw"><img className="pv-img" src={imgs[0]} alt="" loading="lazy" />{imgs.length > 1 && <span className="pv-mas">+{imgs.length - 1}</span>}</span>}
@@ -132,6 +148,7 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
               <div className="post2">
                 {cabecera}
                 {p.titulo && <h2 style={{ margin: "4px 0 6px" }}>{p.titulo}</h2>}
+                {lec && p.leccion_id && <p style={{ margin: "0 0 6px" }}><Link className="pill" href={"/cursos/" + lec.curso_id + "?l=" + p.leccion_id}>📚 Sobre la lección: {lec.curso ? lec.curso + " › " : ""}{lec.titulo}</Link></p>}
                 {p.cuerpo && <p style={{ whiteSpace: "pre-wrap", margin: "6px 0 0" }}><TextoMenciones texto={p.cuerpo} /></p>}
                 {imgs.length === 1 && <ImagenZoom className="pimg" src={imgs[0]} alt="Imagen de la publicación" />}
                 {imgs.length > 1 && <div className="pgal">{imgs.map((u, i) => <ImagenZoom key={u} className="pimg" src={u} alt={"Imagen " + (i + 1) + " de la publicación"} />)}</div>}
