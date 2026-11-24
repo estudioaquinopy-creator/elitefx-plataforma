@@ -12,6 +12,8 @@ export const dynamic = "force-dynamic";
 type Aliado = { id: string; tipo: string; titulo: string; descripcion: string; url: string; boton: string; tutorial_url: string };
 const TIPOS = ["Broker", "Tarjeta", "Fondeo", "Otro"];
 // Broker prioritario: Valor Markets (misma familia que Liquid Brokers). Se detecta por el título; sin migración.
+const VALOR_URL = "https://my.valormarkets.com/auth/register?partner_code=6357476";
+const VALOR_DESC = "Valor Markets, de la misma familia que Liquid Brokers, llega con una ventaja nueva: la cuenta PAM.";
 const esPrioritario = (a: { titulo: string }) => /valor/i.test(a.titulo);
 const PAM_PUNTOS = [
   { t: "Tú aportas", d: "Tu capital queda en tu cuenta, a tu nombre." },
@@ -47,8 +49,10 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
   const { data } = await createClient().from("aliados").select("*").order("orden").order("created_at");
   const todos = (data ?? []) as Aliado[];
   // El prioritario va primero; el resto conserva su orden.
-  const aliados = [...todos.filter(esPrioritario), ...todos.filter((a) => !esPrioritario(a))];
+  // Si el admin aún no cargó Valor Markets, se muestra uno por defecto (al cargarlo en "+ Agregar broker" lo reemplaza).
   const hayPrioritario = todos.some(esPrioritario);
+  const porDefecto: Aliado[] = hayPrioritario ? [] : [{ id: "valor-defecto", tipo: "Broker", titulo: "Valor Markets", descripcion: VALOR_DESC, url: VALOR_URL, boton: "Abrir cuenta en Valor Markets", tutorial_url: "" }];
+  const aliados = [...porDefecto, ...todos.filter(esPrioritario), ...todos.filter((a) => !esPrioritario(a))];
   const { data: misLiq } = admin ? { data: null } : await createClient().from("liquid_cuentas").select("cuenta, estado, nota, reward, mes").eq("user_id", perfil.id).order("mes", { ascending: false });
   const todasLiq = (misLiq ?? []) as { cuenta: string; estado: string; nota: string; reward: number; mes: string }[];
   const liq = todasLiq.find((x) => x.mes === hoyPY().slice(0, 7)) ?? null;
@@ -78,9 +82,6 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
       {searchParams.ok && <p className="okmsg">{searchParams.ok}</p>}
 
-      {admin && !hayPrioritario && (
-        <p className="alerta">Aún no hay un broker prioritario. Usa "+ Agregar broker" con el título <b>Valor Markets</b>, su enlace de registro y una descripción: aparecerá primero con la etiqueta "Prioritario" y el cuadro de la cuenta PAM.</p>
-      )}
       {admin && (
         <>
           <details className="box adm">
@@ -106,7 +107,7 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
             const prio = esPrioritario(a);
             return (
               <section key={a.id} className="box dest">
-                <div className="hd"><h2>{a.titulo}</h2><span className="pill rec">{prio ? "★ Prioritario" : "★ Recomendado"}</span></div>
+                <div className="hd"><h2>{prio && /valor/i.test(a.titulo) ? <img src="/valor-logo.png" alt={a.titulo} style={{ height: 34, width: "auto", background: "#fff", borderRadius: 8, padding: "4px 10px", verticalAlign: "middle" }} /> : a.titulo}</h2><span className="pill rec">{prio ? "★ Prioritario" : "★ Recomendado"}</span></div>
                 <p className="mu">{a.descripcion}</p>
                 {prio && (
                   <div style={{ margin: "12px 0 16px", padding: 14, border: "1px solid var(--ac, #22c55e)", borderRadius: 12 }}>
@@ -138,7 +139,7 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
                     <div className="vid" style={{ marginTop: 10 }}><iframe src={"https://www.youtube-nocookie.com/embed/" + vid + "?rel=0"} title={"Tutorial de " + a.titulo} allowFullScreen /></div>
                   </div>
                 )}
-                {admin && (
+                {admin && a.id !== "valor-defecto" && (
                   <details className="adm" style={{ marginTop: 12 }}>
                     <summary>Editar</summary>
                     <form action={guardarAliado} className="fm">
