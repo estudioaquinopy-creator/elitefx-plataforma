@@ -142,14 +142,23 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
           {aj.aliados_legal && <p className="note" style={{ lineHeight: 1.55 }}>{aj.aliados_legal}</p>}
         </div>
         <div>
+        <section className="box">
+          <div className="hd"><h2>Tus primeros pasos</h2></div>
+          {["Abre y verifica tu cuenta con nuestro enlace", "Realiza tu primer depósito", "Empieza a operar con la fórmula"].map((t, i) => (
+            <div key={i} className="ses" style={{ flexWrap: "nowrap", alignItems: "center" }}><div className="dt" style={{ flexShrink: 0 }}>{i + 1}</div><div style={{ flex: 1, minWidth: 0 }}><b>{t}</b></div></div>
+          ))}
+        </section>
         {!admin && (
           <section className="box">
             <div className="hd"><h2>Registra tu cuenta de Liquid</h2>{liq && <span className={"pill " + (liq.estado === "aprobado" ? "ok" : "")}>{liq.estado === "aprobado" ? "✓ Confirmada" : liq.estado === "rechazado" ? "Rechazada" : "⏳ Pendiente"}</span>}</div>
-            <p className="mu">Escribe el número de tu cuenta de trading de Liquid (ej. 108451).{!esGratis && <> Sumas <b>{ptsLiq} puntos</b> en el ranking al confirmarse.</>} Solo una cuenta por mes.</p>
+            <p className="mu">Si abriste tu cuenta con nuestro enlace, escribe aquí el número de tu cuenta de trading de Liquid (el que ves en tu cuenta, no tu correo; por ejemplo 108451). {esGratis
+                ? <>Así confirmamos que eres cliente nuestro.</>
+                : <>Si eres cliente nuestro, sumas <b>{ptsLiq} puntos</b> en el ranking mensual (solo para miembros VIP) cuando confirmemos que hiciste un <b>depósito</b> o que ya <b>operas en cuenta real</b>.</>}</p>
             {bonoHasta && <p className="okmsg">Tu calendario VIP está activo hasta el <b>{bonoHasta}</b>.</p>}
+            <p className="mu"><b>Solo puedes registrar una cuenta de trading por mes.</b></p>
             {liq?.estado === "aprobado" ? (
               <>
-                <p className="okmsg">Tu cuenta <b>{liq.cuenta}</b> fue confirmada. ¡Gracias!</p>
+                <p className="okmsg">Tu cuenta <b>{liq.cuenta}</b> fue confirmada. ¡Gracias!{!esGratis ? " Tus puntos ya están confirmados." : ""}</p>
                               </>
             ) : (
               <form action={enviarLiquid} className="fm">
@@ -157,7 +166,8 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
                 {liq?.estado === "pendiente" && (
                   <div className="alerta" style={{ borderColor: "var(--ac)" }}>
                     <b>⏳ Pendiente de confirmación</b> · cuenta <b>{liq.cuenta}</b>
-                    <div className="mu" style={{ marginTop: 4 }}>Puede tardar hasta 24 horas en confirmarse.</div>
+                    <div className="mu" style={{ marginTop: 4 }}>Comparamos tu cuenta con la lista de clientes de Liquid, que se actualiza cada día: puede tardar en promedio <b>24 horas</b> en confirmarse.</div>
+                    <div className="mu" style={{ marginTop: 4 }}>Si te equivocaste, puedes enviarla otra vez (sigue contando como tu cuenta de este mes).</div>
                   </div>
                 )}
                 <label>Número de tu cuenta de trading de Liquid<input name="cuenta" defaultValue={liq?.estado === "rechazado" ? liq.cuenta : ""} maxLength={30} required placeholder="Ej.: 108451" /></label>
