@@ -11,6 +11,13 @@ export const dynamic = "force-dynamic";
 
 type Aliado = { id: string; tipo: string; titulo: string; descripcion: string; url: string; boton: string; tutorial_url: string };
 const TIPOS = ["Broker", "Tarjeta", "Fondeo", "Otro"];
+// Broker prioritario: Valor Markets (misma familia que Liquid Brokers). Se detecta por el título; sin migración.
+const esPrioritario = (a: { titulo: string }) => /valor/i.test(a.titulo);
+const PAM_PUNTOS = [
+  { t: "Tú aportas", d: "Tu capital queda en tu cuenta, a tu nombre." },
+  { t: "ELITE FX opera", d: "Nuestro equipo gestiona la operativa del fondo común." },
+  { t: "Resultado proporcional", d: "Ganancias o pérdidas según tu parte del total." },
+];
 
 function Campos({ a }: { a?: Aliado }) {
   return (
@@ -38,7 +45,10 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
   const admin = perfil.rol === "admin";
   const aj = await leerAjustes();
   const { data } = await createClient().from("aliados").select("*").order("orden").order("created_at");
-  const aliados = (data ?? []) as Aliado[];
+  const todos = (data ?? []) as Aliado[];
+  // El prioritario va primero; el resto conserva su orden.
+  const aliados = [...todos.filter(esPrioritario), ...todos.filter((a) => !esPrioritario(a))];
+  const hayPrioritario = todos.some(esPrioritario);
   const { data: misLiq } = admin ? { data: null } : await createClient().from("liquid_cuentas").select("cuenta, estado, nota, reward, mes").eq("user_id", perfil.id).order("mes", { ascending: false });
   const todasLiq = (misLiq ?? []) as { cuenta: string; estado: string; nota: string; reward: number; mes: string }[];
   const liq = todasLiq.find((x) => x.mes === hoyPY().slice(0, 7)) ?? null;
@@ -64,10 +74,13 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
   return (
     <>
       <h1>Broker recomendado</h1>
-      <p className="sub">Abre tu cuenta con Liquid, nuestro broker recomendado, y empieza a operar con la fórmula.</p>
+      <p className="sub">Abre tu cuenta con Valor Markets, nuestro broker prioritario, o con Liquid Brokers (misma familia): puedes tener los dos.</p>
       {searchParams.error && <p className="alerta">{searchParams.error}</p>}
       {searchParams.ok && <p className="okmsg">{searchParams.ok}</p>}
 
+      {admin && !hayPrioritario && (
+        <p className="alerta">Aún no hay un broker prioritario. Usa "+ Agregar broker" con el título <b>Valor Markets</b>, su enlace de registro y una descripción: aparecerá primero con la etiqueta "Prioritario" y el cuadro de la cuenta PAM.</p>
+      )}
       {admin && (
         <>
           <details className="box adm">
@@ -90,10 +103,22 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
           {aliados.length === 0 && <section className="box"><p className="mu">Aún no hay un broker cargado.</p></section>}
           {aliados.map((a) => {
             const vid = youtubeId(a.tutorial_url);
+            const prio = esPrioritario(a);
             return (
               <section key={a.id} className="box dest">
-                <div className="hd"><h2>{a.titulo}</h2><span className="pill rec">★ Recomendado</span></div>
+                <div className="hd"><h2>{a.titulo}</h2><span className="pill rec">{prio ? "★ Prioritario" : "★ Recomendado"}</span></div>
                 <p className="mu">{a.descripcion}</p>
+                {prio && (
+                  <div style={{ margin: "12px 0 16px", padding: 14, border: "1px solid var(--ac, #22c55e)", borderRadius: 12 }}>
+                    <div className="tag">NUEVO · Cuenta PAM administrada por ELITE FX</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10, marginTop: 10 }}>
+                      {PAM_PUNTOS.map((x) => (
+                        <div key={x.t}><b>{x.t}</b><small className="mu" style={{ display: "block", marginTop: 2 }}>{x.d}</small></div>
+                      ))}
+                    </div>
+                    <small className="mu" style={{ display: "block", marginTop: 10 }}>No hace falta dejar Liquid: puedes tener los dos.</small>
+                  </div>
+                )}
                 {a.url ? <a className="btn sd" href={a.url} target="_blank" rel="noopener noreferrer">{a.boton || "Abrir cuenta"}</a> : <p className="mu">Enlace pendiente.</p>}
                 {a.tipo === "Broker" && (
                   <div style={{ marginTop: 16 }}>
