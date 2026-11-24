@@ -34,14 +34,16 @@ export async function publicar(f: FormData) {
   // Evita duplicados: si se envió exactamente lo mismo hace menos de 2 minutos, no se vuelve a crear.
   const { data: rep } = await createClient().from("publicaciones").select("id").eq("user_id", perfil.id).eq("canal", canal).eq("titulo", titulo).eq("cuerpo", cuerpo).gte("created_at", new Date(Date.now() - 120000).toISOString()).limit(1);
   if (rep && rep.length) redirect("/comunidad");
-  const { error } = await createClient().from("publicaciones").insert({
+  const fila = {
     user_id: perfil.id,
     autor: perfil.nombre || perfil.email.split("@")[0],
     canal, titulo, cuerpo, imagen_url: imagen,
     ...(extras.length ? { imagenes_extra: extras } : {}),
-    ...(leccionId ? { leccion_id: leccionId } : {}),
-  });
-  if (error) fallo("/comunidad", error.message.includes("imagenes_extra") ? "Falta correr la migración 0070 en Supabase para publicar con más de una imagen." : error.message.includes("leccion_id") ? "Falta correr la migración 0078 en Supabase para publicar una duda sobre una lección." : "No se pudo publicar: " + error.message);
+  };
+  let { error } = await createClient().from("publicaciones").insert(leccionId ? { ...fila, leccion_id: leccionId } : fila);
+  // Si aún no se corrió la migración 0078 (columna leccion_id), la duda se publica igual, solo sin la etiqueta de la lección (el título ya dice de cuál es).
+  if (error && leccionId && error.message.includes("leccion_id")) ({ error } = await createClient().from("publicaciones").insert(fila));
+  if (error) fallo("/comunidad", error.message.includes("imagenes_extra") ? "Falta correr la migración 0070 en Supabase para publicar con más de una imagen." : "No se pudo publicar: " + error.message);
   revalidatePath("/comunidad");
   revalidatePath("/", "layout");
   redirect("/comunidad");
