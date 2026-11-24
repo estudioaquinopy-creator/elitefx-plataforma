@@ -14,6 +14,14 @@ const TIPOS = ["Broker", "Tarjeta", "Fondeo", "Otro"];
 // Broker prioritario: Valor Markets (misma familia que Liquid Brokers). Se detecta por el título; sin migración.
 const VALOR_URL = "https://my.valormarkets.com/auth/register?partner_code=6357476";
 const VALOR_DESC = "Nuestro broker prioritario.";
+// Texto corto para la tarjeta (el completo sigue en "Editar").
+const corto = (t: string, n = 150) => {
+  const x = (t || "").trim();
+  if (x.length <= n) return x;
+  const dentro = x.slice(0, n);
+  const punto = Math.max(dentro.lastIndexOf(". "), dentro.lastIndexOf(".\n"));
+  return punto > 40 ? dentro.slice(0, punto + 1) : dentro.replace(/\s+\S*$/, "") + "…";
+};
 const esPrioritario = (a: { titulo: string }) => /valor/i.test(a.titulo);
 
 function Campos({ a }: { a?: Aliado }) {
@@ -103,7 +111,7 @@ export default async function Aliados({ searchParams }: { searchParams: { error?
             return (
               <section key={a.id} className="box dest">
                 <div className="hd"><h2>{prio && /valor/i.test(a.titulo) ? <img src="/valor-logo.png" alt={a.titulo} style={{ height: 34, width: "auto", background: "#fff", borderRadius: 8, padding: "4px 10px", verticalAlign: "middle" }} /> : a.titulo}</h2><span className="pill rec">{prio ? "★ Prioritario" : "★ Recomendado"}</span></div>
-                <p className="mu">{a.descripcion}</p>
+                <p className="mu">{corto(a.descripcion)}</p>
                 {a.url ? <a className="btn sd" href={a.url} target="_blank" rel="noopener noreferrer">{a.boton || "Abrir cuenta"}</a> : <p className="mu">Enlace pendiente.</p>}
                 {a.tipo === "Broker" && (
                   <div style={{ marginTop: 16 }}>

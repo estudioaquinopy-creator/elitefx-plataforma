@@ -170,9 +170,9 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
           </section>
 
           <section className="box">
-            <div className="hd"><h2>Broker recomendado</h2></div>
-            <p className="mu">Abre tu cuenta con Liquid, nuestro broker recomendado. Es con el que trabajamos y el que usamos en las clases, así que todo lo que aprendes se aplica igual en tu cuenta. Si la abres desde aquí, además te acompañamos con soporte personalizado.</p>
-            <Link className="btn bl s" href="/aliados">Abrir mi cuenta</Link>
+            <div className="hd"><h2>Nuestros brokers</h2></div>
+            <p className="mu">Trabajamos con dos brokers: <b>Valor Markets</b> (prioritario) y <b>Liquid</b> (recomendado). Puedes abrir tu cuenta con cualquiera de los dos, o con ambos, y te acompañamos con soporte personalizado.</p>
+            <Link className="btn bl s" href="/aliados">Ver brokers</Link>
           </section>
         </div>
 
