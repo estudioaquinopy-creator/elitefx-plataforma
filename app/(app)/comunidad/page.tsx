@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { clienteAdmin } from "@/lib/supabase/admin";
 import { perfilActual, permisos } from "@/lib/sesion";
 import CajaTexto from "@/components/CajaTexto";
 import Compositor from "@/components/Compositor";
@@ -88,6 +89,13 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
   }
   const lecNueva = pideLec ? lecInfo.get(pideLec) : undefined;
   const inicialDuda = perm.comunidad && lecNueva ? { titulo: ("Duda: " + lecNueva.titulo).slice(0, 140), leccionId: pideLec, etiqueta: (lecNueva.curso ? lecNueva.curso + " › " : "") + lecNueva.titulo } : undefined;
+  // Quiénes son administradores (solo sus enlaces se resaltan): se leen con la clave de servicio, solo los ids. Sin ella, al menos las propias.
+  const adminIds = new Set<string>(perm.admin ? [perfil.id] : []);
+  const ca = clienteAdmin();
+  if (ca) {
+    const { data: ads } = await ca.from("perfiles").select("id").eq("rol", "admin");
+    for (const a of (ads ?? []) as { id: string }[]) adminIds.add(a.id);
+  }
   const opciones = perm.admin ? ["anuncios", "preguntas", "resultados"] : ["preguntas", "resultados"];
   const volver = "/comunidad" + (filtro ? "?canal=" + filtro : "");
 
@@ -135,7 +143,7 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
               <div className="pv-t">
                 {p.titulo && <b className="pv-ti">{p.titulo}</b>}
                 {lec && <small className="mu" style={{ display: "block" }}>📚 {lec.curso ? lec.curso + " › " : ""}{lec.titulo}</small>}
-                {p.cuerpo && <p className="pv-tx"><TextoMenciones texto={p.cuerpo} /></p>}
+                {p.cuerpo && <p className="pv-tx"><TextoMenciones texto={p.cuerpo} enlaces={adminIds.has(p.user_id) ? "resaltar" : undefined} /></p>}
               </div>
               {imgs.length > 0 && <span className="pv-imgw"><img className="pv-img" src={imgs[0]} alt="" loading="lazy" />{imgs.length > 1 && <span className="pv-mas">+{imgs.length - 1}</span>}</span>}
             </div>
@@ -149,7 +157,7 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
                 {cabecera}
                 {p.titulo && <h2 style={{ margin: "4px 0 6px" }}>{p.titulo}</h2>}
                 {lec && p.leccion_id && <p style={{ margin: "0 0 6px" }}><Link className="pill" href={"/cursos/" + lec.curso_id + "?l=" + p.leccion_id}>📚 Sobre la lección: {lec.curso ? lec.curso + " › " : ""}{lec.titulo}</Link></p>}
-                {p.cuerpo && <p style={{ whiteSpace: "pre-wrap", margin: "6px 0 0" }}><TextoMenciones texto={p.cuerpo} /></p>}
+                {p.cuerpo && <p style={{ whiteSpace: "pre-wrap", margin: "6px 0 0" }}><TextoMenciones texto={p.cuerpo} enlaces={adminIds.has(p.user_id) ? "activo" : undefined} /></p>}
                 {imgs.length === 1 && <ImagenZoom className="pimg" src={imgs[0]} alt="Imagen de la publicación" />}
                 {imgs.length > 1 && <div className="pgal">{imgs.map((u, i) => <ImagenZoom key={u} className="pimg" src={u} alt={"Imagen " + (i + 1) + " de la publicación"} />)}</div>}
               </div>
@@ -171,7 +179,7 @@ export default async function Comunidad({ searchParams }: { searchParams: { cana
                     <span className="av2 s">{avatar(c.user_id, c.autor)}</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <b>{c.autor}</b> <small className="mu">{cuando(c.created_at)}</small>{c.util && <span className="pill pos" style={{ marginLeft: 8 }}>✓ Respuesta útil</span>}
-                      {c.cuerpo && <p style={{ whiteSpace: "pre-wrap", margin: "2px 0 0" }}><TextoMenciones texto={c.cuerpo} /></p>}
+                      {c.cuerpo && <p style={{ whiteSpace: "pre-wrap", margin: "2px 0 0" }}><TextoMenciones texto={c.cuerpo} enlaces={adminIds.has(c.user_id) ? "activo" : undefined} /></p>}
                       {imgsDe(c).length > 0 && <div className="pgal rgal">{imgsDe(c).map((u, i) => <ImagenZoom key={u} className="pimg" src={u} alt={"Imagen " + (i + 1) + " de la respuesta"} />)}</div>}
                       <div className="resp-acc">
                       {(perm.admin || p.user_id === perfil.id) && c.user_id !== p.user_id && (
