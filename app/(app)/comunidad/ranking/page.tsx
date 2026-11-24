@@ -5,7 +5,7 @@ import { leerAjustes } from "@/lib/ajustes";
 import { guardarTextos } from "../../ajustes-actions";
 import { ajustarPuntos } from "../actions";
 import { referidosActivos, puntosReferidos, fechaReferidos, REFERIDOS_DESDE } from "@/lib/referidos";
-import { mesDeRanking, ultimoViernes, cierreISO, textoFecha, premiosRanking, puntosCertificado, puntosFoto, puntosLiquid, puntosLiquidReal, puntosChat, penalTop3, PENAL_DESDE } from "@/lib/ranking";
+import { mesDeRanking, ultimoViernes, cierreISO, textoFecha, premiosRanking, puntosCertificado, puntosFoto, puntosLiquid, puntosLiquidReal, penalTop3, PENAL_DESDE } from "@/lib/ranking";
 import CuentaRanking from "@/components/CuentaRanking";
 import { clienteAdmin } from "@/lib/supabase/admin";
 
@@ -36,7 +36,6 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
   const ptsLiqR = puntosLiquidReal(aj.ranking_pts_liquid_real);
   const refAct = referidosActivos(hoyPY(), aj, perfil.rol === "admin"); // los referidos se muestran desde el 9 de noviembre (antes, solo al administrador)
   const pr = puntosReferidos(aj);
-  const pch = puntosChat(aj.ranking_pts_chat, aj.ranking_chat_tope_dia);
   const fr = fechaReferidos(aj);
 
   const penal = penalTop3(aj.ranking_penal_top3);
@@ -138,8 +137,6 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
               <label>Referidos · puntos cuando el referido se activa<input name="ranking_pts_ref" type="number" min={0} max={999} step={1} defaultValue={pr.registro} /></label>
               <label>Referidos · puntos extra cuando pasa a VIP<input name="ranking_pts_ref_vip" type="number" min={0} max={999} step={1} defaultValue={pr.vip} /></label>
               <label>Referidos · máximo de activaciones puntuables por mes<input name="ranking_ref_tope" type="number" min={0} max={999} step={1} defaultValue={pr.tope} /></label>
-              <label>Chat en vivo · puntos por mensaje, reacción recibida o imagen<input name="ranking_pts_chat" type="number" min={0} max={999} step={1} defaultValue={pch.pts} /></label>
-              <label>Chat en vivo · máximo de puntos por día<input name="ranking_chat_tope_dia" type="number" min={0} max={999} step={1} defaultValue={pch.tope} /></label>
               <label>Penalización a quienes fueron Top 3 el mes anterior: % de puntos que se descuenta (0 = sin penalización; rige desde diciembre de 2026)<input name="ranking_penal_top3" type="number" min={0} max={100} step={1} defaultValue={penal} /></label>
               <label>Referidos · fecha de inicio (la base de datos usa esta fecha; por defecto {REFERIDOS_DESDE})<input name="referidos_desde" type="date" defaultValue={(aj.referidos_desde ?? "").trim() || REFERIDOS_DESDE} /></label>
               <button className="btn s">Guardar</button>
@@ -189,11 +186,10 @@ export default async function Ranking({ searchParams }: { searchParams: { m?: st
           <div className="ses"><div style={{ flex: 1 }}><b>📸 Subir tu foto de perfil</b><small className="mu" style={{ display: "block" }}>Una sola vez (suma en el mes en que la subes)</small></div><b>{ptsFoto} pts</b></div>
           <div className="ses"><div style={{ flex: 1 }}><b>🏦 Registrar tu cuenta de Liquid</b><small className="mu" style={{ display: "block" }}>Una sola vez, cuando confirmamos que tu cuenta hizo un depósito o ya opera en real (en <Link href="/aliados">Broker</Link>)</small></div><b>{ptsLiq} pts</b></div>
           <div className="ses"><div style={{ flex: 1 }}><b>🎓 Obtener un certificado</b><small className="mu" style={{ display: "block" }}>Al aprobar el examen de Curso básico, intermedio o avanzado (suma en el mes en que apruebas)</small></div><b>{ptsCert} pts</b></div>
-          {pch.pts > 0 && <div className="ses"><div style={{ flex: 1 }}><b>💬 Participas en el Chat en vivo</b><small className="mu" style={{ display: "block" }}>Mensaje de 20 o más caracteres (máx. 3 al día), mensaje tuyo que recibe una reacción (máx. 2 al día) o imagen compartida (máx. 1 al día); hasta {pch.tope} pts por día</small></div><b>{pch.pts} pt c/u</b></div>}
           {pr.registro > 0 && <div className="ses"><div style={{ flex: 1 }}><b>👥 Tu referido se activa</b><small className="mu" style={{ display: "block" }}>Se registra con tu código y completa su primera lección (máx. {pr.tope} al mes){!refAct && " · desde el " + fr.largo}</small></div><b>{pr.registro} pts</b></div>}
           <div className="ses"><div style={{ flex: 1 }}><b>⭐ Tu referido pasa a VIP</b><small className="mu" style={{ display: "block" }}>{pr.registro > 0 ? "Se suma además de los puntos anteriores, en el mes en que se hace VIP" : "Por cada persona que se registra con tu código y se hace VIP, en el mes en que se hace VIP"}{!refAct && " · desde el " + fr.largo}</small></div><b>{pr.registro > 0 ? "+" : ""}{pr.vip} pts</b></div>
           <div className="ses" style={{ borderColor: "rgba(201,88,92,.5)" }}><div style={{ flex: 1 }}><b>🚫 Entre las personas del Top 3 no se suman puntos entre sí</b><small className="mu" style={{ display: "block" }}>Las respuestas, las marcas de “útil” y los me gusta que se den entre ellas no suman puntos (ni para quien los da ni para quien los recibe). Entre las personas del Top 10, cada me gusta que se den vale medio punto (0,5); el resto de la comunidad les suma 1 como siempre. Las respuestas y las marcas de “útil” cuentan normal desde el puesto 4.</small></div></div>
-          <div className="ses" style={{ borderColor: "rgba(201,88,92,.5)" }}><div style={{ flex: 1 }}><b>🚫 Prohibido usar inteligencia artificial</b><small className="mu" style={{ display: "block" }}>No se puede usar IA (ChatGPT, Gemini, Claude u otras) para escribir publicaciones, respuestas ni mensajes del chat: todo debe ser de tu propia mano. Quien lo haga puede perder sus puntos o ser descalificado del ranking.</small></div></div>
+          <div className="ses" style={{ borderColor: "rgba(201,88,92,.5)" }}><div style={{ flex: 1 }}><b>🚫 Prohibido usar inteligencia artificial</b><small className="mu" style={{ display: "block" }}>No se puede usar IA (ChatGPT, Gemini, Claude u otras) para escribir publicaciones ni respuestas: todo debe ser de tu propia mano. Quien lo haga puede perder sus puntos o ser descalificado del ranking.</small></div></div>
           <small className="mu" style={{ display: "block", marginTop: 10 }}>Máximo 12 puntos por día (las respuestas útiles, los certificados, la foto de perfil, la cuenta de Liquid y los referidos no cuentan para ese tope). No suman: publicaciones muy cortas, responder a tu propia publicación, dar me gusta a lo tuyo ni las interacciones entre las personas del Top 3. El mes cierra el último viernes a las 23:59 (hora de Paraguay). Si se elimina una publicación, se pierden sus puntos. ELITE FX puede ajustar o descalificar puntos por conductas de spam, uso de inteligencia artificial o trampa.</small>
           {!gratis && (refAct
             ? <Link className="btn sd s" href="/referidos" style={{ marginTop: 12 }}>👥 Invitar amigos y ganar puntos</Link>

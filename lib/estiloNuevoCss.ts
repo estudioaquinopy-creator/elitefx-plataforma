@@ -17,10 +17,6 @@ html body .center .logo{font-weight:800}
 html body .center input{min-height:48px}
 html body .center a{color:var(--ac)}
 
-/* Botón "Chat en vivo": rojo suave */
-@keyframes salaPulsoSuave{0%{box-shadow:0 0 0 0 rgba(201,88,92,.4)}70%{box-shadow:0 0 0 8px rgba(201,88,92,0)}100%{box-shadow:0 0 0 0 rgba(201,88,92,0)}}
-html body .btn.sala-vivo.on,html body a.btn.sala-vivo.on:hover{background:#c9585c!important;border-color:#c9585c!important;color:#fff!important;animation:salaPulsoSuave 2.2s infinite}
-
 /* Pantallas bajas (celular en horizontal): las redes sociales no se montan sobre el menú, quedan al final de la lista */
 @media(max-height:760px){html body .redes{position:static!important;bottom:auto!important;margin:14px 0 0!important}}
 

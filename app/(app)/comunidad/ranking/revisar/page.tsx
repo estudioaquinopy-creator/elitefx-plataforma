@@ -31,7 +31,6 @@ const LINEAS: { id: string; txt: string; tipos: string[] }[] = [
   { id: "resp", txt: "Respuestas", tipos: ["respuesta"] },
   { id: "util", txt: "Respuestas marcadas útiles", tipos: ["util"] },
   { id: "like", txt: "Me gusta recibidos", tipos: ["like"] },
-  { id: "chat", txt: "Chat en vivo", tipos: ["chat"] },
   { id: "cert", txt: "Certificados", tipos: ["certificado"] },
   { id: "ref", txt: "Referidos activos", tipos: ["ref"] },
   { id: "refvip", txt: "Referidos que pasaron a VIP", tipos: ["refvip"] },
@@ -92,10 +91,9 @@ export default async function Revisar({ searchParams }: { searchParams: { u?: st
   const post = new Map(posts.map((p) => [p.id, p]));
   const com = new Map(coms.map((c) => [c.id, c]));
 
-  // Bloques: cada publicación, respuesta y útil por separado; los me gusta de una misma publicación juntos (con quién los dio); el chat de cada día junto.
+  // Bloques: cada publicación, respuesta y útil por separado; los me gusta de una misma publicación juntos (con quién los dio).
   const bloques: Bloque[] = [];
   const likes = new Map<string, Bloque>();
-  const chats = new Map<string, Bloque>();
   for (const r of filas) {
     if (!r.dia || !r.cuando || r.tipo === "ajuste") continue;
     if (r.tipo === "resultados" || r.tipo === "preguntas") bloques.push({ key: "p" + r.post_id, kind: "pub", dia: r.dia, at: r.cuando, pts: r.pts, tipo: r.tipo, filas: [r] });
@@ -106,11 +104,6 @@ export default async function Revisar({ searchParams }: { searchParams: { u?: st
       const b = likes.get(k);
       if (b) { b.pts += r.pts; b.filas.push(r); if (r.cuando > b.at) b.at = r.cuando; }
       else { const nb: Bloque = { key: k, kind: "like", dia: r.dia, at: r.cuando, pts: r.pts, tipo: "like", filas: [r] }; likes.set(k, nb); bloques.push(nb); }
-    } else if (r.tipo === "chat") {
-      const k = "c" + r.dia;
-      const b = chats.get(k);
-      if (b) { b.pts += r.pts; b.filas.push(r); if (r.cuando > b.at) b.at = r.cuando; }
-      else { const nb: Bloque = { key: k, kind: "otros", dia: r.dia, at: r.cuando, pts: r.pts, tipo: "chat", filas: [r] }; chats.set(k, nb); bloques.push(nb); }
     } else bloques.push({ key: r.tipo + (r.cuando ?? "") + (r.otro ?? ""), kind: "otros", dia: r.dia, at: r.cuando, pts: r.pts, tipo: r.tipo, filas: [r] });
   }
 
@@ -176,11 +169,6 @@ export default async function Revisar({ searchParams }: { searchParams: { u?: st
       );
     }
     // otros
-    if (b.tipo === "chat") {
-      const m = b.filas.filter((f) => f.otro === "msg").length, re = b.filas.filter((f) => f.otro === "reac").length, im = b.filas.filter((f) => f.otro === "img").length;
-      const partes = [m ? m + (m === 1 ? " mensaje" : " mensajes") : "", re ? re + (re === 1 ? " reacción recibida" : " reacciones recibidas") : "", im ? im + (im === 1 ? " imagen" : " imágenes") : ""].filter(Boolean);
-      return <p style={{ margin: "6px 0 2px" }}>💬 Chat en vivo: {partes.join(" · ")}</p>;
-    }
     if (b.tipo === "certificado") return <p style={{ margin: "6px 0 2px" }}>🎓 Certificado: {r.otro}</p>;
     if (b.tipo === "ref") return <p style={{ margin: "6px 0 2px" }}>👥 Referido activo (completó su primera lección): {r.otro}</p>;
     if (b.tipo === "refvip") return <p style={{ margin: "6px 0 2px" }}>⭐ Referido que pasó a VIP: {r.otro}</p>;
