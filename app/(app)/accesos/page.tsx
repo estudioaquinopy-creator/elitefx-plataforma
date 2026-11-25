@@ -6,6 +6,7 @@ import { estadoMembresia, perfilActual } from "@/lib/sesion";
 import { clienteAdmin } from "@/lib/supabase/admin";
 import { crearPersona } from "./actions";
 import { guardarAdminsAyuda } from "../comunidad/actions";
+import { guardarEducadoresVisitas } from "../visitas/actions";
 import { leerAjustes } from "@/lib/ajustes";
 import AnclarJournal from "@/components/AnclarJournal";
 import AvisarWhatsApp from "@/components/AvisarWhatsApp";
@@ -139,6 +140,17 @@ export default async function Accesos({ searchParams }: { searchParams: { q?: st
           <p className="mu">Cuando un alumno escribe #ayuda o @ayuda en una pregunta, la alerta roja aparece arriba solo para los administradores marcados. Si no marcas a nadie, la ven todos.</p>
           {(todos as { id: string; nombre: string; email: string; rol: string }[]).filter((f) => f.rol === "admin").map((f) => (
             <label key={f.id} className="ck"><input type="checkbox" name="admin" value={f.id} defaultChecked={(ajA.ayuda_admins ?? "").split(",").includes(f.id)} /> <span>{f.nombre || f.email} <small className="mu">{f.email}</small></span></label>
+          ))}
+          <button className="btn s">Guardar</button>
+        </form>
+      </details>
+
+      <details className="box adm">
+        <summary>🎓 Educadores que reciben reuniones y visitas</summary>
+        <form action={guardarEducadoresVisitas} className="fm">
+          <p className="mu">Solo los marcados aparecen para las reuniones virtuales y como “quién recibe” en las visitas. Los demás administradores pueden aprobar, pero no cuentan como educadores. Si no marcas a nadie, cuentan todos.</p>
+          {(todos as { id: string; nombre: string; email: string; rol: string }[]).filter((f) => f.rol === "admin").map((f) => (
+            <label key={f.id} className="ck"><input type="checkbox" name="educador" value={f.id} defaultChecked={(ajA.visitas_educadores ?? "").split(",").includes(f.id)} /> <span>{f.nombre || f.email} <small className="mu">{f.email}</small></span></label>
           ))}
           <button className="btn s">Guardar</button>
         </form>

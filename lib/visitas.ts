@@ -33,3 +33,9 @@ export function visitaVigente(fecha: string, hora: string, ahora: number = Date.
   const fin = new Date(fecha + "T" + hora.slice(0, 5) + ":00-03:00").getTime() + 3600000;
   return Number.isNaN(fin) ? fecha >= new Date(ahora - 3 * 3600000).toISOString().slice(0, 10) : ahora < fin;
 }
+
+// Ajuste `visitas_educadores`: ids de los administradores que reciben reuniones y visitas (educadores), separados por coma. Vacío = todos los administradores.
+export const esEducador = (ajuste: string | undefined | null, id: string) => {
+  const ids = (ajuste ?? "").split(",").map((x) => x.trim()).filter(Boolean);
+  return ids.length === 0 || ids.includes(id);
+};

@@ -41,7 +41,10 @@ export default async function Visitas({ searchParams }: { searchParams: { ok?: s
   if (admin) {
     const cupo = Math.max(1, Number((await leerAjustes()).visitas_cupo) || 1);
     const { data: adm } = await sb.from("perfiles").select("id, nombre").eq("rol", "admin").order("nombre");
-    const admins = (adm ?? []) as { id: string; nombre: string }[];
+    const todosAdmins = (adm ?? []) as { id: string; nombre: string }[];
+    // Solo los educadores reciben a la gente (los demás administradores pueden aprobar). Sin la migración 0081 se ofrecen todos.
+    const { data: edu } = await sb.rpc("visitas_educadores");
+    const admins = edu && (edu as { id: string; nombre: string }[]).length > 0 ? (edu as { id: string; nombre: string }[]) : todosAdmins;
     const { data } = await sb.from("visitas").select("*").order("fecha").order("hora").limit(300);
     const todas = (data ?? []) as Visita[];
     const { data: segRaw } = await sb.from("visitas_seguimiento").select("visita_id, nota, pendiente"); // sin la migración 0065 viene vacío

@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { perfilActual } from "@/lib/sesion";
 import { registrar } from "@/lib/auditoria";
 import { fallo, aviso } from "@/lib/subida";
-import { HORAS, TEMAS, horaCorta, fechaLarga } from "@/lib/visitas";
+import { HORAS, TEMAS, horaCorta, fechaLarga, esEducador } from "@/lib/visitas";
+import { redirect } from "next/navigation";
 
 export async function agendarVisita(f: FormData) {
   const yo = await perfilActual();
@@ -61,6 +62,8 @@ export async function revisarVisita(f: FormData) {
     const { data: e } = await sb.from("perfiles").select("id, nombre, rol").eq("id", quienId).maybeSingle();
     const ee = e as { id: string; nombre: string; rol: string } | null;
     if (!ee || ee.rol !== "admin") fallo("/visitas", "El encargado debe ser un administrador.");
+    const { data: ajE } = await sb.from("ajustes").select("valor").eq("clave", "visitas_educadores").maybeSingle();
+    if (!esEducador((ajE as { valor: string } | null)?.valor, ee!.id)) fallo("/visitas", ee!.nombre + " no es educador: elige a uno de los educadores.");
     encargado = { id: ee!.id, nombre: ee!.nombre };
   }
   const estado = decision === "aprobar" ? "aprobada" : "rechazada";
@@ -89,6 +92,8 @@ export async function proponerHorario(f: FormData) {
   const { data: e } = await sb.from("perfiles").select("id, nombre, rol").eq("id", encargadoId).maybeSingle();
   const ee = e as { id: string; nombre: string; rol: string } | null;
   if (!ee || ee.rol !== "admin") fallo("/visitas", "El encargado debe ser un administrador.");
+  const { data: ajE } = await sb.from("ajustes").select("valor").eq("clave", "visitas_educadores").maybeSingle();
+  if (!esEducador((ajE as { valor: string } | null)?.valor, ee!.id)) fallo("/visitas", ee!.nombre + " no es educador: elige a uno de los educadores.");
   const { data: v } = await sb.from("visitas").select("*").eq("id", id).maybeSingle();
   const vis = v as { user_id: string; fecha: string; hora: string; estado: string; modalidad?: string } | null;
   if (!vis || vis.estado !== "pendiente") fallo("/visitas", "Solo se puede proponer otro horario a una solicitud pendiente.");
@@ -160,4 +165,19 @@ export async function resenarVisita(f: FormData) {
   if (error) fallo("/visitas", error.message.includes("function") ? "Falta correr la migración 0065 en Supabase." : error.message.replace(/^.*?:\s*/, ""));
   revalidatePath("/visitas");
   aviso("/visitas", "¡Gracias por tu opinión!");
+}
+
+// Solo el administrador: elige qué administradores cuentan como educadores (reciben reuniones virtuales y visitas). Sin marcar a nadie = todos.
+export async function guardarEducadoresVisitas(f: FormData) {
+  const yo = await perfilActual();
+  if (yo.rol !== "admin") throw new Error("Solo el administrador puede hacer esto.");
+  const sb = createClient();
+  const { data: adm } = await sb.from("perfiles").select("id").eq("rol", "admin");
+  const validos = new Set(((adm ?? []) as { id: string }[]).map((x) => x.id));
+  const ids = f.getAll("educador").map(String).filter((x) => validos.has(x));
+  const { error } = await sb.from("ajustes").upsert({ clave: "visitas_educadores", valor: ids.join(",") });
+  if (error) fallo("/accesos", "No se pudo guardar: " + error.message);
+  await registrar("visita", null, "Educadores que reciben reuniones y visitas: " + (ids.length ? ids.length + " administradores" : "todos"));
+  revalidatePath("/visitas");
+  redirect("/accesos?ok=" + encodeURIComponent("Guardado: elegiste quiénes son los educadores de las reuniones y visitas."));
 }
