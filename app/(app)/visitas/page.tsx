@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { perfilActual, hoyPY, vipVigente } from "@/lib/sesion";
 import { HORAS, TEMAS, proximosMiercoles, visitaVigente, fechaLarga, horaCorta, whatsapp } from "@/lib/visitas";
@@ -7,13 +8,14 @@ import FormVisita from "@/components/FormVisita";
 
 export const dynamic = "force-dynamic";
 
-type Visita = { id: string; user_id: string; fecha: string; hora: string; tema: string; detalle: string; estado: string; nota: string; created_at: string; revisado_at?: string | null; encargado_id?: string | null; encargado_nombre?: string; propuesta_fecha?: string | null; propuesta_hora?: string | null; resultado?: string | null; resena_estrellas?: number | null; resena_texto?: string; resena_at?: string | null };
+type Visita = { id: string; user_id: string; fecha: string; hora: string; tema: string; detalle: string; estado: string; nota: string; created_at: string; revisado_at?: string | null; encargado_id?: string | null; encargado_nombre?: string; propuesta_fecha?: string | null; propuesta_hora?: string | null; resultado?: string | null; resena_estrellas?: number | null; resena_texto?: string; resena_at?: string | null; modalidad?: string; educador_id?: string | null; enlace_meet?: string };
 type Seg = { visita_id: string; nota: string; pendiente: boolean };
 const estrellas = (n: number) => "★".repeat(n) + "☆".repeat(5 - n);
 const ETIQ: Record<string, string> = { pendiente: "Pendiente de aprobación", aprobada: "Aprobada", propuesta: "Nuevo horario propuesto", rechazada: "Rechazada", cancelada: "Cancelada" };
+const esVirtual = (v: { modalidad?: string }) => v.modalidad === "virtual";
 const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 
-export default async function Visitas({ searchParams }: { searchParams: { ok?: string; error?: string } }) {
+export default async function Visitas({ searchParams }: { searchParams: { ok?: string; error?: string; m?: string } }) {
   const perfil = await perfilActual();
   const sb = createClient();
   const hoy = hoyPY();
@@ -55,18 +57,23 @@ export default async function Visitas({ searchParams }: { searchParams: { ok?: s
     const resto = todas.filter((v) => !pend.includes(v) && !prox.includes(v) && !prop.includes(v) && !porMarcar.includes(v) && !conSeguimiento.includes(v)).reverse().slice(0, 30);
     const Tarjeta = ({ v }: { v: Visita }) => {
       const p = quien.get(v.user_id);
-      const lleno = todas.filter((x) => x.estado === "aprobada" && x.fecha === v.fecha && x.hora === v.hora).length;
+      const mismaHora = todas.filter((x) => x.estado === "aprobada" && x.fecha === v.fecha && x.hora === v.hora && x.id !== v.id);
+      const virtual = esVirtual(v);
+      const ocupados = new Set(mismaHora.map((x) => x.encargado_id).filter(Boolean) as string[]);
+      // Una sola agenda: virtual → el educador elegido no puede tener otra cosa aprobada; presencial → cupo de la oficina.
+      const lleno = virtual ? (v.educador_id && ocupados.has(v.educador_id) ? cupo : 0) : mismaHora.filter((x) => !esVirtual(x)).length;
       const wa = whatsapp(p?.telefono);
-      const texto = "Hola " + (p?.nombre || "").split(" ")[0] + ", tu visita a la oficina quedó " + (v.estado === "aprobada" ? "aprobada" : "rechazada") + ": " + fechaLarga(v.fecha) + " a las " + horaCorta(v.hora) + "." + (v.estado === "aprobada" && v.encargado_nombre ? " Te va a recibir " + v.encargado_nombre + "." : "") + (v.nota ? " " + v.nota : "");
+      const texto = "Hola " + (p?.nombre || "").split(" ")[0] + ", tu " + (virtual ? "reunión virtual" : "visita a la oficina") + " quedó " + (v.estado === "aprobada" ? "aprobada" : "rechazada") + ": " + fechaLarga(v.fecha) + " a las " + horaCorta(v.hora) + "." + (v.estado === "aprobada" && v.encargado_nombre ? (virtual ? " Con " : " Te va a recibir ") + v.encargado_nombre + "." : "") + (v.estado === "aprobada" && virtual && v.enlace_meet ? " Enlace: " + v.enlace_meet : "") + (v.nota ? " " + v.nota : "");
       return (
         <div className="ses" style={{ flexWrap: "wrap", gap: 10 }}>
           <div style={{ flex: 1, minWidth: 240 }}>
             <b>{p?.nombre || p?.email || "—"}</b>
             <small className="mu" style={{ display: "block" }}>{p?.email}{p?.telefono ? " · " + p.telefono : ""}</small>
-            <small style={{ display: "block" }}><b>{cap(fechaLarga(v.fecha))} · {horaCorta(v.hora)}</b> · {v.tema}</small>
-            {v.estado === "pendiente" && lleno >= cupo && <small style={{ display: "block", color: "var(--co)" }}>Ese horario ya está ocupado por otra visita aprobada.</small>}
+            <small style={{ display: "block" }}><b>{cap(fechaLarga(v.fecha))} · {horaCorta(v.hora)}</b> · {v.tema} · <span className="pill">{virtual ? "💻 Virtual" : "🏢 Oficina"}</span></small>
+            {virtual && v.estado !== "rechazada" && v.estado !== "cancelada" && <small style={{ display: "block" }}>Con: <b>{v.encargado_nombre || "—"}</b>{v.estado === "aprobada" && v.enlace_meet ? <> · <a href={v.enlace_meet} target="_blank" rel="noopener noreferrer" style={{ color: "var(--ac)" }}>enlace de la reunión</a></> : null}</small>}
+            {v.estado === "pendiente" && lleno >= cupo && <small style={{ display: "block", color: "var(--co)" }}>{virtual ? "Ese educador ya está ocupado en ese horario (otra visita o reunión aprobada)." : "Ese horario ya está ocupado por otra visita aprobada."}</small>}
             {v.estado === "propuesta" && v.propuesta_fecha && <small style={{ display: "block" }}>Propuesto: <b>{cap(fechaLarga(v.propuesta_fecha))} · {horaCorta(v.propuesta_hora ?? "")}</b> · recibe: <b>{v.encargado_nombre}</b> · esperando que la persona acepte</small>}
-            {v.estado === "aprobada" && <small style={{ display: "block" }}>Recibe: <b>{v.encargado_nombre || "sin asignar"}</b></small>}
+            {v.estado === "aprobada" && !virtual && <small style={{ display: "block" }}>Recibe: <b>{v.encargado_nombre || "sin asignar"}</b></small>}
             {v.detalle && <small className="mu" style={{ display: "block", whiteSpace: "pre-wrap" }}>{v.detalle}</small>}
             {v.estado !== "pendiente" && <small className="mu" style={{ display: "block" }}>{ETIQ[v.estado]}{v.nota ? " · " + v.nota : ""}</small>}
             {v.resultado && <small style={{ display: "block", color: v.resultado === "atendida" ? "var(--ac)" : "var(--co)" }}><b>{v.resultado === "atendida" ? "✓ Atendida" : "✕ No asistió"}</b>{seg.get(v.id)?.pendiente ? " · seguimiento pendiente" : ""}</small>}
@@ -89,10 +96,14 @@ export default async function Visitas({ searchParams }: { searchParams: { ok?: s
               <input name="nota" placeholder="Nota para la persona (opcional)" maxLength={200} style={{ width: 200 }} defaultValue={v.nota} />
               {v.estado === "pendiente" && lleno < cupo && (
                 <>
-                  <select name="encargado" defaultValue="" style={{ width: 190 }} aria-label="Quién recibe a la persona">
-                    <option value="" disabled>Quién la recibe…</option>
-                    {admins.map((a) => <option key={a.id} value={a.id}>{a.nombre}</option>)}
-                  </select>
+                  {virtual ? (
+                    <input name="enlace" type="url" placeholder="Enlace de Google Meet (https://…)" required style={{ width: 250 }} aria-label="Enlace de la reunión" />
+                  ) : (
+                    <select name="encargado" defaultValue="" style={{ width: 190 }} aria-label="Quién recibe a la persona">
+                      <option value="" disabled>Quién la recibe…</option>
+                      {admins.map((a) => <option key={a.id} value={a.id} disabled={ocupados.has(a.id)}>{a.nombre}{ocupados.has(a.id) ? " · ocupado" : ""}</option>)}
+                    </select>
+                  )}
                   <button className="btn s" name="decision" value="aprobar">Aprobar</button>
                 </>
               )}
@@ -116,10 +127,11 @@ export default async function Visitas({ searchParams }: { searchParams: { ok?: s
                   <option value="" disabled>Quién la recibe…</option>
                   {admins.map((a) => <option key={a.id} value={a.id}>{a.nombre}</option>)}
                 </select>
+                {virtual && <input name="enlace" type="url" placeholder="Enlace de Google Meet (https://…)" required style={{ width: 240 }} aria-label="Enlace de la reunión" />}
                 <input name="nota" placeholder="Mensaje para la persona (opcional)" maxLength={200} style={{ width: 220 }} />
                 <button className="btn s">Enviar propuesta</button>
               </form>
-              <small className="mu">Si el horario ya está ocupado por una visita aprobada, no se podrá proponer. La persona debe aceptarlo para que quede aprobada.</small>
+              <small className="mu">Si el encargado ya tiene otra visita o reunión aprobada a esa hora, no se podrá proponer. La persona debe aceptarlo para que quede aprobada.</small>
             </details>
           )}
         </div>
@@ -127,8 +139,8 @@ export default async function Visitas({ searchParams }: { searchParams: { ok?: s
     };
     return (
       <>
-        <h1>Visitas a la oficina</h1>
-        <p className="sub">Solicitudes de los miembros VIP. Solo miércoles de 8:00 a 17:00, una sola persona por horario. Al aprobar debes elegir quién la recibe. Una vez aprobada, el horario se bloquea para los demás. Al aprobar o rechazar, la persona recibe el aviso en sus notificaciones.</p>
+        <h1>Visitas y reuniones virtuales</h1>
+        <p className="sub">Solicitudes de los miembros VIP, en una sola agenda. Solo miércoles de 8:00 a 17:00. Oficina: una sola persona por horario, y debes elegir quién la recibe. Virtual: la persona elige al educador y tú pegas el enlace de Google Meet al aprobar. Una vez aprobada, ese educador queda ocupado a esa hora (sea visita o reunión). Al aprobar o rechazar, la persona recibe el aviso en sus notificaciones.</p>
         {msgs}
         <section className="box">
           <h2>Por aprobar ({pend.length})</h2>
@@ -155,7 +167,7 @@ export default async function Visitas({ searchParams }: { searchParams: { ok?: s
           </section>
         )}
         <section className="box">
-          <h2>Próximas visitas aprobadas ({prox.length})</h2>
+          <h2>Próximas visitas y reuniones aprobadas ({prox.length})</h2>
           {prox.length === 0 ? <p className="mu">Todavía no hay visitas aprobadas.</p> : prox.map((v) => <Tarjeta key={v.id} v={v} />)}
         </section>
         {resto.length > 0 && (
@@ -169,10 +181,15 @@ export default async function Visitas({ searchParams }: { searchParams: { ok?: s
   }
 
   // ---------- Miembro VIP ----------
-  const [rMis, rOc] = await Promise.all([
+  const [rMis, rOc, rEdu, rEduOc] = await Promise.all([
     sb.from("visitas").select("*").eq("user_id", perfil.id).order("fecha", { ascending: false }).limit(20),
     sb.rpc("visitas_ocupadas"),
+    sb.rpc("visitas_educadores"), // sin la migración 0080 vienen con error y se ocultan las reuniones virtuales
+    sb.rpc("visitas_educadores_ocupados"),
   ]);
+  const educadores = rEdu.error ? [] : ((rEdu.data ?? []) as { id: string; nombre: string }[]);
+  const ocupadasEdu = ((rEduOc.data ?? []) as { fecha: string; hora: string; educador_id: string }[]).map((o) => o.fecha + " " + horaCorta(o.hora) + " " + o.educador_id);
+  const virtualTab = searchParams.m === "virtual" && educadores.length > 0;
   const faltaMigracion = !!rMis.error;
   const mis = (rMis.data ?? []) as Visita[];
   const activa = mis.find((v) => (v.estado === "pendiente" || v.estado === "aprobada" || v.estado === "propuesta") && visitaVigente(v.fecha, v.hora));
@@ -184,9 +201,21 @@ export default async function Visitas({ searchParams }: { searchParams: { ok?: s
   return (
     <>
       <h1>Agendar visita</h1>
-      <p className="sub">Visita nuestras oficinas para resolver tus dudas, cargar brokers, configurar MetaTrader o revisar cualquier pregunta sobre la estrategia. Atendemos solo los <b>miércoles de 8:00 a 17:00</b> y cada visita se confirma manualmente.</p>
+      <p className="sub">Visita nuestras oficinas o reúnete de forma virtual con uno de nuestros educadores para resolver tus dudas, cargar brokers, configurar MetaTrader o revisar cualquier pregunta sobre la estrategia. Atendemos solo los <b>miércoles de 8:00 a 17:00</b> y cada solicitud se confirma manualmente.</p>
       {msgs}
-      {activa?.estado === "aprobada" && <section className="box" style={{ borderColor: "var(--go)" }}><div className="tag" style={{ marginTop: 0 }}>✓ Tu solicitud fue aprobada</div><p style={{ margin: "6px 0 0" }}><b>{cap(fechaLarga(activa.fecha))} · {horaCorta(activa.hora)}</b>. Te esperamos en la oficina.{activa.encargado_nombre ? " Te recibe " + activa.encargado_nombre + "." : ""}{activa.nota ? " " + activa.nota : ""}</p></section>}
+      {activa?.estado === "aprobada" && (
+        <section className="box" style={{ borderColor: "var(--go)" }}>
+          <div className="tag" style={{ marginTop: 0 }}>✓ Tu solicitud fue aprobada</div>
+          {esVirtual(activa) ? (
+            <>
+              <p style={{ margin: "6px 0 0" }}><b>{cap(fechaLarga(activa.fecha))} · {horaCorta(activa.hora)}</b>. Reunión virtual{activa.encargado_nombre ? " con " + activa.encargado_nombre : ""}.{activa.nota ? " " + activa.nota : ""}</p>
+              {activa.enlace_meet && <p style={{ margin: "10px 0 0" }}><a className="btn s" href={activa.enlace_meet} target="_blank" rel="noopener noreferrer">Unirme a la reunión (Google Meet)</a></p>}
+            </>
+          ) : (
+            <p style={{ margin: "6px 0 0" }}><b>{cap(fechaLarga(activa.fecha))} · {horaCorta(activa.hora)}</b>. Te esperamos en la oficina.{activa.encargado_nombre ? " Te recibe " + activa.encargado_nombre + "." : ""}{activa.nota ? " " + activa.nota : ""}</p>
+          )}
+        </section>
+      )}
       {activa?.estado === "propuesta" && activa.propuesta_fecha && (
         <section className="box" style={{ borderColor: "var(--go)" }}>
           <div className="tag" style={{ marginTop: 0 }}>Te propusieron otro horario</div>
@@ -203,8 +232,9 @@ export default async function Visitas({ searchParams }: { searchParams: { ok?: s
         <section className="box"><p className="mu">Esta función todavía no está disponible.</p></section>
       ) : activa ? (
         <section className="box">
-          <div className="tag">{ETIQ[activa.estado]}</div>
+          <div className="tag">{ETIQ[activa.estado]} · {esVirtual(activa) ? "Reunión virtual" : "Visita a la oficina"}</div>
           <h2>{cap(fechaLarga(activa.fecha))} · {horaCorta(activa.hora)}</h2>
+          {esVirtual(activa) && activa.encargado_nombre && <p className="mu">Con {activa.encargado_nombre}</p>}
           <p className="mu">Tema: {activa.tema}{activa.detalle ? " — " + activa.detalle : ""}</p>
           {activa.estado === "propuesta" && <p className="mu">Tienes una propuesta de nuevo horario arriba: acéptala o recházala.</p>}
           {activa.estado === "pendiente" && <p className="mu">Estamos revisando tu solicitud. Apenas la aprobemos (o no), lo verás aquí arriba y en el menú “Agendar visita”.</p>}
@@ -213,7 +243,14 @@ export default async function Visitas({ searchParams }: { searchParams: { ok?: s
       ) : (
         <section className="box">
           <h2>Elige tu horario</h2>
-          <FormVisita action={agendarVisita} fechas={fechas} horas={HORAS} temas={TEMAS} ocupadas={ocupadas} />
+          {educadores.length > 0 && (
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
+              <Link className={virtualTab ? "btn g s" : "btn s"} href="/visitas">🏢 En la oficina</Link>
+              <Link className={virtualTab ? "btn s" : "btn g s"} href="/visitas?m=virtual">💻 Reunión virtual</Link>
+            </div>
+          )}
+          {virtualTab && <p className="mu">Elige con qué educador quieres reunirte. Si ya tiene otra visita o reunión aprobada a esa hora, el horario aparece como ocupado. Cuando se apruebe, aquí verás el enlace de Google Meet.</p>}
+          <FormVisita key={virtualTab ? "v" : "p"} action={agendarVisita} fechas={fechas} horas={HORAS} temas={TEMAS} ocupadas={ocupadas} virtual={virtualTab} educadores={educadores} ocupadasEdu={ocupadasEdu} />
         </section>
       )}
       {mis.filter((v) => v !== activa).length > 0 && (
@@ -222,7 +259,7 @@ export default async function Visitas({ searchParams }: { searchParams: { ok?: s
           {mis.filter((v) => v !== activa).map((v) => (
             <div key={v.id} className="ses" style={{ display: "block", padding: "10px 0" }}>
               <b>{cap(fechaLarga(v.fecha))} · {horaCorta(v.hora)}</b>
-              <small className="mu" style={{ display: "block" }}>{v.tema} · {v.resultado === "atendida" ? "Atendida" : v.resultado === "no_asistio" ? "No asististe" : ETIQ[v.estado]}{v.nota ? " · " + v.nota : ""}</small>
+              <small className="mu" style={{ display: "block" }}>{esVirtual(v) ? "Reunión virtual · " : ""}{v.tema} · {v.resultado === "atendida" ? "Atendida" : v.resultado === "no_asistio" ? "No asististe" : ETIQ[v.estado]}{v.nota ? " · " + v.nota : ""}</small>
               {v.resultado === "atendida" && v.resena_estrellas && <small style={{ display: "block", marginTop: 4 }}><span style={{ color: "var(--go)" }}>{estrellas(v.resena_estrellas)}</span> Tu opinión{v.resena_texto ? ": “" + v.resena_texto + "”" : ""}</small>}
               {v.resultado === "atendida" && !v.resena_estrellas && (
                 <form action={resenarVisita} style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginTop: 8 }}>

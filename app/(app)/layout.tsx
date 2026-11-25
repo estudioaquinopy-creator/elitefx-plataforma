@@ -115,12 +115,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const nPorVencer = venc.length - nVencidas;
   if (nPorVencer > 0) notifs.unshift({ id: "v-por", titulo: nPorVencer + (nPorVencer === 1 ? " membresía por vencer" : " membresías por vencer"), cuerpo: "Vencen en los próximos 7 días · toca para ver la lista", enlace: "/accesos?e=porvencer", fecha: "", nueva: true });
   if (nVencidas > 0) notifs.unshift({ id: "v-venc", titulo: nVencidas + (nVencidas === 1 ? " membresía vencida" : " membresías vencidas"), cuerpo: "Vencidas en los últimos 30 días · toca para ver la lista", enlace: "/accesos?e=vencido", fecha: "", nueva: true });
-  for (const v of (rVisMias.data ?? []) as { id: string; fecha: string; hora: string; estado: string; revisado_at: string; propuesta_fecha?: string | null; propuesta_hora?: string | null }[]) {
+  for (const v of (rVisMias.data ?? []) as { id: string; fecha: string; hora: string; estado: string; revisado_at: string; propuesta_fecha?: string | null; propuesta_hora?: string | null; modalidad?: string }[]) {
     const prop = v.estado === "propuesta" && !!v.propuesta_fecha;
     const dia = new Date((prop ? v.propuesta_fecha! : v.fecha) + "T12:00:00Z").toLocaleDateString("es-PY", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" });
     notifs.unshift({
       id: "vis-" + v.id,
-      titulo: prop ? "Te propusieron otro horario para tu visita" : v.estado === "aprobada" ? "Tu visita fue aprobada" : "Tu visita no pudo aprobarse",
+      titulo: prop ? "Te propusieron otro horario para tu " + (v.modalidad === "virtual" ? "reunión" : "visita") : v.estado === "aprobada" ? (v.modalidad === "virtual" ? "Tu reunión virtual fue aprobada" : "Tu visita fue aprobada") : (v.modalidad === "virtual" ? "Tu reunión virtual no pudo aprobarse" : "Tu visita no pudo aprobarse"),
       cuerpo: (prop ? "Acéptalo o recházalo: " : "") + dia + " a las " + String(prop ? v.propuesta_hora : v.hora).slice(0, 5),
       enlace: "/visitas",
       fecha: fmt(v.revisado_at),
