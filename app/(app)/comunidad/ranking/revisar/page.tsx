@@ -8,7 +8,7 @@ import { ajustarPuntos } from "../../actions";
 export const dynamic = "force-dynamic";
 
 // Esta pantalla muestra SOLO lo que suma de verdad: los datos salen de ranking_detalle (migración 0076),
-// que aplica las mismas reglas que el ranking (tope diario, Top 3, me gusta del Top 10, redondeo y penalización).
+// que aplica las mismas reglas que el ranking (tope diario, redondeo y penalización).
 type Fila = { tipo: string; dia: string | null; cuando: string | null; pts: number; post_id: string | null; com_id: string | null; otro: string | null };
 type Post = { id: string; canal: string; titulo: string; cuerpo: string; autor?: string | null; imagen_url?: string | null; imagenes_extra?: string[] | null };
 type Com = { id: string; post_id: string; cuerpo: string; imagen_url?: string | null; imagenes_extra?: string[] | null };
