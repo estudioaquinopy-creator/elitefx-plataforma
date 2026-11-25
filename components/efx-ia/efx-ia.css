@@ -1,0 +1,106 @@
+/* =====================================================================
+   ELITE FX · Asistente IA · Estilos
+   ---------------------------------------------------------------------
+   Todas las clases empiezan con "efx-ia-" y todo cuelga de .efx-ia,
+   así que no afectan ningún estilo existente de la plataforma.
+   Para adaptarse al diseño actual, cambiar solo las variables de abajo.
+   ===================================================================== */
+.efx-ia {
+  /* Colores de la plataforma (siguen el tema claro/oscuro): ver variables --bg, --sf, --sf2, --bd, --tx, --mu, --ac, --co */
+  --efx-ia-fondo: var(--bg, #0e1116);
+  --efx-ia-superficie: var(--sf, #161b22);
+  --efx-ia-superficie-2: var(--sf2, #12161d);
+  --efx-ia-borde: var(--bd, #2a313c);
+  --efx-ia-texto: var(--tx, #e6eaf0);
+  --efx-ia-texto-suave: var(--mu, #9aa4b2);
+  --efx-ia-acento: var(--ac, #e3b54a);
+  --efx-ia-texto-sobre-acento: #04130c;
+  --efx-ia-alerta: var(--co, #f2a65a);
+  --efx-ia-medio: #e2c044;
+  --efx-ia-ok: #4cc38a;
+  --efx-ia-radio: 12px;
+
+  color: var(--efx-ia-texto);
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  box-sizing: border-box;
+}
+.efx-ia *, .efx-ia *::before, .efx-ia *::after { box-sizing: border-box; }
+
+.efx-ia-titulo { margin: 0; font-size: 26px; font-weight: 700; }
+.efx-ia-subtitulo { margin: 4px 0 0; font-size: 14px; color: var(--efx-ia-texto-suave); }
+.efx-ia-encabezado { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px; }
+
+.efx-ia-aviso {
+  background: var(--efx-ia-superficie); border: 1px solid var(--efx-ia-borde);
+  border-radius: 10px; padding: 14px 18px; font-size: 14px; color: var(--efx-ia-texto-suave);
+}
+.efx-ia-error { border-color: var(--efx-ia-alerta); color: var(--efx-ia-alerta); }
+
+.efx-ia-tarjetas { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.efx-ia-tarjeta, .efx-ia-seccion {
+  background: var(--efx-ia-superficie); border: 1px solid var(--efx-ia-borde);
+  border-radius: var(--efx-ia-radio); padding: 20px;
+}
+.efx-ia-tarjeta { display: flex; flex-direction: column; gap: 6px; }
+.efx-ia-tarjeta-numero { font-size: 34px; font-weight: 700; }
+.efx-ia-tarjeta-etiqueta { font-size: 13px; color: var(--efx-ia-texto-suave); }
+
+.efx-ia-seccion { display: flex; flex-direction: column; gap: 16px; }
+.efx-ia-seccion h2 { margin: 0; font-size: 18px; font-weight: 600; }
+.efx-ia-columnas { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+.efx-ia-columnas > * { flex: 1 1 420px; min-width: 0; }
+
+.efx-ia-tabla-caja { overflow-x: auto; }
+.efx-ia-tabla { border-collapse: collapse; width: 100%; }
+.efx-ia-tabla th {
+  text-align: left; font-weight: 500; font-size: 12px; color: var(--efx-ia-texto-suave);
+  padding: 10px 12px; border-bottom: 1px solid var(--efx-ia-borde); white-space: nowrap;
+}
+.efx-ia-tabla td { font-size: 14px; padding: 14px 12px; border-bottom: 1px solid var(--efx-ia-borde); vertical-align: top; }
+
+.efx-ia-etiqueta { display: inline-block; border-radius: 6px; padding: 3px 8px; font-size: 12px; font-weight: 700; }
+.efx-ia-etiqueta-alta { background: rgba(242, 166, 90, 0.15); color: var(--efx-ia-alerta); }
+.efx-ia-etiqueta-media { background: rgba(226, 192, 68, 0.15); color: var(--efx-ia-medio); }
+.efx-ia-etiqueta-neutra { background: var(--efx-ia-superficie-2); color: var(--efx-ia-texto-suave); }
+
+.efx-ia-item { border: 1px solid var(--efx-ia-borde); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.efx-ia-item-cabecera { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center; }
+.efx-ia-cita { margin: 0; background: var(--efx-ia-superficie-2); border-radius: 8px; padding: 12px; font-size: 14px; font-style: italic; line-height: 1.5; white-space: pre-wrap; }
+.efx-ia-lista { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.6; }
+.efx-ia-suave { color: var(--efx-ia-texto-suave); font-size: 13px; }
+
+.efx-ia-botones { display: flex; flex-wrap: wrap; gap: 8px; }
+.efx-ia-boton {
+  font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; min-height: 36px;
+  border-radius: 8px; padding: 8px 14px; border: 1px solid var(--efx-ia-borde);
+  background: transparent; color: var(--efx-ia-texto);
+}
+.efx-ia-boton-principal { background: var(--efx-ia-acento); border-color: var(--efx-ia-acento); color: var(--efx-ia-texto-sobre-acento); }
+.efx-ia-boton:disabled { opacity: 0.5; cursor: not-allowed; }
+.efx-ia-boton:focus-visible, .efx-ia-campo:focus-visible { outline: 2px solid var(--efx-ia-acento); outline-offset: 2px; }
+.efx-ia-enlace { background: none; border: 0; padding: 8px 0; font: inherit; font-size: 14px; color: var(--efx-ia-acento); cursor: pointer; text-align: left; }
+
+/* Chat */
+.efx-ia-chat { display: flex; flex-direction: column; gap: 12px; }
+.efx-ia-mensajes { display: flex; flex-direction: column; gap: 12px; max-height: 520px; overflow-y: auto; }
+.efx-ia-burbuja { max-width: 85%; padding: 12px 14px; font-size: 14px; line-height: 1.55; white-space: pre-wrap; }
+.efx-ia-burbuja-usuario { align-self: flex-end; background: var(--efx-ia-superficie-2); border-radius: 12px 12px 4px 12px; }
+.efx-ia-burbuja-ia { align-self: flex-start; border: 1px solid var(--efx-ia-borde); border-radius: 12px 12px 12px 4px; }
+.efx-ia-burbuja-ia strong { display: block; font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; color: var(--efx-ia-acento); margin-bottom: 4px; }
+.efx-ia-sugerencias { display: flex; flex-wrap: wrap; gap: 8px; }
+.efx-ia-sugerencia { font: inherit; font-size: 13px; cursor: pointer; min-height: 36px; border-radius: 20px; padding: 8px 14px; border: 1px solid var(--efx-ia-borde); background: transparent; color: var(--efx-ia-texto); }
+.efx-ia-formulario { display: flex; gap: 8px; }
+.efx-ia-campo {
+  flex: 1; min-width: 0; min-height: 44px; font: inherit; font-size: 14px;
+  background: var(--efx-ia-superficie-2); color: var(--efx-ia-texto);
+  border: 1px solid var(--efx-ia-borde); border-radius: 8px; padding: 12px;
+}
+.efx-ia-solo-lector { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Ajustes para convivir con los estilos globales de la plataforma (input, label) sin tocarlos */
+.efx-ia .efx-ia-campo { width: auto; margin-top: 0; }
+.efx-ia .efx-ia-solo-lector { margin: 0; }
+.efx-ia .efx-ia-boton, .efx-ia .efx-ia-sugerencia, .efx-ia .efx-ia-enlace { width: auto; }
