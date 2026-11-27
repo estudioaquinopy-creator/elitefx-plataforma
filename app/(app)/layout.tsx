@@ -15,7 +15,6 @@ import { ocurrencias, type Fijo } from "@/lib/horario";
 import { hoyPY } from "@/lib/sesion";
 import { visitaVigente } from "@/lib/visitas";
 import { leerAjustes } from "@/lib/ajustes";
-import { armarRedes } from "@/lib/redes";
 import { referidosActivos, fechaReferidos } from "@/lib/referidos";
 import { TERMINOS_VERSION } from "@/lib/terminos";
 import type { Notif } from "@/components/Cabecera";
@@ -182,7 +181,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     }
     items.splice(pos, 0, { href: "/visitas", label: perfil.rol === "admin" ? "Visitas" : "Agendar visita", lock: false, aviso, icon: "M3 21V8l9-5l9 5v13M9 21v-6h6v6M7 11h2M15 11h2" });
   }
-  const redes = armarRedes(aj);
   // Administrador: contenido reportado por los miembros, sin revisar.
   if (perfil.rol === "admin" && !perfil.vista) {
     const rp = await supabase.from("reportes").select("id", { count: "exact", head: true }).eq("estado", "pendiente");
@@ -208,7 +206,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const iniciales = nombre.split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((x) => x[0].toUpperCase()).join("");
 
   return (
-    <Shell items={items} nombre={nombre} email={perfil.email} iniciales={iniciales} avatar={perfil.avatar_url ?? ""} notifs={notifs} noLeidas={noLeidas} real={perfil.rol === "admin" || !!perfil.vista} vista={perfil.vista ?? ""} redes={redes} editarRedes={perfil.rol === "admin"} enLinea={<EnLinea id={perfil.id} nombre={nombre} />}>
+    <Shell items={items} nombre={nombre} email={perfil.email} iniciales={iniciales} avatar={perfil.avatar_url ?? ""} notifs={notifs} noLeidas={noLeidas} real={perfil.rol === "admin" || !!perfil.vista} vista={perfil.vista ?? ""} enLinea={<EnLinea id={perfil.id} nombre={nombre} />}>
       {perfil.vista && (
         <form action={modoAlumno} className="vbar">
           <span>Estás viendo la plataforma como <b>{perfil.vista === "gratis" ? "gratuito (nuevo)" : perfil.vista === "alumno" ? "gratuito alumno" : "VIP"}</b>. Los cambios de administrador están ocultos.</span>

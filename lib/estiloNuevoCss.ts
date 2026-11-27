@@ -84,14 +84,6 @@ html[data-tema="claro"] body .nav.on .ni{color:var(--ac)!important}
 html[data-tema="claro"] body .slogo,html[data-tema="claro"] body .slogo span{background:none!important;-webkit-text-fill-color:initial}
 html[data-tema="claro"] body .nav .ni{color:inherit!important}
 html[data-tema="claro"] body .side{background:var(--rail)!important}
-/* Redes sociales minimalistas: un solo icono de Instagram; al acercar o tocar se despliegan dos (ELITE FX y Marcos Aquino) */
-html body .redes{flex-direction:row!important;align-items:center!important;gap:4px!important;padding:8px 10px 0!important}
-html body .ig{width:30px!important;height:30px!important;padding:0!important;gap:0!important;justify-content:center!important;border:0!important;border-radius:8px!important;box-shadow:none!important;background:transparent!important;transform:none!important;color:var(--rail-ic)!important;cursor:pointer}
-html body .ig:hover{background:rgba(255,255,255,.1)!important;color:#fff!important}
-html body .ig svg{stroke:currentColor!important}html body .ig svg circle[fill]{fill:currentColor!important}
-html body .igsub{animation:igsalta .18s ease-out}
-html body .redit{margin-left:2px;font-size:14px;line-height:1;text-decoration:none}
-@keyframes igsalta{from{opacity:0;transform:translateX(-6px) scale(.8)}to{opacity:1;transform:none}}
 @media(max-width:760px){
   html body .hero{padding:20px!important}
 }

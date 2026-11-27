@@ -15,6 +15,8 @@ import { leerAjustes } from "@/lib/ajustes";
 import { mesDeRanking } from "@/lib/ranking";
 import { rankingLateral, type RankingLateral as DatosRanking } from "@/lib/rankingLateral";
 import TarjetaRanking from "@/components/TarjetaRanking";
+import TarjetaRedes from "@/components/TarjetaRedes";
+import { armarRedes } from "@/lib/redes";
 import AvisoAccesoCompleto from "@/components/AvisoAccesoCompleto";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +27,7 @@ type Leccion = { id: string; curso_id: string; orden: number; titulo: string; yo
 export default async function Inicio({ searchParams }: { searchParams: { sim?: string } }) {
   const perfil = await perfilActual();
   const perm = await permisos(perfil);
+  const redes = armarRedes(await leerAjustes());
   const supabase = createClient();
 
   // Primer video: quien aún no vio la bienvenida va directo a ella.
@@ -184,6 +187,7 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
             </section>
           )}
           {ranking && <TarjetaRanking d={ranking} />}
+          <TarjetaRedes redes={redes} editar={perm.admin} />
         </div>
       </div>
     </>
