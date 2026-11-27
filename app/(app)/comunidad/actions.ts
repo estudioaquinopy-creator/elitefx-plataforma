@@ -7,6 +7,7 @@ import { fallo, subirVarias } from "@/lib/subida";
 import { rutaSegura } from "@/lib/seguridad";
 import { registrar } from "@/lib/auditoria";
 import { MOTIVOS_REPORTE } from "@/lib/reportes";
+import { MAX_PUBLICACIONES_DIA, inicioDiaParaguay } from "@/lib/limitePublicaciones";
 
 export async function publicar(f: FormData) {
   const perfil = await perfilActual();
@@ -34,6 +35,11 @@ export async function publicar(f: FormData) {
   // Evita duplicados: si se envió exactamente lo mismo hace menos de 2 minutos, no se vuelve a crear.
   const { data: rep } = await createClient().from("publicaciones").select("id").eq("user_id", perfil.id).eq("canal", canal).eq("titulo", titulo).eq("cuerpo", cuerpo).gte("created_at", new Date(Date.now() - 120000).toISOString()).limit(1);
   if (rep && rep.length) redirect("/comunidad");
+  // Límite anti-spam: máximo 2 publicaciones por día (hora de Paraguay); los administradores no tienen límite.
+  if (!perm.admin) {
+    const { count: hoyN } = await createClient().from("publicaciones").select("id", { count: "exact", head: true }).eq("user_id", perfil.id).gte("created_at", inicioDiaParaguay());
+    if ((hoyN ?? 0) >= MAX_PUBLICACIONES_DIA) fallo("/comunidad", `Ya hiciste tus ${MAX_PUBLICACIONES_DIA} publicaciones de hoy. Puedes seguir respondiendo y dando me gusta; mañana podrás publicar de nuevo.`);
+  }
   const fila = {
     user_id: perfil.id,
     autor: perfil.nombre || perfil.email.split("@")[0],
