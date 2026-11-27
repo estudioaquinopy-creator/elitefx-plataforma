@@ -124,7 +124,7 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
 
       <AvisoNoticias noticias={avisos} />
 
-      <div className="cols">
+      <div className="cols" style={{ alignItems: "stretch" }}>
         <div>
           <section className="box hero">
             {siguiente && cursoSig && miniSig ? (
@@ -178,7 +178,7 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
           </section>
         </div>
 
-        <div>
+        <div style={{ display: "flex", flexDirection: "column" }}>
           {perm.calendario && (
             <section className="box">
               <h2>Próximas sesiones</h2>
