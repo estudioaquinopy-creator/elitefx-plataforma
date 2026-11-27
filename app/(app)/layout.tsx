@@ -37,6 +37,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     { href: "/calendario", label: "Calendario", lock: !perm.calendario, icon: "M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v13H3zM3 11h18M8 3v4M16 3v4" },
     { href: "/aliados", label: "Broker", lock: false, icon: "M3 12a5 5 0 1 0 10 0a5 5 0 1 0-10 0M11 12a5 5 0 1 0 10 0a5 5 0 1 0-10 0" },
     { href: "/comunidad", label: "Comunidad", lock: !perm.comunidad, icon: "M21 12a8 8 0 0 1-11.5 7.2L4 20l1-4.6A8 8 0 1 1 21 12z" },
+    { href: "/comunidad/ranking", label: "Ranking", lock: false, icon: "M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3" },
     { href: "/journal", label: "Journal", lock: !perm.journal, icon: "M5 4h12a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2zM9 4v16M12 9h4M12 13h4" },
     { href: "/noticias", label: "Noticias", lock: !perm.noticias, icon: "M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2zM18 8h2v10a2 2 0 0 1-2 2M8 8h6M8 12h6M8 16h4" },
   ];
@@ -197,6 +198,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     "/cursos": "M4 5.5A2.5 2.5 0 016.5 3H20v15H6.5A2.5 2.5 0 004 20.5zM4 20.5A2.5 2.5 0 006.5 23H20v-5",
     "/calendario": "M3.5 8a3 3 0 013-3h11a3 3 0 013 3v9.5a3 3 0 01-3 3h-11a3 3 0 01-3-3zM8 3v4M16 3v4M3.5 10h17",
     "/comunidad": "M4 5h16v11H9l-5 4z",
+    "/comunidad/ranking": "M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0zM17 5h3v2a3 3 0 01-3 3M7 5H4v2a3 3 0 003 3",
     "/journal": "M5 20V5a2 2 0 012-2h11v18H7a2 2 0 01-2-1zM9 8h6M9 12h6",
     "/noticias": "M6 8a6 6 0 0112 0c0 6 2 7 2 8H4c0-1 2-2 2-8zM10 19a2 2 0 004 0",
   };

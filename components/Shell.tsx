@@ -12,6 +12,8 @@ type Props = { items: Item[]; nombre: string; email: string; iniciales: string; 
 export default function Shell({ items, nombre, email, iniciales, avatar, notifs, noLeidas, real, vista, redes, editarRedes, enLinea, children }: Props) {
   const [open, setOpen] = useState(false);
   const path = usePathname();
+  // Se resalta solo la sección más específica (así "Comunidad" no se marca cuando estás en "Ranking", que cuelga de /comunidad).
+  const activo = items.filter((i) => !i.soon && (path === i.href || path.startsWith(i.href + "/"))).sort((x, y) => y.href.length - x.href.length)[0]?.href;
   return (
     <div className="app">
       {open && <div className="scrim" onClick={() => setOpen(false)} />}
@@ -34,7 +36,7 @@ export default function Shell({ items, nombre, email, iniciales, avatar, notifs,
             onClick={() => setOpen(false)}
             title={it.label}
             aria-label={it.label}
-            className={path === it.href || path.startsWith(it.href + "/") ? "nav on" : "nav"}
+            className={it.href === activo ? "nav on" : "nav"}
             data-sec={it.href.slice(1)}
           >
             <span className="ni"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -48,13 +50,13 @@ export default function Shell({ items, nombre, email, iniciales, avatar, notifs,
         {(redes.length > 0 || editarRedes) && (
           <div className="redes">
             {redes.flatMap((g) => g.items.map((r) => ({ g: g.grupo, ...r }))).map((r) => (
-              <a key={r.g + r.nombre} href={r.url} target="_blank" rel="noopener noreferrer" className="ig">
+              <a key={r.g + r.nombre} href={r.url} target="_blank" rel="noopener noreferrer" className="ig" title={r.nombre + " · " + r.g}>
                 <span className="igi">
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                    <rect x="3" y="3" width="18" height="18" rx="5.5" /><circle cx="12" cy="12" r="4.2" /><circle cx="17.3" cy="6.7" r=".6" fill="#fff" />
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                    <rect x="3" y="3" width="18" height="18" rx="5.5" /><circle cx="12" cy="12" r="4.2" /><circle cx="17.3" cy="6.7" r=".6" fill="currentColor" />
                   </svg>
                 </span>
-                <span className="igt"><b>{r.g === "Marcos Aquino" ? "Sígueme" : "Síguenos"}</b><small>{r.nombre} · {r.g}</small></span>
+                <span className="igt1">{r.g === "Marcos Aquino" ? "Sígueme" : "Síguenos"} · {r.g}</span>
               </a>
             ))}
             {editarRedes && <Link href="/redes" onClick={() => setOpen(false)} className="redit">{redes.length ? "Editar redes" : "+ Agregar redes sociales"}</Link>}

@@ -16,7 +16,6 @@ import { mesDeRanking } from "@/lib/ranking";
 import { rankingLateral, type RankingLateral as DatosRanking } from "@/lib/rankingLateral";
 import TarjetaRanking from "@/components/TarjetaRanking";
 import AvisoAccesoCompleto from "@/components/AvisoAccesoCompleto";
-import CintaCotizaciones from "@/components/CintaCotizaciones";
 
 export const dynamic = "force-dynamic";
 
@@ -187,8 +186,6 @@ export default async function Inicio({ searchParams }: { searchParams: { sim?: s
           {ranking && <TarjetaRanking d={ranking} />}
         </div>
       </div>
-      <div style={{ height: 60 }} aria-hidden="true" />
-      <CintaCotizaciones />
     </>
   );
 }

@@ -84,6 +84,13 @@ html[data-tema="claro"] body .nav.on .ni{color:var(--ac)!important}
 html[data-tema="claro"] body .slogo,html[data-tema="claro"] body .slogo span{background:none!important;-webkit-text-fill-color:initial}
 html[data-tema="claro"] body .nav .ni{color:inherit!important}
 html[data-tema="claro"] body .side{background:var(--rail)!important}
+/* Redes sociales minimalistas: una sola línea pequeña por red */
+html body .redes{padding:8px 8px 0!important;gap:2px!important}
+html body .ig{padding:4px 8px!important;gap:7px!important;border-radius:8px!important;box-shadow:none!important;background:transparent!important;transform:none!important}
+html body .ig:hover{background:rgba(255,255,255,.07)!important}
+html body .igi{width:16px!important;height:16px!important;border:0!important;background:transparent!important;border-radius:0!important}
+html body .igi svg{width:14px!important;height:14px!important;stroke:var(--rail-ic)!important}html body .igi svg circle[fill]{fill:var(--rail-ic)!important}
+html body .igt1{font-size:11.5px;font-weight:500;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--rail-ic)!important}
 @media(max-width:760px){
   html body .hero{padding:20px!important}
 }
