@@ -9,8 +9,18 @@ type Item = { href: string; label: string; lock: boolean; icon: string; soon?: s
 
 type Props = { items: Item[]; nombre: string; email: string; iniciales: string; avatar?: string; notifs: Notif[]; noLeidas: number; real: boolean; vista: string; redes: GrupoRedes[]; editarRedes: boolean; enLinea?: React.ReactNode; children: React.ReactNode };
 
+function IconoIg() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+      <rect x="3" y="3" width="18" height="18" rx="5.5" /><circle cx="12" cy="12" r="4.2" /><circle cx="17.3" cy="6.7" r=".6" fill="currentColor" />
+    </svg>
+  );
+}
+
 export default function Shell({ items, nombre, email, iniciales, avatar, notifs, noLeidas, real, vista, redes, editarRedes, enLinea, children }: Props) {
   const [open, setOpen] = useState(false);
+  const [verRedes, setVerRedes] = useState(false);
+  const lista = redes.flatMap((g) => g.items.map((r) => ({ g: g.grupo, ...r })));
   const path = usePathname();
   // Se resalta solo la sección más específica (así "Comunidad" no se marca cuando estás en "Ranking", que cuelga de /comunidad).
   const activo = items.filter((i) => !i.soon && (path === i.href || path.startsWith(i.href + "/"))).sort((x, y) => y.href.length - x.href.length)[0]?.href;
@@ -48,18 +58,20 @@ export default function Shell({ items, nombre, email, iniciales, avatar, notifs,
           </Link>
         ))}
         {(redes.length > 0 || editarRedes) && (
-          <div className="redes">
-            {redes.flatMap((g) => g.items.map((r) => ({ g: g.grupo, ...r }))).map((r) => (
-              <a key={r.g + r.nombre} href={r.url} target="_blank" rel="noopener noreferrer" className="ig" title={r.nombre + " · " + r.g}>
-                <span className="igi">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                    <rect x="3" y="3" width="18" height="18" rx="5.5" /><circle cx="12" cy="12" r="4.2" /><circle cx="17.3" cy="6.7" r=".6" fill="currentColor" />
-                  </svg>
-                </span>
-                <span className="igt1">{r.g === "Marcos Aquino" ? "Sígueme" : "Síguenos"} · {r.g}</span>
-              </a>
-            ))}
-            {editarRedes && <Link href="/redes" onClick={() => setOpen(false)} className="redit">{redes.length ? "Editar redes" : "+ Agregar redes sociales"}</Link>}
+          <div className="redes" onMouseEnter={() => setVerRedes(true)} onMouseLeave={() => setVerRedes(false)}>
+            {lista.length === 1 && (
+              <a href={lista[0].url} target="_blank" rel="noopener noreferrer" className="ig" title={"Instagram · " + lista[0].g} aria-label={"Instagram · " + lista[0].g}><IconoIg /></a>
+            )}
+            {lista.length > 1 && (
+              <>
+                <button type="button" className="ig" title="Instagram" aria-label="Instagram" aria-expanded={verRedes} onClick={() => setVerRedes(!verRedes)}><IconoIg /></button>
+                {verRedes && lista.map((r) => (
+                  <a key={r.g + r.nombre} href={r.url} target="_blank" rel="noopener noreferrer" className="ig igsub" title={"Instagram · " + r.g} aria-label={"Instagram · " + r.g}><IconoIg /></a>
+                ))}
+              </>
+            )}
+            {editarRedes && lista.length === 0 && <Link href="/redes" onClick={() => setOpen(false)} className="redit">+ Agregar redes sociales</Link>}
+            {editarRedes && lista.length > 0 && verRedes && <Link href="/redes" onClick={() => setOpen(false)} className="redit" title="Editar redes" aria-label="Editar redes">✎</Link>}
           </div>
         )}
       </aside>
