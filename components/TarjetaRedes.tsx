@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { GrupoRedes } from "@/lib/redes";
 
-// Tarjeta de redes sociales en Inicio (debajo del ranking): un botón por cuenta de Instagram ("Síguenos" = ELITE FX, "Sígueme" = Marcos Aquino).
+// Tarjeta de redes sociales en Inicio (debajo del ranking): un botón por cuenta de Instagram ("ELITE FX" y "Marcos Aquino").
 // Sin título, para ocupar poco. Crece (flex: 1) hasta quedar a la altura del final de la columna izquierda de Inicio (el cuadro de brokers),
 // con el contenido centrado. Los enlaces se cargan en /redes (solo administradores).
 export default function TarjetaRedes({ redes, editar }: { redes: GrupoRedes[]; editar: boolean }) {
@@ -20,7 +20,7 @@ export default function TarjetaRedes({ redes, editar }: { redes: GrupoRedes[]; e
                   <rect x="3" y="3" width="18" height="18" rx="5.5" /><circle cx="12" cy="12" r="4.2" /><circle cx="17.3" cy="6.7" r=".6" fill="#fff" />
                 </svg>
               </span>
-              <b style={{ fontSize: 14, whiteSpace: "nowrap" }}>{r.g === "Marcos Aquino" ? "Sígueme" : "Síguenos"}</b>
+              <b style={{ fontSize: 14, whiteSpace: "nowrap" }}>{r.g === "Marcos Aquino" ? "Marcos Aquino" : "ELITE FX"}</b>
             </a>
           ))}
           {editar && <Link href="/redes" title="Editar redes" aria-label="Editar redes" className="mu" style={{ flex: "none", padding: "4px 6px", textDecoration: "none", fontSize: 15 }}>✎</Link>}
